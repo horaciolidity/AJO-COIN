@@ -9,9 +9,14 @@ import {
   QuestItem,
   AchievementItem,
   PresaleInfo,
-  LeaderboardEntry,
+  EvolutionStage,
+  SkinId,
+  EvolutionStageId,
 } from '../types';
 import { DEFAULT_GAME_CONFIG } from '../config/gameConfig';
+import { EVOLUTION_STAGES, getStageById } from '../config/gameBalance';
+import { StorageAdapter, SavedGameState } from '../services/StorageAdapter';
+import { GameService } from '../services/GameService';
 import { triggerHaptic } from '../utils/haptics';
 import { playTapSound, playHarvestSound, playCoinSound } from '../utils/audio';
 
@@ -35,6 +40,10 @@ interface GameContextType {
   presale: PresaleInfo;
   comboCount: number;
   toast: ToastMessage | null;
+  currentStage: EvolutionStage;
+  isEvolutionModalOpen: boolean;
+  setIsEvolutionModalOpen: (open: boolean) => void;
+  justEvolvedStage: EvolutionStage | null;
   showToast: (title: string, message: string, type?: 'success' | 'info' | 'warning' | 'error') => void;
   handleTap: (clientX?: number, clientY?: number) => void;
   sellGarlic: (amount: number) => void;
@@ -42,6 +51,10 @@ interface GameContextType {
   claimAjoFromBox: (boxId: string) => void;
   buyUpgrade: (upgradeId: string) => void;
   claimQuestReward: (questId: string) => void;
+  attemptEvolution: () => void;
+  purchaseSkin: (skinId: SkinId) => void;
+  equipSkin: (skinId: SkinId) => void;
+  resetLocalProgress: () => void;
   isWalletModalOpen: boolean;
   setIsWalletModalOpen: (open: boolean) => void;
   isClaimModalOpen: boolean;
@@ -54,13 +67,20 @@ interface GameContextType {
 const GameContext = createContext<GameContextType | undefined>(undefined);
 
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Load initial saved state from StorageAdapter
+  const [initialSave] = useState<SavedGameState>(() => StorageAdapter.loadState());
+
   const [activeTab, setActiveTab] = useState<NavigationTab>('farm');
   const [isWalletModalOpen, setIsWalletModalOpen] = useState(false);
   const [isClaimModalOpen, setIsClaimModalOpen] = useState(false);
   const [selectedBoxForClaim, setSelectedBoxForClaim] = useState<GarlicBoxItem | null>(null);
 
+  // Evolution Celebration Modal
+  const [isEvolutionModalOpen, setIsEvolutionModalOpen] = useState(false);
+  const [justEvolvedStage, setJustEvolvedStage] = useState<EvolutionStage | null>(null);
+
   // User state
-  const [user, setUser] = useState<UserState>({
+  const [user] = useState<UserState>({
     id: 'usr_demo_123',
     username: 'GarlicKing',
     firstName: 'Garlic',
@@ -70,184 +90,16 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isBanned: false,
   });
 
-  // Game Stats
-  const [stats, setStats] = useState<GameStatsState>({
-    level: 12,
-    xp: 1240,
-    energy: 873,
-    maxEnergy: 1000,
-    energyRegenSeconds: 3,
-    tapsPerGarlic: 100,
-    currentGarlicTaps: 87,
-    totalTaps: 1247,
-    totalGarlicHarvested: 247,
-    totalBoxesCompleted: 2,
-    totalAjoEarned: 4.25,
-    powerPerTap: 1,
-    garlicMultiplier: 1,
-  });
-
-  // Inventory & Currencies
-  const [inventory, setInventory] = useState<InventoryState>({
-    rawGarlic: 247,
-    gcBalance: 12450,
-    ajoBalance: 4.25,
-  });
-
-  // Garlic Boxes
-  const [boxes, setBoxes] = useState<GarlicBoxItem[]>([
-    {
-      id: 'box_1',
-      boxType: 'BASIC',
-      capacity: 100,
-      currentCount: 100,
-      isFull: true,
-      claimedAjo: false,
-    },
-    {
-      id: 'box_2',
-      boxType: 'FARM',
-      capacity: 500,
-      currentCount: 247,
-      isFull: false,
-      claimedAjo: false,
-    },
-  ]);
-
-  // Upgrades
-  const [upgrades, setUpgrades] = useState<UpgradeItem[]>([
-    {
-      id: 'up_1',
-      code: 'STRONGER_FINGERS',
-      name: 'STRONGER FINGERS',
-      description: '+1 garlic tap power per tap',
-      currentLevel: 3,
-      maxLevel: 50,
-      nextCost: 800,
-      effectText: '+4 garlic tap power',
-    },
-    {
-      id: 'up_2',
-      code: 'BIGGER_HANDS',
-      name: 'BIGGER HANDS',
-      description: '+25 max energy capacity',
-      currentLevel: 5,
-      maxLevel: 50,
-      nextCost: 1500,
-      effectText: '+150 max energy',
-    },
-    {
-      id: 'up_3',
-      code: 'FAST_REGEN',
-      name: 'FAST REGEN',
-      description: 'Energy regenerates faster (+1 / 2.5s)',
-      currentLevel: 2,
-      maxLevel: 20,
-      nextCost: 3000,
-      effectText: '+1 energy every 2.5 seconds',
-    },
-    {
-      id: 'up_4',
-      code: 'GARLIC_MULTIPLIER',
-      name: 'GARLIC MULTIPLIER',
-      description: 'Chance to produce bonus garlic',
-      currentLevel: 1,
-      maxLevel: 25,
-      nextCost: 5000,
-      effectText: '5% chance for 2x Garlic',
-    },
-    {
-      id: 'up_5',
-      code: 'BIGGER_BOXES',
-      name: 'BIGGER BOXES',
-      description: 'Increase box storage capacity',
-      currentLevel: 0,
-      maxLevel: 10,
-      nextCost: 10000,
-      effectText: '+10% storage capacity',
-    },
-  ]);
-
-  // Quests
-  const [quests, setQuests] = useState<QuestItem[]>([
-    {
-      id: 'q_1',
-      code: 'TAP_100',
-      title: 'TAP 100 TIMES',
-      description: 'Tap the giant AJO 100 times',
-      rewardGc: 100,
-      rewardAjo: 0,
-      progress: 100,
-      targetValue: 100,
-      isCompleted: true,
-      isClaimed: true,
-      questType: 'TAPS',
-    },
-    {
-      id: 'q_2',
-      code: 'HARVEST_10',
-      title: 'HARVEST 10 GARLIC',
-      description: 'Harvest 10 raw garlic units',
-      rewardGc: 500,
-      rewardAjo: 0,
-      progress: 10,
-      targetValue: 10,
-      isCompleted: true,
-      isClaimed: false,
-      questType: 'HARVEST',
-    },
-    {
-      id: 'q_3',
-      code: 'FILL_1_BOX',
-      title: 'FILL 1 BOX',
-      description: 'Completely fill 1 garlic box',
-      rewardGc: 1000,
-      rewardAjo: 0.5,
-      progress: 1,
-      targetValue: 1,
-      isCompleted: true,
-      isClaimed: false,
-      questType: 'BOX',
-    },
-    {
-      id: 'q_4',
-      code: 'INVITE_3',
-      title: 'INVITE 3 FRIENDS',
-      description: 'Invite 3 friends on Telegram',
-      rewardGc: 2500,
-      rewardAjo: 1.0,
-      progress: 1,
-      targetValue: 3,
-      isCompleted: false,
-      isClaimed: false,
-      questType: 'REFERRAL',
-    },
-    {
-      id: 'q_5',
-      code: 'CONNECT_WALLETS',
-      title: 'CONNECT WALLET',
-      description: 'Connect your Web3 EVM wallet',
-      rewardGc: 5000,
-      rewardAjo: 2.0,
-      progress: 1,
-      targetValue: 1,
-      isCompleted: true,
-      isClaimed: false,
-      questType: 'WALLET',
-    },
-  ]);
-
-  // Achievements
-  const [achievements, setAchievements] = useState<AchievementItem[]>([
-    { id: 'a1', code: 'FIRST_GARLIC', name: 'First Garlic', description: 'Harvested your first raw garlic', icon: '🧄', unlocked: true },
-    { id: 'a2', code: 'FIRST_BOX', name: 'First Box', description: 'Filled 1 garlic box', icon: '📦', unlocked: true },
-    { id: 'a3', code: 'TAPS_10K', name: '10K Taps', description: 'Tapped 10,000 times', icon: '🔥', unlocked: false },
-    { id: 'a4', code: 'GARLIC_MASTER', name: 'Garlic Master', description: 'Harvested 1,000 garlics', icon: '👑', unlocked: false },
-    { id: 'a5', code: 'EARLY_FARMER', name: 'Early Farmer', description: 'Joined during Fair Launch', icon: '🚀', unlocked: true },
-  ]);
+  // Game States initialized from local storage
+  const [stats, setStats] = useState<GameStatsState>(initialSave.stats);
+  const [inventory, setInventory] = useState<InventoryState>(initialSave.inventory);
+  const [boxes, setBoxes] = useState<GarlicBoxItem[]>(initialSave.boxes);
+  const [upgrades, setUpgrades] = useState<UpgradeItem[]>(initialSave.upgrades);
+  const [quests, setQuests] = useState<QuestItem[]>(initialSave.quests);
+  const [achievements, setAchievements] = useState<AchievementItem[]>(initialSave.achievements);
 
   // Presale State
-  const [presale, setPresale] = useState<PresaleInfo>({
+  const [presale] = useState<PresaleInfo>({
     tokenName: 'AJO COIN',
     tokenSymbol: 'AJO',
     contractAddress: '0x1234567890abcdef1234567890abcdef12345678',
@@ -275,6 +127,22 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setTimeout(() => setToast(null), 3500);
   };
 
+  // Get current evolution stage
+  const currentStage = getStageById(stats.currentStageId || 'COMMON_SMALL');
+
+  // Auto-Save game state whenever stats/inventory/boxes/upgrades/quests change
+  useEffect(() => {
+    StorageAdapter.saveState({
+      version: 2,
+      stats,
+      inventory,
+      boxes,
+      upgrades,
+      quests,
+      achievements,
+    });
+  }, [stats, inventory, boxes, upgrades, quests, achievements]);
+
   // Energy Auto Regeneration Timer (1 energy every X seconds)
   useEffect(() => {
     const interval = setInterval(() => {
@@ -284,7 +152,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         return prev;
       });
-    }, stats.energyRegenSeconds * 1000);
+    }, (stats.energyRegenSeconds || 3) * 1000);
 
     return () => clearInterval(interval);
   }, [stats.energyRegenSeconds]);
@@ -293,7 +161,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleTap = (clientX?: number, clientY?: number) => {
     if (stats.energy < DEFAULT_GAME_CONFIG.tapEnergyCost) {
       triggerHaptic('warning');
-      showToast('Energy Depleted', 'Wait for your energy to regenerate!', 'warning');
+      showToast('¡Energía Agotada!', 'Espera unos segundos para que tu energía se recargue.', 'warning');
       return;
     }
 
@@ -301,26 +169,45 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     playTapSound();
 
     // Increment combo
-    setComboCount((prev) => prev + 1);
+    setComboCount((prev) => {
+      const nextCombo = prev + 1;
+      // Update combo quest progress if applicable
+      setQuests((qList) =>
+        qList.map((q) => {
+          if (q.mechanicType === 'RHYTHM' && !q.isCompleted) {
+            const isDone = nextCombo >= q.targetValue;
+            return {
+              ...q,
+              progress: Math.max(q.progress, nextCombo),
+              isCompleted: isDone,
+            };
+          }
+          return q;
+        })
+      );
+      return nextCombo;
+    });
+
     if (comboTimeoutRef.current) clearTimeout(comboTimeoutRef.current);
     comboTimeoutRef.current = setTimeout(() => setComboCount(0), 1200);
 
-    // Spawn floating particle text
+    // Spawn floating particle text (+1 XP or +Teeth)
     if (clientX && clientY) {
       const newParticle = {
         id: Date.now() + Math.random(),
         x: clientX,
         y: clientY - 30,
-        text: `+${stats.powerPerTap}`,
+        text: `+${stats.powerPerTap} XP`,
       };
       setFloatingParticles((prev) => [...prev.slice(-15), newParticle]);
     }
 
-    // Update energy & tap counts
+    // Update energy, TAPs, XP, and Garlic Teeth
     setStats((prev) => {
       const nextEnergy = prev.energy - DEFAULT_GAME_CONFIG.tapEnergyCost;
       const nextTaps = prev.currentGarlicTaps + prev.powerPerTap;
       const nextTotalTaps = prev.totalTaps + prev.powerPerTap;
+      const nextXp = prev.xp + prev.powerPerTap;
 
       let harvestOccurred = false;
       let remTaps = nextTaps;
@@ -336,10 +223,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         triggerHaptic('success');
         playHarvestSound();
 
-        // Increment Garlic Inventory
+        // Increment Garlic Inventory & Garlic Teeth (+2 Garlic Teeth per Garlic Harvested)
         setInventory((inv) => ({
           ...inv,
           rawGarlic: inv.rawGarlic + garlicHarvested,
+          garlicTeeth: inv.garlicTeeth + garlicHarvested * 2,
         }));
 
         // Fill active box
@@ -353,7 +241,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const isFullNow = box.currentCount + addCount >= box.capacity;
 
               if (isFullNow) {
-                showToast('🎉 BOX FULL!', '1 AJO produced! Go to Inventory to claim.', 'success');
+                showToast('🎉 ¡CAJA LLENA!', '¡Has completado una caja de ajo!', 'success');
               }
               return {
                 ...box,
@@ -366,9 +254,25 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       }
 
+      // Check quests for TAP progress
+      setQuests((qList) =>
+        qList.map((q) => {
+          if (q.questType === 'TAPS' && q.mechanicType !== 'RHYTHM' && !q.isCompleted) {
+            const nextProg = q.progress + prev.powerPerTap;
+            return {
+              ...q,
+              progress: nextProg,
+              isCompleted: nextProg >= q.targetValue,
+            };
+          }
+          return q;
+        })
+      );
+
       return {
         ...prev,
         energy: nextEnergy,
+        xp: nextXp,
         currentGarlicTaps: remTaps,
         totalTaps: nextTotalTaps,
         totalGarlicHarvested: prev.totalGarlicHarvested + (harvestOccurred ? garlicHarvested : 0),
@@ -391,7 +295,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       gcBalance: prev.gcBalance + gcEarned,
     }));
 
-    showToast('Garlic Sold!', `Sold ${amount} Garlic for +${gcEarned.toLocaleString()} GC!`, 'success');
+    showToast('¡Ajo Vendido!', `Vendiste ${amount} Ajo(s) por +${gcEarned.toLocaleString()} GC!`, 'success');
   };
 
   // Buy Garlic Box
@@ -400,7 +304,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const capacity = DEFAULT_GAME_CONFIG.boxCapacities[boxType];
 
     if (inventory.gcBalance < price) {
-      showToast('Insufficient GC', `Need ${price.toLocaleString()} GC to buy ${boxType} box.`, 'error');
+      showToast('GC Insuficiente', `Requieres ${price.toLocaleString()} GC para comprar la caja ${boxType}.`, 'error');
       return;
     }
 
@@ -418,7 +322,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
     ]);
 
-    showToast('Box Purchased!', `Created new ${boxType} Box (${capacity} capacity).`, 'success');
+    showToast('¡Caja Comprada!', `Nueva caja ${boxType} (${capacity} capacidad).`, 'success');
   };
 
   // Claim AJO from completed box
@@ -426,7 +330,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setBoxes((prev) =>
       prev.map((b) => (b.id === boxId ? { ...b, claimedAjo: true } : b))
     );
-    setInventory((prev) => ({ ...prev, ajoBalance: prev.ajoBalance + 1.0 }));
+    setInventory((prev) => ({
+      ...prev,
+      ajoBalance: prev.ajoBalance + 1.0,
+      garlicTeeth: prev.garlicTeeth + 25, // Bonus Garlic Teeth for completing a box
+    }));
     setStats((prev) => ({
       ...prev,
       totalBoxesCompleted: prev.totalBoxesCompleted + 1,
@@ -434,7 +342,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }));
 
     triggerHaptic('success');
-    showToast('🎉 AJO Claimed!', 'Added +1.0 AJO to your balance!', 'success');
+    showToast('🎉 ¡Caja Canjeada!', '¡Ganaste +1.0 AJO y +25 Garlic Teeth 🧄!', 'success');
   };
 
   // Buy Upgrade in Garlic Lab
@@ -443,13 +351,13 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!up) return;
 
     if (inventory.gcBalance < up.nextCost) {
-      showToast('Insufficient GC', `Requires ${up.nextCost.toLocaleString()} GC!`, 'error');
+      showToast('GC Insuficiente', `¡Requieres ${up.nextCost.toLocaleString()} GC!`, 'error');
       return;
     }
 
     triggerHaptic('success');
     setInventory((prev) => ({ ...prev, gcBalance: prev.gcBalance - up.nextCost }));
-    
+
     setUpgrades((prev) =>
       prev.map((item) => {
         if (item.id === upgradeId) {
@@ -468,7 +376,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setStats((s) => ({ ...s, maxEnergy: s.maxEnergy + 25 }));
     }
 
-    showToast('Upgrade Unlocked!', `${up.name} upgraded to Lvl ${up.currentLevel + 1}!`, 'success');
+    showToast('¡Mejora Desbloqueada!', `${up.name} subió al Nivel ${up.currentLevel + 1}!`, 'success');
   };
 
   // Claim Quest Reward
@@ -479,6 +387,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     triggerHaptic('success');
     playCoinSound();
 
+    const teethReward = quest.rewardGarlicTeeth || 15;
+    const xpReward = quest.rewardXp || 100;
+
     setQuests((prev) =>
       prev.map((q) => (q.id === questId ? { ...q, isClaimed: true } : q))
     );
@@ -486,14 +397,114 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setInventory((prev) => ({
       ...prev,
       gcBalance: prev.gcBalance + quest.rewardGc,
-      ajoBalance: prev.ajoBalance + quest.rewardAjo,
+      garlicTeeth: prev.garlicTeeth + teethReward,
+    }));
+
+    setStats((prev) => ({
+      ...prev,
+      xp: prev.xp + xpReward,
     }));
 
     showToast(
-      'Quest Claimed!',
-      `Received +${quest.rewardGc.toLocaleString()} GC ${quest.rewardAjo > 0 ? `+${quest.rewardAjo} AJO` : ''}`,
+      '¡Misión Reclamada!',
+      `Recibiste +${quest.rewardGc.toLocaleString()} GC, +${teethReward} Garlic Teeth 🧄 y +${xpReward} XP!`,
       'success'
     );
+  };
+
+  // Attempt Evolution
+  const attemptEvolution = () => {
+    const currentState: SavedGameState = {
+      version: 2,
+      stats,
+      inventory,
+      boxes,
+      upgrades,
+      quests,
+      achievements,
+    };
+
+    const result = GameService.attemptEvolution(currentState);
+
+    if (!result.success) {
+      const msg = result.missing?.join('\n• ') || 'No cumples los requisitos aún.';
+      showToast('No puedes evolucionar aún', `Requisitos faltantes:\n• ${msg}`, 'warning');
+      return;
+    }
+
+    // Update local states
+    setStats(result.state.stats);
+    setInventory(result.state.inventory);
+
+    if (result.newStageId) {
+      const stage = getStageById(result.newStageId);
+      setJustEvolvedStage(stage);
+      setIsEvolutionModalOpen(true);
+      triggerHaptic('success');
+
+      // Check achievement unlock
+      setAchievements((prev) =>
+        prev.map((a) => (a.code === 'FIRST_EVOLUTION' ? { ...a, unlocked: true } : a))
+      );
+    }
+  };
+
+  // Purchase Skin
+  const purchaseSkin = (skinId: SkinId) => {
+    const currentState: SavedGameState = {
+      version: 2,
+      stats,
+      inventory,
+      boxes,
+      upgrades,
+      quests,
+      achievements,
+    };
+
+    const res = GameService.purchaseSkin(currentState, skinId);
+    if (!res.success) {
+      showToast('Error', res.error || 'No se pudo comprar el aspecto.', 'error');
+      return;
+    }
+
+    setInventory(res.state.inventory);
+    triggerHaptic('success');
+    showToast('¡Aspecto Desbloqueado!', `¡Equipaste el aspecto con éxito!`, 'success');
+  };
+
+  // Equip Skin
+  const equipSkin = (skinId: SkinId) => {
+    const currentState: SavedGameState = {
+      version: 2,
+      stats,
+      inventory,
+      boxes,
+      upgrades,
+      quests,
+      achievements,
+    };
+
+    const res = GameService.equipSkin(currentState, skinId);
+    if (!res.success) {
+      showToast('Error', res.error || 'No se pudo equipar.', 'error');
+      return;
+    }
+
+    setInventory(res.state.inventory);
+    triggerHaptic('light');
+    showToast('Aspecto Equipado', 'Has cambiado tu aspecto correctamente.', 'info');
+  };
+
+  // Reset Progress for Dev/Testing
+  const resetLocalProgress = () => {
+    const reset = StorageAdapter.resetState();
+    setStats(reset.stats);
+    setInventory(reset.inventory);
+    setBoxes(reset.boxes);
+    setUpgrades(reset.upgrades);
+    setQuests(reset.quests);
+    setAchievements(reset.achievements);
+    showToast('Progreso Reiniciado', 'Se ha restablecido el juego al estado inicial.', 'info');
   };
 
   return (
@@ -511,6 +522,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         presale,
         comboCount,
         toast,
+        currentStage,
+        isEvolutionModalOpen,
+        setIsEvolutionModalOpen,
+        justEvolvedStage,
         showToast,
         handleTap,
         sellGarlic,
@@ -518,6 +533,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         claimAjoFromBox,
         buyUpgrade,
         claimQuestReward,
+        attemptEvolution,
+        purchaseSkin,
+        equipSkin,
+        resetLocalProgress,
         isWalletModalOpen,
         setIsWalletModalOpen,
         isClaimModalOpen,

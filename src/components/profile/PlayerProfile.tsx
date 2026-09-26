@@ -3,10 +3,10 @@ import { useGame } from '../../context/GameContext';
 import { useWeb3 } from '../../context/Web3Context';
 import { Referrals } from './Referrals';
 import { formatAddress } from '../../utils/format';
-import { User, Wallet, Trophy, Flame, Package, Coins, Award, ShieldCheck } from 'lucide-react';
+import { User, Wallet, Trophy, Flame, Package, Coins, Award, ShieldCheck, RefreshCw, Star } from 'lucide-react';
 
 export const PlayerProfile: React.FC = () => {
-  const { user, stats, inventory, achievements, setIsWalletModalOpen } = useGame();
+  const { user, stats, inventory, currentStage, achievements, setIsWalletModalOpen, resetLocalProgress } = useGame();
   const { wallet } = useWeb3();
   const [tab, setTab] = useState<'profile' | 'referrals'>('profile');
 
@@ -32,9 +32,12 @@ export const PlayerProfile: React.FC = () => {
 
           <div>
             <h2 className="text-xl font-black text-white">{user.username}</h2>
-            <span className="text-xs bg-sprout-500/20 text-sprout-400 border border-sprout-500/30 px-2.5 py-0.5 rounded-full font-bold uppercase inline-block mt-0.5">
-              GARLIC FARMER LVL {stats.level}
-            </span>
+            <div className="flex items-center justify-center gap-1.5 mt-1">
+              <span className="text-xs bg-sprout-500/20 text-sprout-300 border border-sprout-500/30 px-2.5 py-0.5 rounded-full font-bold uppercase inline-flex items-center gap-1">
+                <span>{currentStage.badgeIcon}</span>
+                <span>{currentStage.name}</span>
+              </span>
+            </div>
           </div>
 
           {/* Wallet Address badge */}
@@ -43,7 +46,7 @@ export const PlayerProfile: React.FC = () => {
             className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-900/50 border border-purple-500/40 text-xs font-mono text-purple-200 hover:bg-purple-800/60 transition-colors"
           >
             <Wallet className="w-3.5 h-3.5 text-purple-300" />
-            <span>{wallet.isConnected ? formatAddress(wallet.address, 4) : 'Connect Web3 Wallet'}</span>
+            <span>{wallet.isConnected ? formatAddress(wallet.address, 4) : 'Conectar Wallet Web3'}</span>
           </button>
         </div>
       </div>
@@ -58,7 +61,7 @@ export const PlayerProfile: React.FC = () => {
               : 'text-gray-400 hover:text-white'
           }`}
         >
-          My Stats & Badges
+          Estadísticas & Logros
         </button>
         <button
           onClick={() => setTab('referrals')}
@@ -68,7 +71,7 @@ export const PlayerProfile: React.FC = () => {
               : 'text-gray-400 hover:text-white'
           }`}
         >
-          Referrals
+          Referidos
         </button>
       </div>
 
@@ -76,6 +79,20 @@ export const PlayerProfile: React.FC = () => {
         <div className="space-y-4">
           {/* Lifetime Game Stats Grid */}
           <div className="grid grid-cols-2 gap-2.5">
+            <div className="glass-panel p-3 rounded-2xl border border-amber-500/20 space-y-1">
+              <span className="text-[10px] text-gray-400 uppercase font-semibold flex items-center gap-1">
+                <span className="text-sm">🧄</span> Garlic Teeth
+              </span>
+              <span className="text-base font-extrabold text-amber-300">{inventory.garlicTeeth.toLocaleString()}</span>
+            </div>
+
+            <div className="glass-panel p-3 rounded-2xl border border-purple-500/20 space-y-1">
+              <span className="text-[10px] text-gray-400 uppercase font-semibold flex items-center gap-1">
+                <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" /> Total XP
+              </span>
+              <span className="text-base font-extrabold text-yellow-300">{stats.xp.toLocaleString()}</span>
+            </div>
+
             <div className="glass-panel p-3 rounded-2xl border border-purple-500/20 space-y-1">
               <span className="text-[10px] text-gray-400 uppercase font-semibold flex items-center gap-1">
                 <Flame className="w-3.5 h-3.5 text-orange-400" /> Total Taps
@@ -85,30 +102,16 @@ export const PlayerProfile: React.FC = () => {
 
             <div className="glass-panel p-3 rounded-2xl border border-purple-500/20 space-y-1">
               <span className="text-[10px] text-gray-400 uppercase font-semibold flex items-center gap-1">
-                <span className="text-sm">🧄</span> Total Garlic
-              </span>
-              <span className="text-base font-extrabold text-white">{stats.totalGarlicHarvested.toLocaleString()}</span>
-            </div>
-
-            <div className="glass-panel p-3 rounded-2xl border border-purple-500/20 space-y-1">
-              <span className="text-[10px] text-gray-400 uppercase font-semibold flex items-center gap-1">
-                <Package className="w-3.5 h-3.5 text-amber-400" /> Boxes Filled
+                <Package className="w-3.5 h-3.5 text-amber-400" /> Cajas Llenas
               </span>
               <span className="text-base font-extrabold text-amber-300">{stats.totalBoxesCompleted}</span>
-            </div>
-
-            <div className="glass-panel p-3 rounded-2xl border border-purple-500/20 space-y-1">
-              <span className="text-[10px] text-gray-400 uppercase font-semibold flex items-center gap-1">
-                <Coins className="w-3.5 h-3.5 text-emerald-400" /> AJO Earned
-              </span>
-              <span className="text-base font-extrabold text-emerald-300">{stats.totalAjoEarned.toFixed(2)} AJO</span>
             </div>
           </div>
 
           {/* Achievements Badges */}
           <div className="glass-panel p-4 rounded-3xl border border-purple-500/30 space-y-3">
             <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
-              <Award className="w-4 h-4 text-yellow-400" /> ACHIEVEMENTS & BADGES
+              <Award className="w-4 h-4 text-yellow-400" /> LOGROS & INSIGNIAS
             </h4>
 
             <div className="grid grid-cols-1 gap-2">
@@ -128,12 +131,22 @@ export const PlayerProfile: React.FC = () => {
                   </div>
                   {ach.unlocked && (
                     <span className="ml-auto text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold uppercase border border-emerald-500/30">
-                      UNLOCKED
+                      DESBLOQUEADO
                     </span>
                   )}
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Dev/Testing Reset Option */}
+          <div className="pt-2 text-center">
+            <button
+              onClick={resetLocalProgress}
+              className="text-[10px] text-gray-400 hover:text-rose-400 flex items-center justify-center gap-1 mx-auto font-semibold uppercase tracking-wider transition-colors"
+            >
+              <RefreshCw className="w-3 h-3" /> Reiniciar Progreso Local (Modo Pruebas)
+            </button>
           </div>
         </div>
       ) : (

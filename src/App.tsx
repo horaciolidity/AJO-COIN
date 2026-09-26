@@ -8,6 +8,7 @@ import { ParticleEffect } from './components/common/ParticleEffect';
 
 import { TapGame } from './components/farm/TapGame';
 import { GarlicInventory } from './components/inventory/GarlicInventory';
+import { SkinsStore } from './components/skins/SkinsStore';
 import { PresaleDashboard } from './components/launch/PresaleDashboard';
 import { Leaderboard } from './components/rank/Leaderboard';
 import { PlayerProfile } from './components/profile/PlayerProfile';
@@ -22,6 +23,8 @@ export const AppContent: React.FC = () => {
         return <TapGame />;
       case 'inventory':
         return <GarlicInventory />;
+      case 'skins':
+        return <SkinsStore />;
       case 'launch':
         return <PresaleDashboard />;
       case 'rank':

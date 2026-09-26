@@ -1,4 +1,64 @@
-export type NavigationTab = 'farm' | 'inventory' | 'rank' | 'launch' | 'profile' | 'admin';
+export type NavigationTab = 'farm' | 'inventory' | 'skins' | 'rank' | 'launch' | 'profile' | 'admin';
+
+export type EvolutionRank = 'COMMON' | 'BRONZE' | 'SILVER' | 'GOLD' | 'PLATINUM' | 'DIAMOND';
+export type EvolutionSize = 'SMALL' | 'BIG';
+
+export type EvolutionStageId =
+  | 'COMMON_SMALL'
+  | 'COMMON_BIG'
+  | 'BRONZE_SMALL'
+  | 'BRONZE_BIG'
+  | 'SILVER_SMALL'
+  | 'SILVER_BIG'
+  | 'GOLD_SMALL'
+  | 'GOLD_BIG'
+  | 'PLATINUM_SMALL'
+  | 'PLATINUM_BIG'
+  | 'DIAMOND_SMALL'
+  | 'DIAMOND_BIG';
+
+export interface EvolutionStage {
+  id: EvolutionStageId;
+  name: string;
+  rank: EvolutionRank;
+  size: EvolutionSize;
+  order: number;
+  requiredXp: number;
+  requiredTaps: number;
+  requiredGarlicTeeth: number;
+  requiredQuests: number;
+  description: string;
+  celebrationMessage: string;
+  auraColor: string;
+  themeGradient: string;
+  badgeIcon: string;
+  garlicBodyStartColor: string;
+  garlicBodyEndColor: string;
+  strokeColor: string;
+}
+
+export type SkinId = 'DEFAULT' | 'NINJA' | 'KING' | 'ROBOT' | 'FIRE' | 'ALIEN' | 'DEAD' | 'RICH';
+
+export interface Skin {
+  id: SkinId;
+  name: string;
+  description: string;
+  priceGarlicTeeth: number;
+  icon: string;
+  tag: string;
+  headgearEmoji: string;
+}
+
+export interface GarlicTeethTransaction {
+  id: string;
+  amount: number;
+  type: 'EARN' | 'SPEND';
+  reason: string;
+  timestamp: number;
+}
+
+export type MissionDifficulty = 'EASY' | 'NORMAL' | 'HARD' | 'HELL';
+export type MissionMechanic = 'TAP_SIMPLE' | 'RHYTHM' | 'ACCURACY' | 'SPEED';
 
 export interface TelegramUser {
   id: number;
@@ -35,12 +95,19 @@ export interface GameStatsState {
   totalAjoEarned: number;
   powerPerTap: number;
   garlicMultiplier: number;
+  currentStageId: EvolutionStageId;
+  competitionPoints: number;
+  seasonPoints: number;
 }
 
 export interface InventoryState {
   rawGarlic: number;
   gcBalance: number;
   ajoBalance: number;
+  garlicTeeth: number;
+  equippedSkin: SkinId;
+  unlockedSkins: SkinId[];
+  teethTransactions: GarlicTeethTransaction[];
 }
 
 export interface GarlicBoxItem {
@@ -70,6 +137,10 @@ export interface QuestItem {
   description: string;
   rewardGc: number;
   rewardAjo: number;
+  rewardGarlicTeeth?: number;
+  rewardXp?: number;
+  difficulty?: MissionDifficulty;
+  mechanicType?: MissionMechanic;
   progress: number;
   targetValue: number;
   isCompleted: boolean;
