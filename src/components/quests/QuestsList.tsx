@@ -2,6 +2,7 @@ import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { MissionDifficulty } from '../../types';
 import { CheckCircle2, Gift, Sparkles, Star } from 'lucide-react';
+import { DailyMissions } from './DailyMissions';
 
 const DIFFICULTY_BADGES: Record<MissionDifficulty, { label: string; bg: string; text: string; border: string }> = {
   EASY: { label: '🟢 EASY', bg: 'bg-emerald-500/10', text: 'text-emerald-400', border: 'border-emerald-500/30' },
@@ -21,6 +22,16 @@ export const QuestsList: React.FC = () => {
           <span>📜</span> MISIONES & DESAFÍOS
         </h2>
         <p className="text-xs text-gray-300">Completa objetivos para ganar XP y Dientes de Ajo 🧄</p>
+      </div>
+
+      {/* Daily Missions Panel */}
+      <DailyMissions />
+
+      {/* Divider */}
+      <div className="flex items-center gap-2">
+        <div className="flex-1 h-px bg-white/10" />
+        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">MISIONES PERMANENTES</span>
+        <div className="flex-1 h-px bg-white/10" />
       </div>
 
       <div className="space-y-3">

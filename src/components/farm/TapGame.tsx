@@ -5,6 +5,7 @@ import { EnergyBar } from './EnergyBar';
 import { ComboMeter } from './ComboMeter';
 import { EvolutionCelebrationModal } from './EvolutionCelebrationModal';
 import { getNextStage, checkEvolutionRequirements } from '../../config/gameBalance';
+import { RhythmBar } from './RhythmBar';
 import { Sparkles, ArrowRight, Trophy, ChevronRight, Zap } from 'lucide-react';
 
 export const TapGame: React.FC = () => {
@@ -20,7 +21,12 @@ export const TapGame: React.FC = () => {
     isEvolutionModalOpen,
     setIsEvolutionModalOpen,
     justEvolvedStage,
+    showToast,
   } = useGame();
+
+  // Rhythm quest detection
+  const rhythmQuest = quests.find((q) => q.mechanicType === 'RHYTHM' && !q.isCompleted && !q.isClaimed);
+  const rhythmActive = Boolean(rhythmQuest) && comboCount >= 3;
 
   const completedQuestsCount = quests.filter((q) => q.isCompleted).length;
   const nextStage = getNextStage(currentStage.id);
@@ -131,6 +137,17 @@ export const TapGame: React.FC = () => {
 
       {/* Main Interactive Garlic Character */}
       <GarlicCharacter onTap={handleTap} comboCount={comboCount} />
+
+      {/* Rhythm Bar — activates during RHYTHM quests */}
+      {rhythmActive && (
+        <div className="w-full px-2">
+          <RhythmBar
+            isActive={rhythmActive}
+            onPerfectHit={() => showToast('⚡ PERFECT HIT!', '+2x XP bonus de ritmo activado', 'success')}
+            onMissedHit={() => {}}
+          />
+        </div>
+      )}
 
       {/* Bottom Controls: Energy & Quick Actions */}
       <div className="w-full space-y-3">

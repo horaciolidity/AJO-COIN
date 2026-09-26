@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useGame } from '../../context/GameContext';
 import { SKINS_CATALOG } from '../../config/gameBalance';
+import { spawnCanvasParticle } from '../../utils/particleSystem';
 
 interface GarlicCharacterProps {
   onTap: (clientX?: number, clientY?: number) => void;
@@ -20,18 +21,10 @@ const TAP_SOUND_EFFECTS = [
   '¡OOF! 🥴',
 ];
 
-interface FloatingText {
-  id: number;
-  text: string;
-  x: number;
-  y: number;
-}
-
 export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCount }) => {
   const { currentStage, inventory } = useGame();
   const [isPressed, setIsPressed] = useState(false);
   const [expressionIndex, setExpressionIndex] = useState(0);
-  const [floatingTexts, setFloatingTexts] = useState<FloatingText[]>([]);
   const [wobbleAngle, setWobbleAngle] = useState(0);
 
   // Find equipped skin
@@ -46,19 +39,11 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
     const randomAngle = (Math.random() - 0.5) * 24;
     setWobbleAngle(randomAngle);
 
+    // Spawn comic text popup on Canvas (zero DOM mutations!)
     const randomText = TAP_SOUND_EFFECTS[Math.floor(Math.random() * TAP_SOUND_EFFECTS.length)];
-    const newText: FloatingText = {
-      id: Date.now() + Math.random(),
-      text: randomText,
-      x: (Math.random() - 0.5) * 60,
-      y: (Math.random() - 0.5) * 40 - 50,
-    };
-
-    setFloatingTexts((prev) => [...prev.slice(-4), newText]);
-
-    setTimeout(() => {
-      setFloatingTexts((prev) => prev.filter((item) => item.id !== newText.id));
-    }, 800);
+    if (clientX && clientY) {
+      spawnCanvasParticle(clientX, clientY - 40, randomText, '#FDE047');
+    }
 
     onTap(clientX, clientY);
   };
@@ -77,39 +62,47 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
     setTimeout(() => setIsPressed(false), 140);
   };
 
+  // More dramatic expression changes based on combo level
   const currentExpr = isPressed
     ? expressionIndex
-    : comboCount > 30
-    ? 4
-    : comboCount > 15
-    ? 1
-    : 3;
+    : comboCount >= 50
+    ? 6  // PANIC mode
+    : comboCount >= 30
+    ? 4  // Stars in eyes (amazed)
+    : comboCount >= 15
+    ? 1  // Crazy face
+    : comboCount >= 8
+    ? 5  // Wide eyes surprised
+    : 3; // Normal happy
 
   // Scale factor based on Small vs Big evolution size
   const sizeScale = currentStage.size === 'BIG' ? 'scale-110 sm:scale-125' : 'scale-100';
 
+  // Trembling intensity based on combo
+  const trembleClass = comboCount >= 50
+    ? 'animate-[combo-shake_0.15s_ease-in-out_infinite]'
+    : comboCount >= 30
+    ? 'animate-[combo-shake_0.3s_ease-in-out_infinite]'
+    : '';
+
+  // Aura intensity
+  const auraScale = comboCount >= 50
+    ? 'scale-150 opacity-80'
+    : comboCount >= 25
+    ? 'scale-125 animate-pulse'
+    : 'scale-100 opacity-60';
+
   return (
     <div className="relative flex flex-col items-center justify-center cursor-pointer my-4 select-none">
-      {/* Dynamic Evolution Glow Aura */}
+      {/* Dynamic Evolution Glow Aura — intensifies with combo */}
       <div
         style={{ backgroundColor: currentStage.auraColor }}
-        className={`absolute w-72 h-72 rounded-full transition-all duration-300 pointer-events-none blur-3xl ${
-          comboCount > 25 ? 'scale-125 animate-pulse' : 'scale-100'
-        }`}
+        className={`absolute w-72 h-72 rounded-full transition-all duration-500 pointer-events-none blur-3xl ${auraScale}`}
       />
-
-      {/* Floating Comic Sound Effect Popups */}
-      <div className="absolute inset-0 pointer-events-none z-30 flex items-center justify-center">
-        {floatingTexts.map((item) => (
-          <span
-            key={item.id}
-            style={{ transform: `translate(${item.x}px, ${item.y}px)` }}
-            className="absolute font-black text-lg sm:text-xl text-yellow-300 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] animate-bounce tracking-wider bg-black/40 px-2.5 py-1 rounded-full border border-yellow-400/50"
-          >
-            {item.text}
-          </span>
-        ))}
-      </div>
+      {/* Extra frenzy aura ring */}
+      {comboCount >= 50 && (
+        <div className="absolute w-80 h-80 rounded-full pointer-events-none border-2 border-purple-400/40 animate-ping" />
+      )}
 
       {/* Main Interactive Garlic Character */}
       <div
@@ -121,7 +114,7 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
             ? `scale(0.85, 1.15) rotate(${wobbleAngle}deg)`
             : `scale(1) rotate(0deg)`,
         }}
-        className={`relative z-10 w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center transition-all duration-100 ease-out active:scale-90 ${sizeScale} ${
+        className={`relative z-10 w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center transition-all duration-100 ease-out active:scale-90 ${sizeScale} ${trembleClass} ${
           isPressed ? '' : 'hover:scale-105 animate-float'
         }`}
       >
@@ -241,6 +234,33 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
               <circle cx="100" cy="138" r="10" fill="#2E1065" />
             </g>
           )}
+
+          {/* EXPR 6: PANIC / FRENZY — spiral eyes, screaming mouth, sweat everywhere */}
+          {currentExpr === 6 && (
+            <g>
+              {/* Spiral left eye */}
+              <circle cx="75" cy="113" r="13" fill="#FFFFFF" stroke="#2E1065" strokeWidth="2.5" />
+              <path d="M 75 113 m 0 -6 a 6 6 0 1 1 -0.01 0" fill="none" stroke="#2E1065" strokeWidth="2" />
+              <path d="M 75 113 m 0 -4 a 4 4 0 1 1 -0.01 0" fill="none" stroke="#7C3AED" strokeWidth="1.5" />
+              <circle cx="75" cy="113" r="2" fill="#2E1065" />
+              {/* Spiral right eye */}
+              <circle cx="125" cy="113" r="13" fill="#FFFFFF" stroke="#2E1065" strokeWidth="2.5" />
+              <path d="M 125 113 m 0 -6 a 6 6 0 1 0 0.01 0" fill="none" stroke="#2E1065" strokeWidth="2" />
+              <path d="M 125 113 m 0 -4 a 4 4 0 1 0 0.01 0" fill="none" stroke="#7C3AED" strokeWidth="1.5" />
+              <circle cx="125" cy="113" r="2" fill="#2E1065" />
+              {/* Big open screaming mouth */}
+              <ellipse cx="100" cy="142" rx="18" ry="13" fill="#2E1065" />
+              <ellipse cx="100" cy="146" rx="13" ry="8" fill="#EF4444" />
+              <ellipse cx="100" cy="150" rx="7" ry="4" fill="#B91C1C" />
+              {/* Multiple sweat drops */}
+              <path d="M 152 88 C 152 83, 157 78, 157 78 C 157 78, 162 83, 162 88 C 162 91, 157 94, 152 88 Z" fill="#60A5FA" opacity="0.9" />
+              <path d="M 160 100 C 160 97, 163 94, 163 94 C 163 94, 166 97, 166 100 C 166 102, 163 104, 160 100 Z" fill="#60A5FA" opacity="0.7" />
+              <path d="M 40 85 C 40 82, 43 79, 43 79 C 43 79, 46 82, 46 85 C 46 87, 43 89, 40 85 Z" fill="#60A5FA" opacity="0.8" />
+              {/* Wobbly eyebrows */}
+              <path d="M 63 97 Q 69 91 78 97" fill="none" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
+              <path d="M 118 97 Q 124 91 133 97" fill="none" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
+            </g>
+          )}
         </svg>
 
         {/* Equipped Skin Headgear Badge */}
@@ -251,14 +271,24 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
         )}
 
         {/* Emoji Reaction Badge on Top Corner */}
-        <div className="absolute -top-3 right-2 text-3xl animate-bounce drop-shadow-md">
+        <div className={`absolute -top-3 right-2 text-3xl drop-shadow-md ${currentExpr === 6 ? 'animate-spin' : 'animate-bounce'}`}>
           {currentExpr === 0 && '💥'}
           {currentExpr === 1 && '🤪'}
           {currentExpr === 2 && '😵'}
           {currentExpr === 3 && '😜'}
           {currentExpr === 4 && '🔥'}
           {currentExpr === 5 && '😱'}
+          {currentExpr === 6 && '🌪️'}
         </div>
+
+        {/* FRENZY label badge */}
+        {comboCount >= 50 && (
+          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
+            <span className="text-[10px] font-black text-purple-300 uppercase tracking-widest animate-pulse">
+              ¡MODO FRENZY ACTIVO!
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -19,6 +19,7 @@ import { StorageAdapter, SavedGameState } from '../services/StorageAdapter';
 import { GameService } from '../services/GameService';
 import { triggerHaptic } from '../utils/haptics';
 import { playTapSound, playHarvestSound, playCoinSound } from '../utils/audio';
+import { spawnCanvasParticle } from '../utils/particleSystem';
 
 interface ToastMessage {
   id: string;
@@ -191,15 +192,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (comboTimeoutRef.current) clearTimeout(comboTimeoutRef.current);
     comboTimeoutRef.current = setTimeout(() => setComboCount(0), 1200);
 
-    // Spawn floating particle text (+1 XP or +Teeth)
+    // Spawn floating particle text (+1 XP or +Teeth) on Canvas (Zero DOM mutations)
     if (clientX && clientY) {
-      const newParticle = {
-        id: Date.now() + Math.random(),
-        x: clientX,
-        y: clientY - 30,
-        text: `+${stats.powerPerTap} XP`,
-      };
-      setFloatingParticles((prev) => [...prev.slice(-15), newParticle]);
+      spawnCanvasParticle(clientX, clientY - 30, `+${stats.powerPerTap} XP`, '#34D399');
     }
 
     // Update energy, TAPs, XP, and Garlic Teeth

@@ -1,20 +1,25 @@
-import React from 'react';
-import { useGame } from '../../context/GameContext';
+import React, { useEffect, useRef } from 'react';
+import { registerParticleCanvas } from '../../utils/particleSystem';
 
 export const ParticleEffect: React.FC = () => {
-  const { floatingParticles } = useGame();
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (canvas) {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      registerParticleCanvas(canvas);
+    }
+    return () => {
+      registerParticleCanvas(null);
+    };
+  }, []);
 
   return (
-    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-      {floatingParticles.map((particle) => (
-        <div
-          key={particle.id}
-          className="absolute font-black text-2xl text-sprout-400 text-glow-green animate-float-up drop-shadow-lg"
-          style={{ left: `${particle.x - 15}px`, top: `${particle.y - 20}px` }}
-        >
-          {particle.text}
-        </div>
-      ))}
-    </div>
+    <canvas
+      ref={canvasRef}
+      className="fixed inset-0 pointer-events-none z-50 overflow-hidden"
+    />
   );
 };

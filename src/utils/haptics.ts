@@ -3,7 +3,8 @@
 export const triggerHaptic = (type: 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error' = 'light') => {
   try {
     const tg = (window as any).Telegram?.WebApp;
-    if (tg?.HapticFeedback) {
+    // HapticFeedback was introduced in Telegram WebApp API version 6.1
+    if (tg && tg.isVersionAtLeast && tg.isVersionAtLeast('6.1') && tg.HapticFeedback) {
       if (['light', 'medium', 'heavy', 'rigid', 'soft'].includes(type)) {
         tg.HapticFeedback.impactOccurred(type);
       } else if (['success', 'warning', 'error'].includes(type)) {
