@@ -206,8 +206,8 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
               <path d="M 68 108 L 82 122 M 82 108 L 68 122" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
               <path d="M 118 108 L 132 122 M 132 108 L 118 122" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
               <path d="M 82 136 Q 90 130 98 136 T 114 136" fill="none" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
-              <text x="60" y="98" fill="#F59E0B" fontSize="14" className="animate-spin">⭐</text>
-              <text x="125" y="96" fill="#F59E0B" fontSize="14" className="animate-bounce">⭐</text>
+              <polygon points="65,90 67,95 72,95 68,98 70,103 65,100 60,103 62,98 58,95 63,95" fill="#F59E0B" />
+              <polygon points="130,88 132,93 137,93 133,96 135,101 130,98 125,101 127,96 123,93 128,93" fill="#F59E0B" />
             </g>
           )}
 
@@ -222,8 +222,8 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
 
           {currentExpr === 4 && (
             <g>
-              <text x="63" y="122" fill="#F59E0B" fontSize="20" fontWeight="bold">★</text>
-              <text x="117" y="122" fill="#F59E0B" fontSize="20" fontWeight="bold">★</text>
+              <polygon points="75,105 78,113 86,113 80,118 82,126 75,121 68,126 70,118 64,113 72,113" fill="#F59E0B" />
+              <polygon points="125,105 128,113 136,113 130,118 132,126 125,121 118,126 120,118 114,113 122,113" fill="#F59E0B" />
               <path d="M 80 130 Q 100 155 120 130 Z" fill="#2E1065" />
               <path d="M 88 130 L 112 130 L 108 136 L 92 136 Z" fill="#FFFFFF" />
               <ellipse cx="100" cy="144" rx="8" ry="4" fill="#EF4444" />
