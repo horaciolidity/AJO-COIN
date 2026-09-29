@@ -39,7 +39,7 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
     const randomAngle = (Math.random() - 0.5) * 24;
     setWobbleAngle(randomAngle);
 
-    // Spawn comic text popup on Canvas (zero DOM mutations!)
+    // Spawn comic text popup on Canvas
     const randomText = TAP_SOUND_EFFECTS[Math.floor(Math.random() * TAP_SOUND_EFFECTS.length)];
     if (clientX && clientY) {
       spawnCanvasParticle(clientX, clientY - 40, randomText, '#FDE047');
@@ -62,23 +62,26 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
     setTimeout(() => setIsPressed(false), 140);
   };
 
-  // More dramatic expression changes based on combo level
+  // Facial expression based on combo / tap
   const currentExpr = isPressed
     ? expressionIndex
     : comboCount >= 50
     ? 6  // PANIC mode
     : comboCount >= 30
-    ? 4  // Stars in eyes (amazed)
+    ? 4  // Amazed
     : comboCount >= 15
     ? 1  // Crazy face
     : comboCount >= 8
-    ? 5  // Wide eyes surprised
-    : 3; // Normal happy
+    ? 5  // Surprised
+    : 3; // Happy
 
-  // Scale factor based on Small vs Big evolution size
-  const sizeScale = currentStage.size === 'BIG' ? 'scale-110 sm:scale-125' : 'scale-100';
+  // Dramatic scale difference between Small and Big sizes
+  const isSmall = currentStage.size === 'SMALL';
+  const sizeContainerClass = isSmall
+    ? 'w-44 h-44 sm:w-52 sm:h-52 scale-70 sm:scale-75'
+    : 'w-72 h-72 sm:w-80 sm:h-80 scale-115 sm:scale-125';
 
-  // Trembling intensity based on combo
+  // Trembling intensity
   const trembleClass = comboCount >= 50
     ? 'animate-[combo-shake_0.15s_ease-in-out_infinite]'
     : comboCount >= 30
@@ -94,12 +97,11 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
 
   return (
     <div className="relative flex flex-col items-center justify-center cursor-pointer my-4 select-none">
-      {/* Dynamic Evolution Glow Aura — intensifies with combo */}
+      {/* Dynamic Evolution Glow Aura */}
       <div
         style={{ backgroundColor: currentStage.auraColor }}
         className={`absolute w-72 h-72 rounded-full transition-all duration-500 pointer-events-none blur-3xl ${auraScale}`}
       />
-      {/* Extra frenzy aura ring */}
       {comboCount >= 50 && (
         <div className="absolute w-80 h-80 rounded-full pointer-events-none border-2 border-purple-400/40 animate-ping" />
       )}
@@ -114,11 +116,11 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
             ? `scale(0.85, 1.15) rotate(${wobbleAngle}deg)`
             : `scale(1) rotate(0deg)`,
         }}
-        className={`relative z-10 w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center transition-all duration-100 ease-out active:scale-90 ${sizeScale} ${trembleClass} ${
+        className={`relative z-10 flex items-center justify-center transition-all duration-150 ease-out active:scale-90 ${sizeContainerClass} ${trembleClass} ${
           isPressed ? '' : 'hover:scale-105 animate-float'
         }`}
       >
-        {/* Stylized SVG Garlic Character with Dynamic Evolution Colors & Facial Expressions */}
+        {/* SVG Garlic Character */}
         <svg
           viewBox="0 0 200 200"
           className="w-full h-full drop-shadow-[0_15px_35px_rgba(16,185,129,0.4)]"
@@ -136,7 +138,20 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
               <stop offset="0%" stopColor="rgba(255,255,255,0.85)" />
               <stop offset="100%" stopColor="rgba(255,255,255,0)" />
             </radialGradient>
+            <linearGradient id="fireGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+              <stop offset="0%" stopColor="#EF4444" />
+              <stop offset="50%" stopColor="#F97316" />
+              <stop offset="100%" stopColor="#FACC15" />
+            </linearGradient>
           </defs>
+
+          {/* SKIN OVERLAY: FIRE AURA (Behind Garlic Body) */}
+          {equippedSkin.id === 'FIRE' && (
+            <g className="animate-pulse">
+              <path d="M 30 110 C 10 90, 20 60, 45 40 C 60 20, 85 5, 100 25 C 115 5, 140 20, 155 40 C 180 60, 190 90, 170 110 C 190 140, 175 180, 145 195 C 120 205, 80 205, 55 195 C 25 180, 10 140, 30 110 Z" fill="url(#fireGrad)" opacity="0.45" />
+              <path d="M 45 120 C 35 100, 45 75, 60 55 C 75 35, 95 20, 100 35 C 105 20, 125 35, 140 55 C 155 75, 165 100, 155 120 C 165 150, 150 175, 130 185 C 110 195, 90 195, 70 185 C 50 175, 35 150, 45 120 Z" fill="url(#fireGrad)" opacity="0.65" />
+            </g>
+          )}
 
           {/* Green Sprout Leaf Top */}
           <g className={`transition-transform duration-100 origin-bottom ${isPressed ? 'scale-125 -rotate-6' : ''}`}>
@@ -159,6 +174,27 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
 
           {/* Highlights */}
           <ellipse cx="80" cy="85" rx="35" ry="25" fill="url(#garlicShine)" opacity="0.65" />
+
+          {/* SKIN OVERLAY: ROBOT CIRCUITS */}
+          {equippedSkin.id === 'ROBOT' && (
+            <g stroke="#06B6D4" strokeWidth="2" fill="none" opacity="0.8">
+              <path d="M 45 130 L 65 130 L 75 150 L 90 150" />
+              <path d="M 155 130 L 135 130 L 125 150 L 110 150" />
+              <circle cx="90" cy="150" r="3" fill="#22D3EE" />
+              <circle cx="110" cy="150" r="3" fill="#22D3EE" />
+            </g>
+          )}
+
+          {/* SKIN OVERLAY: ZOMBIE STITCHES */}
+          {equippedSkin.id === 'DEAD' && (
+            <g stroke="#27272A" strokeWidth="2.5" strokeLinecap="round">
+              <path d="M 130 145 L 155 160" />
+              <path d="M 134 157 L 144 146" />
+              <path d="M 142 163 L 152 152" />
+              <path d="M 45 140 L 65 150" />
+              <path d="M 48 150 L 58 140" />
+            </g>
+          )}
 
           {/* Blushing Cheeks */}
           <ellipse cx="60" cy="128" rx="9" ry="6" fill={isPressed ? '#EF4444' : '#F472B6'} opacity={isPressed ? '0.85' : '0.6'} />
@@ -235,40 +271,157 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
             </g>
           )}
 
-          {/* EXPR 6: PANIC / FRENZY — spiral eyes, screaming mouth, sweat everywhere */}
           {currentExpr === 6 && (
             <g>
-              {/* Spiral left eye */}
               <circle cx="75" cy="113" r="13" fill="#FFFFFF" stroke="#2E1065" strokeWidth="2.5" />
               <path d="M 75 113 m 0 -6 a 6 6 0 1 1 -0.01 0" fill="none" stroke="#2E1065" strokeWidth="2" />
               <path d="M 75 113 m 0 -4 a 4 4 0 1 1 -0.01 0" fill="none" stroke="#7C3AED" strokeWidth="1.5" />
               <circle cx="75" cy="113" r="2" fill="#2E1065" />
-              {/* Spiral right eye */}
               <circle cx="125" cy="113" r="13" fill="#FFFFFF" stroke="#2E1065" strokeWidth="2.5" />
               <path d="M 125 113 m 0 -6 a 6 6 0 1 0 0.01 0" fill="none" stroke="#2E1065" strokeWidth="2" />
               <path d="M 125 113 m 0 -4 a 4 4 0 1 0 0.01 0" fill="none" stroke="#7C3AED" strokeWidth="1.5" />
               <circle cx="125" cy="113" r="2" fill="#2E1065" />
-              {/* Big open screaming mouth */}
               <ellipse cx="100" cy="142" rx="18" ry="13" fill="#2E1065" />
               <ellipse cx="100" cy="146" rx="13" ry="8" fill="#EF4444" />
               <ellipse cx="100" cy="150" rx="7" ry="4" fill="#B91C1C" />
-              {/* Multiple sweat drops */}
               <path d="M 152 88 C 152 83, 157 78, 157 78 C 157 78, 162 83, 162 88 C 162 91, 157 94, 152 88 Z" fill="#60A5FA" opacity="0.9" />
               <path d="M 160 100 C 160 97, 163 94, 163 94 C 163 94, 166 97, 166 100 C 166 102, 163 104, 160 100 Z" fill="#60A5FA" opacity="0.7" />
               <path d="M 40 85 C 40 82, 43 79, 43 79 C 43 79, 46 82, 46 85 C 46 87, 43 89, 40 85 Z" fill="#60A5FA" opacity="0.8" />
-              {/* Wobbly eyebrows */}
               <path d="M 63 97 Q 69 91 78 97" fill="none" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
               <path d="M 118 97 Q 124 91 133 97" fill="none" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
             </g>
           )}
-        </svg>
 
-        {/* Equipped Skin Headgear Badge */}
-        {equippedSkin.headgearEmoji && (
-          <div className="absolute -top-6 text-4xl animate-bounce drop-shadow-lg z-20">
-            {equippedSkin.headgearEmoji}
-          </div>
-        )}
+          {/* ========================================================================= */}
+          {/* HIGH-PRECISION SVG SKIN ACCESORIES & HEADGEAR RENDERED DIRECTLY ON GARLIC */}
+          {/* ========================================================================= */}
+
+          {/* SKIN 1: NINJA (🥷) */}
+          {equippedSkin.id === 'NINJA' && (
+            <g id="skin-ninja">
+              {/* Ninja Bandana Ribbons at back left */}
+              <path d="M 35 75 Q 15 90 20 115" fill="none" stroke="#18181B" strokeWidth="7" strokeLinecap="round" />
+              <path d="M 35 75 Q 10 105 10 130" fill="none" stroke="#27272A" strokeWidth="5" strokeLinecap="round" />
+
+              {/* Ninja Headband across forehead */}
+              <path d="M 35 70 C 60 55, 140 55, 165 70 L 163 88 C 140 73, 60 73, 37 88 Z" fill="#18181B" />
+              {/* Metallic Plate in center */}
+              <rect x="86" y="62" width="28" height="16" rx="4" fill="#E4E4E7" stroke="#71717A" strokeWidth="1.5" />
+              {/* Kanji / Garlic symbol on plate */}
+              <path d="M 94 70 L 106 70 M 100 65 L 100 75" stroke="#18181B" strokeWidth="2" strokeLinecap="round" />
+
+              {/* Ninja Lower Face Mask */}
+              <path d="M 35 122 C 60 145, 140 145, 165 122 L 162 178 C 135 192, 65 192, 38 178 Z" fill="#18181B" stroke="#09090B" strokeWidth="2" />
+              {/* Mask Fold Lines */}
+              <path d="M 60 145 Q 100 160 140 145" fill="none" stroke="#27272A" strokeWidth="2" />
+            </g>
+          )}
+
+          {/* SKIN 2: KING (👑) */}
+          {equippedSkin.id === 'KING' && (
+            <g id="skin-king">
+              {/* Royal Crown on head */}
+              <polygon points="55,55 65,22 82,42 100,12 118,42 135,22 145,55" fill="#F59E0B" stroke="#B45309" strokeWidth="2.5" />
+              {/* Crown Base Band */}
+              <rect x="55" y="48" width="90" height="12" rx="3" fill="#D97706" stroke="#92400E" strokeWidth="2" />
+              {/* Gems on Crown Peaks */}
+              <circle cx="100" cy="12" r="5" fill="#EF4444" stroke="#991B1B" strokeWidth="1" />
+              <circle cx="65" cy="22" r="4" fill="#3B82F6" stroke="#1E40AF" strokeWidth="1" />
+              <circle cx="135" cy="22" r="4" fill="#10B981" stroke="#065F46" strokeWidth="1" />
+              <circle cx="75" cy="54" r="3" fill="#EF4444" />
+              <circle cx="100" cy="54" r="3.5" fill="#3B82F6" />
+              <circle cx="125" cy="54" r="3" fill="#10B981" />
+
+              {/* Royal Red Cape Collar at base */}
+              <path d="M 30 170 C 60 195, 140 195, 170 170 C 155 200, 45 200, 30 170 Z" fill="#DC2626" stroke="#991B1B" strokeWidth="2" />
+              <circle cx="100" cy="180" r="4" fill="#F59E0B" />
+            </g>
+          )}
+
+          {/* SKIN 3: ROBOT (🤖) */}
+          {equippedSkin.id === 'ROBOT' && (
+            <g id="skin-robot">
+              {/* Cybernetic Visor over Eyes */}
+              <rect x="55" y="100" width="90" height="26" rx="8" fill="#0F172A" stroke="#06B6D4" strokeWidth="2.5" />
+              {/* Laser Scanline */}
+              <line x1="60" y1="113" x2="140" y2="113" stroke="#22D3EE" strokeWidth="4" strokeLinecap="round" className="animate-pulse" />
+              <circle cx="100" cy="113" r="5" fill="#67E8F9" />
+
+              {/* Side Robot Ear Bolts */}
+              <rect x="20" y="115" width="10" height="20" rx="3" fill="#64748B" stroke="#334155" strokeWidth="2" />
+              <rect x="170" y="115" width="10" height="20" rx="3" fill="#64748B" stroke="#334155" strokeWidth="2" />
+
+              {/* Antenna on head */}
+              <line x1="100" y1="35" x2="100" y2="10" stroke="#64748B" strokeWidth="4" />
+              <circle cx="100" cy="8" r="6" fill="#EF4444" className="animate-ping" />
+              <circle cx="100" cy="8" r="6" fill="#EF4444" />
+            </g>
+          )}
+
+          {/* SKIN 4: FIRE (🔥) */}
+          {equippedSkin.id === 'FIRE' && (
+            <g id="skin-fire">
+              {/* Flame Crown on top of head */}
+              <path d="M 60 50 C 50 30, 65 15, 75 35 C 85 15, 100 0, 115 25 C 130 5, 145 30, 140 50 Z" fill="#F97316" />
+              <path d="M 70 50 C 65 35, 75 25, 80 40 C 90 25, 100 10, 110 30 C 120 15, 135 35, 130 50 Z" fill="#FACC15" />
+            </g>
+          )}
+
+          {/* SKIN 5: ALIEN (👽) */}
+          {equippedSkin.id === 'ALIEN' && (
+            <g id="skin-alien">
+              {/* Alien Antennae */}
+              <path d="M 80 40 Q 65 20 55 8" fill="none" stroke="#22C55E" strokeWidth="4" strokeLinecap="round" />
+              <circle cx="55" cy="8" r="7" fill="#4ADE80" stroke="#15803D" strokeWidth="2" className="animate-bounce" />
+
+              <path d="M 120 40 Q 135 20 145 8" fill="none" stroke="#22C55E" strokeWidth="4" strokeLinecap="round" />
+              <circle cx="145" cy="8" r="7" fill="#4ADE80" stroke="#15803D" strokeWidth="2" className="animate-bounce" />
+
+              {/* Third Eye in Center Forehead */}
+              <ellipse cx="100" cy="80" rx="10" ry="7" fill="#FFFFFF" stroke="#A855F7" strokeWidth="2" />
+              <circle cx="100" cy="80" r="4" fill="#A855F7" />
+              <circle cx="101" cy="79" r="1.5" fill="#FFFFFF" />
+
+              {/* Translucent Alien Space Helmet */}
+              <ellipse cx="100" cy="115" rx="86" ry="80" fill="rgba(34, 197, 94, 0.08)" stroke="rgba(74, 222, 128, 0.5)" strokeWidth="3" />
+            </g>
+          )}
+
+          {/* SKIN 6: DEAD / ZOMBIE (💀) */}
+          {equippedSkin.id === 'DEAD' && (
+            <g id="skin-dead">
+              {/* Leather Eyepatch over Left Eye */}
+              <line x1="30" y1="90" x2="120" y2="130" stroke="#18181B" strokeWidth="3" />
+              <ellipse cx="75" cy="113" rx="15" ry="15" fill="#18181B" stroke="#27272A" strokeWidth="2" />
+              {/* Skull Crossbones icon on eyepatch */}
+              <circle cx="75" cy="111" r="4" fill="#E4E4E7" />
+              <path d="M 72 118 L 78 118" stroke="#E4E4E7" strokeWidth="2" />
+            </g>
+          )}
+
+          {/* SKIN 7: RICH (🎩) */}
+          {equippedSkin.id === 'RICH' && (
+            <g id="skin-rich">
+              {/* Black Silk Top Hat */}
+              <ellipse cx="100" cy="50" rx="45" ry="9" fill="#18181B" stroke="#09090B" strokeWidth="2" />
+              <rect x="68" y="10" width="64" height="40" rx="3" fill="#18181B" stroke="#09090B" strokeWidth="2" />
+              {/* Purple Silk Ribbon */}
+              <rect x="68" y="38" width="64" height="10" fill="#9333EA" />
+              <rect x="94" y="37" width="12" height="12" rx="2" fill="#F59E0B" />
+
+              {/* Monocle over Right Eye */}
+              <circle cx="125" cy="114" r="13" fill="rgba(255,255,255,0.2)" stroke="#F59E0B" strokeWidth="2.5" />
+              {/* Monocle Chain */}
+              <path d="M 137 121 Q 148 145 142 165" fill="none" stroke="#F59E0B" strokeWidth="2" strokeDasharray="2,2" />
+
+              {/* Red Bowtie at Bottom */}
+              <polygon points="85,178 100,185 85,192" fill="#EF4444" stroke="#991B1B" strokeWidth="1" />
+              <polygon points="115,178 100,185 115,192" fill="#EF4444" stroke="#991B1B" strokeWidth="1" />
+              <circle cx="100" cy="185" r="3.5" fill="#B91C1C" />
+            </g>
+          )}
+
+        </svg>
 
         {/* Emoji Reaction Badge on Top Corner */}
         <div className={`absolute -top-3 right-2 text-3xl drop-shadow-md ${currentExpr === 6 ? 'animate-spin' : 'animate-bounce'}`}>
@@ -281,14 +434,17 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
           {currentExpr === 6 && '🌪️'}
         </div>
 
-        {/* FRENZY label badge */}
-        {comboCount >= 50 && (
-          <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap">
-            <span className="text-[10px] font-black text-purple-300 uppercase tracking-widest animate-pulse">
-              ¡MODO FRENZY ACTIVO!
-            </span>
-          </div>
-        )}
+        {/* Dynamic Size Badge under character */}
+        <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap z-20">
+          <span className={`text-[10px] font-black uppercase px-3 py-0.5 rounded-full border shadow-md inline-flex items-center gap-1 ${
+            isSmall
+              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+              : 'bg-purple-500/20 text-purple-300 border-purple-500/40 animate-pulse'
+          }`}>
+            <span>{isSmall ? '🤏' : '🐘'}</span>
+            <span>{isSmall ? 'Ajo Pequeño' : 'Ajo Grande (Evolución)'}</span>
+          </span>
+        </div>
       </div>
     </div>
   );
