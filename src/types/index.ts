@@ -60,6 +60,8 @@ export interface GarlicTeethTransaction {
 export type MissionDifficulty = 'EASY' | 'NORMAL' | 'HARD' | 'HELL';
 export type MissionMechanic = 'TAP_SIMPLE' | 'RHYTHM' | 'ACCURACY' | 'SPEED';
 
+export type AuthMethod = 'TELEGRAM' | 'WEB3' | 'EMAIL';
+
 export interface TelegramUser {
   id: number;
   first_name: string;
@@ -73,12 +75,23 @@ export interface TelegramUser {
 export interface UserState {
   id: string;
   telegramId?: string;
+  email?: string;
+  walletAddress?: string;
+  authMethod: AuthMethod;
   username: string;
   firstName: string;
   photoUrl?: string;
   referralCode: string;
   isAdmin: boolean;
   isBanned: boolean;
+  createdAt?: string;
+}
+
+export interface UserAuthSession {
+  isAuthenticated: boolean;
+  authMethod: AuthMethod | null;
+  user: UserState | null;
+  token?: string;
 }
 
 export interface GameStatsState {

@@ -64,17 +64,22 @@ export const TopPlayerBar: React.FC = () => {
           </div>
 
           {/* Wallet Button */}
-          <button
-            onClick={() => setIsWalletModalOpen(true)}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
-              wallet.isConnected
-                ? 'bg-purple-900/60 text-purple-200 border border-purple-500/40 hover:bg-purple-800/70'
-                : 'bg-gradient-to-r from-sprout-600 to-emerald-500 text-white shadow-md hover:brightness-110'
-            }`}
-          >
-            <Wallet className="w-3.5 h-3.5" />
-            <span>{wallet.isConnected ? formatAddress(wallet.address, 3) : 'WALLET'}</span>
-          </button>
+          {(() => {
+            const activeWallet = wallet.isConnected ? wallet.address : user.walletAddress;
+            return (
+              <button
+                onClick={() => setIsWalletModalOpen(true)}
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  activeWallet
+                    ? 'bg-purple-900/60 text-purple-200 border border-purple-500/40 hover:bg-purple-800/70'
+                    : 'bg-gradient-to-r from-sprout-600 to-emerald-500 text-white shadow-md hover:brightness-110'
+                }`}
+              >
+                <Wallet className="w-3.5 h-3.5" />
+                <span>{activeWallet ? formatAddress(activeWallet, 3) : 'WALLET'}</span>
+              </button>
+            );
+          })()}
         </div>
       </div>
     </header>

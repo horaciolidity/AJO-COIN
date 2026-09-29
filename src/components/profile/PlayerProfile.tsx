@@ -1,14 +1,43 @@
 import React, { useState } from 'react';
 import { useGame } from '../../context/GameContext';
 import { useWeb3 } from '../../context/Web3Context';
+import { useAuth } from '../../context/AuthContext';
 import { Referrals } from './Referrals';
 import { formatAddress } from '../../utils/format';
-import { User, Wallet, Trophy, Flame, Package, Coins, Award, ShieldCheck, RefreshCw, Star } from 'lucide-react';
+import { User, Wallet, Trophy, Flame, Package, Coins, Award, ShieldCheck, RefreshCw, Star, Send, Mail, LogOut, CheckCircle } from 'lucide-react';
 
 export const PlayerProfile: React.FC = () => {
   const { user, stats, inventory, currentStage, achievements, setIsWalletModalOpen, resetLocalProgress } = useGame();
   const { wallet } = useWeb3();
+  const { setIsAuthModalOpen, logout } = useAuth();
   const [tab, setTab] = useState<'profile' | 'referrals'>('profile');
+
+  const activeWalletAddress = wallet.isConnected ? wallet.address : user.walletAddress;
+
+  const renderAuthBadge = () => {
+    switch (user.authMethod) {
+      case 'TELEGRAM':
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] bg-sky-500/20 text-sky-300 border border-sky-500/30 px-2 py-0.5 rounded-full font-bold uppercase">
+            <Send className="w-3 h-3" /> Telegram
+          </span>
+        );
+      case 'WEB3':
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] bg-purple-500/20 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full font-bold uppercase">
+            <Wallet className="w-3 h-3" /> Auth Web3
+          </span>
+        );
+      case 'EMAIL':
+        return (
+          <span className="inline-flex items-center gap-1 text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold uppercase">
+            <Mail className="w-3 h-3" /> Correo
+          </span>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <div className="space-y-4 p-4 max-w-md mx-auto min-h-[calc(100vh-140px)] pb-20">
@@ -31,7 +60,11 @@ export const PlayerProfile: React.FC = () => {
           </div>
 
           <div>
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              {renderAuthBadge()}
+            </div>
             <h2 className="text-xl font-black text-white">{user.username}</h2>
+            {user.email && <p className="text-xs text-gray-400 font-mono">{user.email}</p>}
             <div className="flex items-center justify-center gap-1.5 mt-1">
               <span className="text-xs bg-sprout-500/20 text-sprout-300 border border-sprout-500/30 px-2.5 py-0.5 rounded-full font-bold uppercase inline-flex items-center gap-1">
                 <span>{currentStage.badgeIcon}</span>
@@ -40,14 +73,40 @@ export const PlayerProfile: React.FC = () => {
             </div>
           </div>
 
-          {/* Wallet Address badge */}
-          <button
-            onClick={() => setIsWalletModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-purple-900/50 border border-purple-500/40 text-xs font-mono text-purple-200 hover:bg-purple-800/60 transition-colors"
-          >
-            <Wallet className="w-3.5 h-3.5 text-purple-300" />
-            <span>{wallet.isConnected ? formatAddress(wallet.address, 4) : 'Conectar Wallet Web3'}</span>
-          </button>
+          {/* Wallet Address badge - Syncs Web3 login without redundancy */}
+          <div className="space-y-2">
+            {user.authMethod === 'WEB3' || activeWalletAddress ? (
+              <div className="inline-flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-900/50 border border-purple-500/40 text-xs">
+                <div className="flex items-center gap-1.5 text-purple-200 font-mono">
+                  <Wallet className="w-3.5 h-3.5 text-purple-300" />
+                  <span>{formatAddress(activeWalletAddress || '0x...', 6)}</span>
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400 ml-1" />
+                </div>
+                <span className="text-[9px] text-emerald-400 font-semibold uppercase tracking-wider">
+                  ✓ Wallet Vinculada al Perfil
+                </span>
+              </div>
+            ) : (
+              <button
+                onClick={() => setIsWalletModalOpen(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-900/50 border border-purple-500/40 text-xs font-mono text-purple-200 hover:bg-purple-800/60 transition-colors"
+              >
+                <Wallet className="w-3.5 h-3.5 text-purple-300" />
+                <span>Conectar Wallet Web3</span>
+              </button>
+            )}
+
+            {/* Switch account / login method button */}
+            <div className="pt-1">
+              <button
+                onClick={() => setIsAuthModalOpen(true)}
+                className="text-[11px] text-purple-300 hover:text-white underline font-semibold inline-flex items-center gap-1"
+              >
+                <LogOut className="w-3 h-3" />
+                <span>Cambiar Método de Login</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

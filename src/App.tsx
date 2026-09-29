@@ -3,6 +3,7 @@ import { useGame } from './context/GameContext';
 import { TopPlayerBar } from './components/common/TopPlayerBar';
 import { BottomNav } from './components/common/BottomNav';
 import { WalletModal } from './components/common/WalletModal';
+import { AuthModal } from './components/common/AuthModal';
 import { NotificationToast } from './components/common/NotificationToast';
 import { ParticleEffect } from './components/common/ParticleEffect';
 
@@ -63,6 +64,9 @@ export const AppContent: React.FC = () => {
 
       {/* EVM Wallet Modal */}
       <WalletModal />
+
+      {/* Auth Modal */}
+      <AuthModal />
     </div>
   );
 };

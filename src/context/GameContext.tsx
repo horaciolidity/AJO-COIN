@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { useAuth } from './AuthContext';
 import {
   NavigationTab,
   UserState,
@@ -80,16 +81,19 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isEvolutionModalOpen, setIsEvolutionModalOpen] = useState(false);
   const [justEvolvedStage, setJustEvolvedStage] = useState<EvolutionStage | null>(null);
 
-  // User state
-  const [user] = useState<UserState>({
+  const { session } = useAuth();
+
+  // User state from AuthContext with fallback
+  const user: UserState = session.user || {
     id: 'usr_demo_123',
+    authMethod: 'TELEGRAM',
     username: 'GarlicKing',
     firstName: 'Garlic',
     photoUrl: 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=150&auto=format&fit=crop&q=80',
     referralCode: 'AJO-X7K29',
     isAdmin: true,
     isBanned: false,
-  });
+  };
 
   // Game States initialized from local storage
   const [stats, setStats] = useState<GameStatsState>(initialSave.stats);
