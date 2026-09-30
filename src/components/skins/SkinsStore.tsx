@@ -2,7 +2,7 @@ import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { SKINS_CATALOG } from '../../config/gameBalance';
 import { SkinId } from '../../types';
-import { Sparkles, Check, Lock, ShoppingBag, ShieldAlert } from 'lucide-react';
+import { Sparkles, Check, Lock, ShoppingBag, Palette } from 'lucide-react';
 
 export const SkinsStore: React.FC = () => {
   const { inventory, purchaseSkin, equipSkin } = useGame();
@@ -21,9 +21,9 @@ export const SkinsStore: React.FC = () => {
       {/* Header Banner */}
       <div className="text-center space-y-1">
         <h2 className="text-2xl font-black uppercase text-white tracking-tight flex items-center justify-center gap-2">
-          <span>🥷</span>
+          <Palette className="w-6 h-6 text-purple-400" />
           <span>TIENDA DE SKINS</span>
-          <span>🥷</span>
+          <Sparkles className="w-5 h-5 text-yellow-400" />
         </h2>
         <p className="text-xs text-gray-300 font-medium">
           Personaliza la apariencia de tu AJO con Garlic Teeth 🧄

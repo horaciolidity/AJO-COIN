@@ -6,7 +6,7 @@ import { ComboMeter } from './ComboMeter';
 import { EvolutionCelebrationModal } from './EvolutionCelebrationModal';
 import { getNextStage, checkEvolutionRequirements } from '../../config/gameBalance';
 import { RhythmBar } from './RhythmBar';
-import { Sparkles, ArrowRight, Trophy, ChevronRight, Zap } from 'lucide-react';
+import { Sparkles, ArrowRight, Trophy, ChevronRight, Zap, Palette } from 'lucide-react';
 
 export const TapGame: React.FC = () => {
   const {
@@ -73,9 +73,10 @@ export const TapGame: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('skins')}
-            className="flex items-center gap-1 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/30 px-3 py-1 rounded-full text-xs font-bold text-purple-200 transition-colors"
+            className="flex items-center gap-1.5 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/30 px-3 py-1 rounded-full text-xs font-bold text-purple-200 transition-colors"
           >
-            <span>🥷 SKINS</span>
+            <Palette className="w-3.5 h-3.5 text-purple-300" />
+            <span>SKINS</span>
           </button>
         </div>
 
@@ -174,7 +175,9 @@ export const TapGame: React.FC = () => {
             className="glass-card p-2.5 rounded-2xl flex items-center justify-between text-xs font-bold text-purple-200 hover:scale-[1.02] transition-transform border border-purple-500/30"
           >
             <div className="flex items-center gap-2">
-              <span className="text-lg">🥷</span>
+              <div className="p-1 rounded-lg bg-purple-500/20 border border-purple-500/30">
+                <Palette className="w-4 h-4 text-purple-300" />
+              </div>
               <div className="text-left">
                 <span className="block text-[10px] text-purple-300/80 uppercase">Tienda Skins</span>
                 <span>{inventory.garlicTeeth} Dientes</span>
