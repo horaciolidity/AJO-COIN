@@ -22,7 +22,7 @@ export const NotificationToast: React.FC = () => {
   };
 
   return (
-    <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-sm animate-bounce-short">
+    <div key={toast.id} className="fixed top-16 left-1/2 -translate-x-1/2 z-50 w-11/12 max-w-sm pointer-events-none animate-bounce-short">
       <div className={`glass-panel border ${borderColors[toast.type]} rounded-2xl p-3.5 shadow-2xl flex items-center gap-3 backdrop-blur-xl`}>
         {icons[toast.type]}
         <div className="flex-1 overflow-hidden">

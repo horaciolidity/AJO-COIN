@@ -257,16 +257,16 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
 
           {/* NATURAL EYE BLINK OVERRIDE */}
           {isBlinking && !isPressed && currentExpr !== 6 ? (
-            <g>
+            <g key="expr-blink">
               <path d="M 65 113 Q 75 118 85 113" fill="none" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
               <path d="M 115 113 Q 125 118 135 113" fill="none" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
               <path d="M 85 130 Q 100 142 115 130" fill="none" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
             </g>
           ) : (
-            <>
+            <g key={`expr-${currentExpr}`}>
               {/* EXPR 0: OUCH / SQUINT */}
               {currentExpr === 0 && (
-                <g>
+                <g key="g-expr-0">
                   <path d="M 65 110 L 80 117 L 65 124" fill="none" stroke="#2E1065" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
                   <path d="M 135 110 L 120 117 L 135 124" fill="none" stroke="#2E1065" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
                   <ellipse cx="100" cy="138" rx="14" ry="10" fill="#2E1065" />
@@ -276,7 +276,7 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
 
               {/* EXPR 1: CRAZY / WINK */}
               {currentExpr === 1 && (
-                <g>
+                <g key="g-expr-1">
                   <circle cx="72" cy="113" r="14" fill="url(#irisGrad)" />
                   <circle cx="75" cy="109" r="5" fill="#FFFFFF" />
                   <circle cx="70" cy="116" r="2" fill="#FFFFFF" />
@@ -289,7 +289,7 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
 
               {/* EXPR 2: DIZZY / STARS */}
               {currentExpr === 2 && (
-                <g>
+                <g key="g-expr-2">
                   <path d="M 68 108 L 82 122 M 82 108 L 68 122" stroke="#2E1065" strokeWidth="4.5" strokeLinecap="round" />
                   <path d="M 118 108 L 132 122 M 132 108 L 118 122" stroke="#2E1065" strokeWidth="4.5" strokeLinecap="round" />
                   <path d="M 82 136 Q 90 130 98 136 T 114 136" fill="none" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
@@ -300,7 +300,7 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
 
               {/* EXPR 3: NORMAL HAPPY (Default Anime Eyes with Catchlights) */}
               {currentExpr === 3 && (
-                <g>
+                <g key="g-expr-3">
                   {/* Left Eye */}
                   <circle cx="75" cy="114" r="12" fill="url(#irisGrad)" />
                   <circle cx="78" cy="110" r="4.5" fill="#FFFFFF" />
@@ -320,7 +320,7 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
 
               {/* EXPR 4: AMAZED / STAR EYES */}
               {currentExpr === 4 && (
-                <g>
+                <g key="g-expr-4">
                   <polygon points="75,103 78,112 87,112 80,117 82,126 75,121 68,126 70,117 63,112 72,112" fill="#F59E0B" />
                   <polygon points="125,103 128,112 137,112 130,117 132,126 125,121 118,126 120,117 113,112 122,112" fill="#F59E0B" />
                   <path d="M 80 130 Q 100 155 120 130 Z" fill="#2E1065" />
@@ -331,7 +331,7 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
 
               {/* EXPR 5: SURPRISED / WIDE EYES */}
               {currentExpr === 5 && (
-                <g>
+                <g key="g-expr-5">
                   <circle cx="75" cy="114" r="13" fill="#FFFFFF" stroke="#2E1065" strokeWidth="3" />
                   <circle cx="75" cy="114" r="6" fill="url(#irisGrad)" />
                   <circle cx="77" cy="112" r="2.5" fill="#FFFFFF" />
@@ -346,7 +346,7 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
 
               {/* EXPR 6: PANIC / FRENZY MODE */}
               {currentExpr === 6 && (
-                <g>
+                <g key="g-expr-6">
                   <circle cx="75" cy="113" r="13" fill="#FFFFFF" stroke="#2E1065" strokeWidth="2.5" />
                   <path d="M 75 113 m 0 -6 a 6 6 0 1 1 -0.01 0" fill="none" stroke="#2E1065" strokeWidth="2" />
                   <path d="M 75 113 m 0 -4 a 4 4 0 1 1 -0.01 0" fill="none" stroke="#7C3AED" strokeWidth="1.5" />
@@ -366,7 +366,7 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCo
                   <path d="M 40 85 C 40 82, 43 79, 43 79 C 43 79, 46 82, 46 85 C 46 87, 43 89, 40 85 Z" fill="#60A5FA" opacity="0.8" />
                 </g>
               )}
-            </>
+            </g>
           )}
 
           {/* ========================================================================= */}

@@ -166,7 +166,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleTap = (clientX?: number, clientY?: number) => {
     if (stats.energy < DEFAULT_GAME_CONFIG.tapEnergyCost) {
       triggerHaptic('warning');
-      showToast('¡Energía Agotada!', 'Espera unos segundos para que tu energía se recargue.', 'warning');
+      if (!toast) {
+        showToast('¡Energía Agotada!', 'Espera unos segundos para que tu energía se recargue.', 'warning');
+      }
       return;
     }
 
