@@ -3,8 +3,9 @@
  * (DB Integration Ready)
  */
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+const metaEnv = (import.meta as any).env || {};
+const SUPABASE_URL = metaEnv.VITE_SUPABASE_URL || '';
+const SUPABASE_ANON_KEY = metaEnv.VITE_SUPABASE_ANON_KEY || '';
 
 export const isSupabaseConfigured = (): boolean => {
   return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
