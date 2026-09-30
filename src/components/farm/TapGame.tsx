@@ -4,16 +4,15 @@ import { GarlicCharacter } from './GarlicCharacter';
 import { EnergyBar } from './EnergyBar';
 import { ComboMeter } from './ComboMeter';
 import { EvolutionCelebrationModal } from './EvolutionCelebrationModal';
-import { getNextStage, checkEvolutionRequirements } from '../../config/gameBalance';
+import { getNextStage, checkEvolutionRequirements, TAP_STYLES_CATALOG } from '../../config/gameBalance';
 import { RhythmBar } from './RhythmBar';
-import { Sparkles, ArrowRight, Trophy, ChevronRight, Zap, Palette } from 'lucide-react';
+import { Sparkles, ArrowRight, Trophy, ChevronRight, Zap, Palette, Swords } from 'lucide-react';
 
 export const TapGame: React.FC = () => {
   const {
     stats,
     inventory,
     quests,
-    handleTap,
     comboCount,
     setActiveTab,
     currentStage,
@@ -41,7 +40,7 @@ export const TapGame: React.FC = () => {
     inventory.garlicTeeth
   );
 
-  // Progress towards next stage percentage calculation
+  // Progress towards next stage
   let evolutionProgress = 100;
   if (nextStage) {
     const xpRatio = Math.min(1, stats.xp / (nextStage.requiredXp || 1));
@@ -50,9 +49,12 @@ export const TapGame: React.FC = () => {
     evolutionProgress = Math.floor(((xpRatio + tapsRatio + teethRatio) / 3) * 100);
   }
 
+  // Active tap style info
+  const activeTapStyle = TAP_STYLES_CATALOG.find((s) => s.id === (inventory.equippedTapStyle || 'NORMAL')) || TAP_STYLES_CATALOG[0];
+
   return (
     <div className="relative flex flex-col items-center justify-between min-h-[calc(100vh-140px)] p-4 max-w-md mx-auto">
-      {/* Evolution Celebration Modal overlay */}
+      {/* Evolution Celebration Modal */}
       {isEvolutionModalOpen && justEvolvedStage && (
         <EvolutionCelebrationModal
           stage={justEvolvedStage}
@@ -60,24 +62,41 @@ export const TapGame: React.FC = () => {
         />
       )}
 
-      {/* Top Banner: Evolution Stage & Progress */}
-      <div className="w-full text-center space-y-2 relative">
+      {/* Top: Stage Badge + Combo + Buttons */}
+      <div className="w-full space-y-2">
         <ComboMeter comboCount={comboCount} />
 
-        {/* Current Stage Badge Header */}
-        <div className="flex items-center justify-between px-2">
-          <div className="flex items-center gap-1.5 bg-black/40 border border-white/10 px-3 py-1 rounded-full text-xs font-bold text-white backdrop-blur-md">
+        <div className="flex items-center justify-between px-1">
+          {/* Stage Badge */}
+          <div className="flex items-center gap-1.5 bg-black/40 border border-white/10 px-3 py-1.5 rounded-full text-xs font-bold text-white backdrop-blur-md">
             <span>{currentStage.badgeIcon}</span>
             <span className="uppercase text-amber-300">{currentStage.name}</span>
           </div>
 
-          <button
-            onClick={() => setActiveTab('skins')}
-            className="flex items-center gap-1.5 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/30 px-3 py-1 rounded-full text-xs font-bold text-purple-200 transition-colors"
-          >
-            <Palette className="w-3.5 h-3.5 text-purple-300" />
-            <span>SKINS</span>
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* Tap Style Quick Button */}
+            <button
+              onClick={() => setActiveTab('skins')}
+              className="flex items-center gap-1 rounded-full text-xs font-bold px-2.5 py-1.5 border transition-colors"
+              style={{
+                backgroundColor: `${activeTapStyle.color}22`,
+                borderColor: `${activeTapStyle.color}55`,
+                color: activeTapStyle.color,
+              }}
+            >
+              <Swords className="w-3.5 h-3.5" />
+              <span>{activeTapStyle.particleEmoji}</span>
+            </button>
+
+            {/* Skins Button */}
+            <button
+              onClick={() => setActiveTab('skins')}
+              className="flex items-center gap-1.5 bg-purple-900/40 hover:bg-purple-800/60 border border-purple-500/30 px-3 py-1.5 rounded-full text-xs font-bold text-purple-200 transition-colors"
+            >
+              <Palette className="w-3.5 h-3.5 text-purple-300" />
+              <span>SKINS</span>
+            </button>
+          </div>
         </div>
 
         {/* Evolution Progress Card */}
@@ -85,12 +104,11 @@ export const TapGame: React.FC = () => {
           <div className="flex justify-between items-center text-xs font-bold">
             <span className="text-sprout-400 flex items-center gap-1">
               <Trophy className="w-3.5 h-3.5 text-amber-400" />
-              {nextStage ? `PROGRESO A: ${nextStage.name}` : '¡ETAPA MÁXIMA ALCANZADA!'}
+              {nextStage ? `PROGRESO A: ${nextStage.name}` : '¡ETAPA MÁXIMA!'}
             </span>
             <span className="text-amber-300 font-extrabold">{evolutionProgress}%</span>
           </div>
 
-          {/* Bar */}
           <div className="w-full h-3 bg-black/50 rounded-full overflow-hidden p-0.5 border border-sprout-500/20">
             <div
               className="h-full bg-gradient-to-r from-amber-500 via-yellow-400 to-sprout-400 rounded-full transition-all duration-300 shadow-[0_0_12px_rgba(245,158,11,0.7)]"
@@ -98,7 +116,6 @@ export const TapGame: React.FC = () => {
             />
           </div>
 
-          {/* Next Stage Requirments Summary */}
           {nextStage && (
             <div className="grid grid-cols-3 gap-1 text-[10px] text-gray-300 font-medium pt-1 border-t border-white/10">
               <div className="text-center">
@@ -114,7 +131,7 @@ export const TapGame: React.FC = () => {
                 </span>
               </div>
               <div className="text-center">
-                <span className="block text-gray-400">Dientes 🧄</span>
+                <span className="block text-gray-400">Dientes 🦷</span>
                 <span className={inventory.garlicTeeth >= nextStage.requiredGarlicTeeth ? 'text-emerald-400 font-bold' : 'text-amber-300'}>
                   {inventory.garlicTeeth} / {nextStage.requiredGarlicTeeth}
                 </span>
@@ -122,7 +139,6 @@ export const TapGame: React.FC = () => {
             </div>
           )}
 
-          {/* Evolve Action Button if Ready */}
           {evalResult.canEvolve && (
             <button
               onClick={attemptEvolution}
@@ -134,12 +150,28 @@ export const TapGame: React.FC = () => {
             </button>
           )}
         </div>
+
+        {/* Tap Hints bar: hold to charge */}
+        <div className="flex items-center justify-center gap-3 text-[10px] text-gray-400 font-medium">
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+            <span>Toca para tapear</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+            <span>Mantén para cargar</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: activeTapStyle.color }} />
+            <span>Crit {Math.round(activeTapStyle.criticalChance * 100)}%</span>
+          </div>
+        </div>
       </div>
 
-      {/* Main Interactive Garlic Character */}
-      <GarlicCharacter onTap={handleTap} comboCount={comboCount} />
+      {/* Main Character */}
+      <GarlicCharacter comboCount={comboCount} />
 
-      {/* Rhythm Bar — activates during RHYTHM quests */}
+      {/* Rhythm Bar */}
       {rhythmActive && (
         <div className="w-full px-2">
           <RhythmBar
@@ -150,11 +182,10 @@ export const TapGame: React.FC = () => {
         </div>
       )}
 
-      {/* Bottom Controls: Energy & Quick Actions */}
-      <div className="w-full space-y-3">
+      {/* Bottom Controls */}
+      <div className="w-full space-y-2">
         <EnergyBar />
 
-        {/* Quick shortcut to Garlic Lab & Quests */}
         <div className="grid grid-cols-2 gap-2">
           <button
             onClick={() => setActiveTab('inventory')}
@@ -172,18 +203,22 @@ export const TapGame: React.FC = () => {
 
           <button
             onClick={() => setActiveTab('skins')}
-            className="glass-card p-2.5 rounded-2xl flex items-center justify-between text-xs font-bold text-purple-200 hover:scale-[1.02] transition-transform border border-purple-500/30"
+            className="glass-card p-2.5 rounded-2xl flex items-center justify-between text-xs font-bold hover:scale-[1.02] transition-transform border"
+            style={{
+              borderColor: `${activeTapStyle.color}40`,
+              color: activeTapStyle.color,
+            }}
           >
             <div className="flex items-center gap-2">
-              <div className="p-1 rounded-lg bg-purple-500/20 border border-purple-500/30">
-                <Palette className="w-4 h-4 text-purple-300" />
+              <div className="p-1.5 rounded-lg border" style={{ backgroundColor: `${activeTapStyle.color}22`, borderColor: `${activeTapStyle.color}44` }}>
+                <Swords className="w-3.5 h-3.5" style={{ color: activeTapStyle.color }} />
               </div>
               <div className="text-left">
-                <span className="block text-[10px] text-purple-300/80 uppercase">Tienda Skins</span>
-                <span>{inventory.garlicTeeth} Dientes</span>
+                <span className="block text-[10px] opacity-70 uppercase">Ataque</span>
+                <span className="text-[10px] truncate max-w-[60px] block">{activeTapStyle.name.split(' ').slice(0, 2).join(' ')}</span>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-purple-400" />
+            <span className="text-lg">{activeTapStyle.particleEmoji}</span>
           </button>
         </div>
       </div>

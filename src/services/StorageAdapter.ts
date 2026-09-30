@@ -19,8 +19,8 @@ export interface SavedGameState {
   version: number;
 }
 
-const STORAGE_KEY = 'AJO_GAME_SAVE_V2';
-const CURRENT_VERSION = 2;
+const STORAGE_KEY = 'AJO_GAME_SAVE_V3';
+const CURRENT_VERSION = 3;
 
 const INITIAL_DEFAULT_STATE: SavedGameState = {
   version: CURRENT_VERSION,
@@ -49,6 +49,8 @@ const INITIAL_DEFAULT_STATE: SavedGameState = {
     garlicTeeth: 15,
     equippedSkin: 'DEFAULT',
     unlockedSkins: ['DEFAULT'],
+    equippedTapStyle: 'NORMAL',
+    unlockedTapStyles: ['NORMAL'],
     teethTransactions: [
       {
         id: 'tx_init',
@@ -119,6 +121,26 @@ const INITIAL_DEFAULT_STATE: SavedGameState = {
       maxLevel: 10,
       nextCost: 2500,
       effectText: '+10% storage capacity',
+    },
+    {
+      id: 'up_6',
+      code: 'ENERGY_TANK',
+      name: 'ENERGY TANK',
+      description: '+100 max energy per level',
+      currentLevel: 0,
+      maxLevel: 20,
+      nextCost: 800,
+      effectText: '+100 max energy',
+    },
+    {
+      id: 'up_7',
+      code: 'CRITICAL_BOOST',
+      name: 'CRITICAL BOOST',
+      description: '+5% critical tap chance per level',
+      currentLevel: 0,
+      maxLevel: 10,
+      nextCost: 1500,
+      effectText: '+5% crit chance',
     },
   ],
   quests: [

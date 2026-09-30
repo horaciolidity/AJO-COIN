@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import {
   NavigationTab,
@@ -12,10 +12,11 @@ import {
   PresaleInfo,
   EvolutionStage,
   SkinId,
+  TapStyleId,
   EvolutionStageId,
 } from '../types';
 import { DEFAULT_GAME_CONFIG } from '../config/gameConfig';
-import { EVOLUTION_STAGES, getStageById } from '../config/gameBalance';
+import { EVOLUTION_STAGES, getStageById, TAP_STYLES_CATALOG } from '../config/gameBalance';
 import { StorageAdapter, SavedGameState } from '../services/StorageAdapter';
 import { GameService } from '../services/GameService';
 import { triggerHaptic } from '../utils/haptics';
@@ -48,6 +49,11 @@ interface GameContextType {
   justEvolvedStage: EvolutionStage | null;
   showToast: (title: string, message: string, type?: 'success' | 'info' | 'warning' | 'error') => void;
   handleTap: (clientX?: number, clientY?: number) => void;
+  handleTapStart: (clientX?: number, clientY?: number) => void;
+  handleTapEnd: (clientX?: number, clientY?: number) => void;
+  chargeLevel: number; // 0-1 charge progress
+  isCharging: boolean;
+  lastCritical: boolean;
   sellGarlic: (amount: number) => void;
   buyBox: (boxType: 'BASIC' | 'FARM' | 'MEGA') => void;
   claimAjoFromBox: (boxId: string) => void;
@@ -56,6 +62,8 @@ interface GameContextType {
   attemptEvolution: () => void;
   purchaseSkin: (skinId: SkinId) => void;
   equipSkin: (skinId: SkinId) => void;
+  purchaseTapStyle: (styleId: TapStyleId) => void;
+  equipTapStyle: (styleId: TapStyleId) => void;
   resetLocalProgress: () => void;
   isWalletModalOpen: boolean;
   setIsWalletModalOpen: (open: boolean) => void;
@@ -64,6 +72,7 @@ interface GameContextType {
   selectedBoxForClaim: GarlicBoxItem | null;
   setSelectedBoxForClaim: (box: GarlicBoxItem | null) => void;
   floatingParticles: { id: number; x: number; y: number; text: string }[];
+  teethCelebration: { active: boolean; amount: number };
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -80,6 +89,17 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Evolution Celebration Modal
   const [isEvolutionModalOpen, setIsEvolutionModalOpen] = useState(false);
   const [justEvolvedStage, setJustEvolvedStage] = useState<EvolutionStage | null>(null);
+
+  // Tap charge system
+  const [chargeLevel, setChargeLevel] = useState(0);
+  const [isCharging, setIsCharging] = useState(false);
+  const [lastCritical, setLastCritical] = useState(false);
+  const chargeStartRef = useRef<number>(0);
+  const chargeAnimRef = useRef<number | null>(null);
+  const chargeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Garlic teeth celebration
+  const [teethCelebration, setTeethCelebration] = useState<{ active: boolean; amount: number }>({ active: false, amount: 0 });
 
   const { session } = useAuth();
 
@@ -162,8 +182,64 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => clearInterval(interval);
   }, [stats.energyRegenSeconds]);
 
+  // Get current tap style
+  const getCurrentTapStyle = useCallback(() => {
+    const styleId = inventory.equippedTapStyle || 'NORMAL';
+    return TAP_STYLES_CATALOG.find((s) => s.id === styleId) || TAP_STYLES_CATALOG[0];
+  }, [inventory.equippedTapStyle]);
+
+  // Get difficulty multiplier based on evolution stage
+  const getDifficultyMultiplier = useCallback(() => {
+    const stageOrder = currentStage.order || 1;
+    // Higher stage = taps per garlic increases (harder)
+    return 1 + (stageOrder - 1) * 0.15;
+  }, [currentStage.order]);
+
+  // Get critical bonus from upgrades
+  const getCriticalBonus = useCallback(() => {
+    const critUpgrade = upgrades.find((u) => u.code === 'CRITICAL_BOOST');
+    return (critUpgrade?.currentLevel || 0) * 0.05;
+  }, [upgrades]);
+
+  // Handle Tap Start (for hold-to-charge)
+  const handleTapStart = useCallback((clientX?: number, clientY?: number) => {
+    chargeStartRef.current = Date.now();
+    setIsCharging(true);
+    setChargeLevel(0);
+
+    // Animate charge level
+    if (chargeIntervalRef.current) clearInterval(chargeIntervalRef.current);
+    chargeIntervalRef.current = setInterval(() => {
+      const elapsed = Date.now() - chargeStartRef.current;
+      const maxCharge = 1500; // 1.5s for full charge
+      const level = Math.min(1, elapsed / maxCharge);
+      setChargeLevel(level);
+
+      if (level >= 1) {
+        if (chargeIntervalRef.current) clearInterval(chargeIntervalRef.current);
+        triggerHaptic('success');
+      }
+    }, 50);
+  }, []);
+
+  // Handle Tap End (release = execute charged tap)
+  // Uses ref to avoid stale closure — handleTap is assigned to the ref after definition
+  const handleTapRef = useRef<(clientX?: number, clientY?: number, chargeRatio?: number) => void>(() => {});
+
+  const handleTapEnd = useCallback((clientX?: number, clientY?: number) => {
+    if (chargeIntervalRef.current) clearInterval(chargeIntervalRef.current);
+    const heldMs = Date.now() - chargeStartRef.current;
+    const wasCharged = heldMs > 200; // min 200ms to count as charge
+    const chargedRatio = Math.min(1, heldMs / 1500);
+    setIsCharging(false);
+    setChargeLevel(0);
+
+    // Execute the tap with charge bonus via ref (avoids stale closure)
+    handleTapRef.current(clientX, clientY, wasCharged ? chargedRatio : 0);
+  }, []);
+
   // Handle Tap Action
-  const handleTap = (clientX?: number, clientY?: number) => {
+  const handleTap = (clientX?: number, clientY?: number, chargeRatio: number = 0) => {
     if (stats.energy < DEFAULT_GAME_CONFIG.tapEnergyCost) {
       triggerHaptic('warning');
       if (!toast) {
@@ -175,10 +251,30 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     triggerHaptic('light');
     playTapSound();
 
+    const tapStyle = getCurrentTapStyle();
+    const diffMult = getDifficultyMultiplier();
+    const critBonus = getCriticalBonus();
+
+    // Check for critical hit
+    const critChance = tapStyle.criticalChance + critBonus;
+    const isCritical = Math.random() < critChance;
+    setLastCritical(isCritical);
+
+    // Calculate tap power
+    let tapPower = stats.powerPerTap;
+    if (chargeRatio > 0) {
+      tapPower = Math.floor(tapPower * (1 + chargeRatio * (tapStyle.chargeMultiplier - 1)));
+    }
+    if (isCritical) {
+      tapPower = Math.floor(tapPower * tapStyle.criticalMultiplier);
+    }
+    // Combo multiplier
+    const comboMult = comboCount >= 20 ? tapStyle.comboMultiplier : 1.0;
+    tapPower = Math.floor(tapPower * comboMult);
+
     // Increment combo
     setComboCount((prev) => {
       const nextCombo = prev + 1;
-      // Update combo quest progress if applicable
       setQuests((qList) =>
         qList.map((q) => {
           if (q.mechanicType === 'RHYTHM' && !q.isCompleted) {
@@ -198,38 +294,60 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (comboTimeoutRef.current) clearTimeout(comboTimeoutRef.current);
     comboTimeoutRef.current = setTimeout(() => setComboCount(0), 1200);
 
-    // Spawn floating particle text (+1 XP or +Teeth) on Canvas (Zero DOM mutations)
+    // Spawn floating particle text on Canvas
     if (clientX && clientY) {
-      spawnCanvasParticle(clientX, clientY - 30, `+${stats.powerPerTap} XP`, '#34D399');
+      const particleText = isCritical
+        ? `CRITICO! +${tapPower} XP`
+        : chargeRatio > 0.5
+        ? `CARGADO! +${tapPower} XP`
+        : `+${tapPower} XP`;
+      const color = isCritical ? tapStyle.glowColor : chargeRatio > 0.5 ? '#FDE047' : '#34D399';
+      spawnCanvasParticle(clientX, clientY - 30, particleText, color);
+
+      // Spawn style emoji particle
+      if (isCritical || chargeRatio > 0.3) {
+        spawnCanvasParticle(clientX + 30, clientY - 60, tapStyle.particleEmoji, '#FFFFFF');
+      }
     }
 
     // Update energy, TAPs, XP, and Garlic Teeth
     setStats((prev) => {
-      const nextEnergy = prev.energy - DEFAULT_GAME_CONFIG.tapEnergyCost;
-      const nextTaps = prev.currentGarlicTaps + prev.powerPerTap;
-      const nextTotalTaps = prev.totalTaps + prev.powerPerTap;
-      const nextXp = prev.xp + prev.powerPerTap;
+      const energyCost = Math.ceil(DEFAULT_GAME_CONFIG.tapEnergyCost * (chargeRatio > 0 ? 1 + chargeRatio : 1));
+      const nextEnergy = Math.max(0, prev.energy - energyCost);
+      const nextTaps = prev.currentGarlicTaps + tapPower;
+      const nextTotalTaps = prev.totalTaps + tapPower;
+      const nextXp = prev.xp + tapPower;
+
+      // Difficulty scales tapsPerGarlic
+      const scaledTapsPerGarlic = Math.floor(prev.tapsPerGarlic * diffMult);
+      const effectiveTpg = Math.max(prev.tapsPerGarlic, scaledTapsPerGarlic);
 
       let harvestOccurred = false;
       let remTaps = nextTaps;
       let garlicHarvested = 0;
 
-      if (nextTaps >= prev.tapsPerGarlic) {
+      if (nextTaps >= effectiveTpg) {
         harvestOccurred = true;
-        garlicHarvested = Math.floor(nextTaps / prev.tapsPerGarlic);
-        remTaps = nextTaps % prev.tapsPerGarlic;
+        garlicHarvested = Math.floor(nextTaps / effectiveTpg);
+        remTaps = nextTaps % effectiveTpg;
       }
 
       if (harvestOccurred) {
         triggerHaptic('success');
         playHarvestSound();
 
-        // Increment Garlic Inventory & Garlic Teeth (+2 Garlic Teeth per Garlic Harvested)
+        const teethEarned = garlicHarvested * 2 * (isCritical ? 2 : 1);
+
+        // Increment Garlic Inventory & Garlic Teeth
         setInventory((inv) => ({
           ...inv,
           rawGarlic: inv.rawGarlic + garlicHarvested,
-          garlicTeeth: inv.garlicTeeth + garlicHarvested * 2,
+          garlicTeeth: inv.garlicTeeth + teethEarned,
         }));
+
+        // Trigger celebration for garlic teeth
+        setTeethCelebration({ active: true, amount: teethEarned });
+        setTimeout(() => setTeethCelebration({ active: false, amount: 0 }), 2500);
 
         // Fill active box
         setBoxes((prevBoxes) => {
@@ -242,7 +360,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const isFullNow = box.currentCount + addCount >= box.capacity;
 
               if (isFullNow) {
-                showToast('🎉 ¡CAJA LLENA!', '¡Has completado una caja de ajo!', 'success');
+                showToast('CAJA LLENA!', '¡Has completado una caja de ajo!', 'success');
               }
               return {
                 ...box,
@@ -259,7 +377,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setQuests((qList) =>
         qList.map((q) => {
           if (q.questType === 'TAPS' && q.mechanicType !== 'RHYTHM' && !q.isCompleted) {
-            const nextProg = q.progress + prev.powerPerTap;
+            const nextProg = q.progress + tapPower;
             return {
               ...q,
               progress: nextProg,
@@ -281,6 +399,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     });
   };
+
+  // Assign to ref so handleTapEnd can always call the latest version
+  handleTapRef.current = handleTap;
 
   // Sell Raw Garlic for GC
   const sellGarlic = (amount: number) => {
@@ -375,6 +496,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setStats((s) => ({ ...s, powerPerTap: s.powerPerTap + 1 }));
     } else if (up.code === 'BIGGER_HANDS') {
       setStats((s) => ({ ...s, maxEnergy: s.maxEnergy + 25 }));
+    } else if (up.code === 'ENERGY_TANK') {
+      setStats((s) => ({ ...s, maxEnergy: s.maxEnergy + 100, energy: Math.min(s.energy + 100, s.maxEnergy + 100) }));
+    } else if (up.code === 'CRITICAL_BOOST') {
+      // Stored as upgrade levels, critBonus computed dynamically
+      showToast('Critico Mejorado!', `Ahora tienes +${(up.currentLevel + 1) * 5}% de chance critico!`, 'success');
     }
 
     showToast('¡Mejora Desbloqueada!', `${up.name} subió al Nivel ${up.currentLevel + 1}!`, 'success');
@@ -448,6 +574,43 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         prev.map((a) => (a.code === 'FIRST_EVOLUTION' ? { ...a, unlocked: true } : a))
       );
     }
+  };
+
+  // Purchase Tap Style
+  const purchaseTapStyle = (styleId: TapStyleId) => {
+    const style = TAP_STYLES_CATALOG.find((s) => s.id === styleId);
+    if (!style) return;
+
+    if (inventory.garlicTeeth < style.priceGarlicTeeth) {
+      showToast('Dientes insuficientes', `Necesitas ${style.priceGarlicTeeth} Dientes de Ajo para este ataque.`, 'error');
+      return;
+    }
+
+    if (inventory.unlockedTapStyles?.includes(styleId)) {
+      showToast('Ya tienes este ataque', 'Prueba equipándolo desde la tienda.', 'info');
+      return;
+    }
+
+    setInventory((prev) => ({
+      ...prev,
+      garlicTeeth: prev.garlicTeeth - style.priceGarlicTeeth,
+      unlockedTapStyles: [...(prev.unlockedTapStyles || []), styleId],
+      equippedTapStyle: styleId,
+    }));
+    triggerHaptic('success');
+    showToast(`¡${style.name} DESBLOQUEADO!`, style.description, 'success');
+  };
+
+  // Equip Tap Style
+  const equipTapStyle = (styleId: TapStyleId) => {
+    if (!inventory.unlockedTapStyles?.includes(styleId)) {
+      showToast('No desbloqueado', 'Compra primero este estilo de ataque.', 'error');
+      return;
+    }
+    setInventory((prev) => ({ ...prev, equippedTapStyle: styleId }));
+    triggerHaptic('light');
+    const style = TAP_STYLES_CATALOG.find((s) => s.id === styleId);
+    showToast('Ataque Equipado', `${style?.name} está listo para usar!`, 'info');
   };
 
   // Purchase Skin
@@ -529,6 +692,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         justEvolvedStage,
         showToast,
         handleTap,
+        handleTapStart,
+        handleTapEnd,
+        chargeLevel,
+        isCharging,
+        lastCritical,
         sellGarlic,
         buyBox,
         claimAjoFromBox,
@@ -537,6 +705,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         attemptEvolution,
         purchaseSkin,
         equipSkin,
+        purchaseTapStyle,
+        equipTapStyle,
         resetLocalProgress,
         isWalletModalOpen,
         setIsWalletModalOpen,
@@ -545,6 +715,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         selectedBoxForClaim,
         setSelectedBoxForClaim,
         floatingParticles,
+        teethCelebration,
       }}
     >
       {children}

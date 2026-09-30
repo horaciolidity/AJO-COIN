@@ -39,6 +39,32 @@ export interface EvolutionStage {
 
 export type SkinId = 'DEFAULT' | 'NINJA' | 'KING' | 'ROBOT' | 'FIRE' | 'ALIEN' | 'DEAD' | 'RICH';
 
+export type TapStyleId =
+  | 'NORMAL'
+  | 'FIRE_PUNCH'
+  | 'ICE_STRIKE'
+  | 'KAME_HAME'
+  | 'THUNDER'
+  | 'SHADOW'
+  | 'COSMIC'
+  | 'DRAGON';
+
+export interface TapStyle {
+  id: TapStyleId;
+  name: string;
+  description: string;
+  priceGarlicTeeth: number;
+  color: string;
+  glowColor: string;
+  particleEmoji: string;
+  criticalMultiplier: number;
+  criticalChance: number; // 0-1
+  comboMultiplier: number;
+  chargeMultiplier: number; // when holding
+  soundEffect: string;
+  unlockRank: string; // minimum rank needed
+}
+
 export interface Skin {
   id: SkinId;
   name: string;
@@ -120,6 +146,8 @@ export interface InventoryState {
   garlicTeeth: number;
   equippedSkin: SkinId;
   unlockedSkins: SkinId[];
+  equippedTapStyle: TapStyleId;
+  unlockedTapStyles: TapStyleId[];
   teethTransactions: GarlicTeethTransaction[];
 }
 
@@ -134,7 +162,7 @@ export interface GarlicBoxItem {
 
 export interface UpgradeItem {
   id: string;
-  code: 'STRONGER_FINGERS' | 'BIGGER_HANDS' | 'FAST_REGEN' | 'GARLIC_MULTIPLIER' | 'BIGGER_BOXES';
+  code: 'STRONGER_FINGERS' | 'BIGGER_HANDS' | 'FAST_REGEN' | 'GARLIC_MULTIPLIER' | 'BIGGER_BOXES' | 'ENERGY_TANK' | 'CRITICAL_BOOST';
   name: string;
   description: string;
   currentLevel: number;

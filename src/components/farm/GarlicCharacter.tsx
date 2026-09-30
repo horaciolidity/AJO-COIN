@@ -1,494 +1,660 @@
 import React, { useState, useEffect } from 'react';
 import { useGame } from '../../context/GameContext';
-import { SKINS_CATALOG } from '../../config/gameBalance';
-import { spawnCanvasParticle } from '../../utils/particleSystem';
+import { SKINS_CATALOG, TAP_STYLES_CATALOG } from '../../config/gameBalance';
 
 interface GarlicCharacterProps {
-  onTap: (clientX?: number, clientY?: number) => void;
+  onTap?: (clientX?: number, clientY?: number) => void;
   comboCount: number;
 }
 
-const TAP_SOUND_EFFECTS = [
-  '¡OUCH! 🧄',
-  '¡ZAS! 💥',
-  '¡MAS AJO! 🧄',
-  '¡BOING! ✨',
-  '¡CRAZY! 🤪',
-  '¡AJOLOTE! 🚀',
-  '¡AAAH! 😵',
-  '¡SPICY! 🌶️',
-  '¡AJO POWER! 💪',
-  '¡OOF! 🥴',
-];
+export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) => {
+  const {
+    currentStage,
+    inventory,
+    handleTapStart,
+    handleTapEnd,
+    chargeLevel,
+    isCharging,
+    lastCritical,
+    teethCelebration,
+    stats,
+  } = useGame();
 
-export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ onTap, comboCount }) => {
-  const { currentStage, inventory } = useGame();
   const [isPressed, setIsPressed] = useState(false);
-  const [expressionIndex, setExpressionIndex] = useState(0);
+  const [expressionIndex, setExpressionIndex] = useState(3);
   const [wobbleAngle, setWobbleAngle] = useState(0);
   const [isBlinking, setIsBlinking] = useState(false);
+  const [showCritFlash, setShowCritFlash] = useState(false);
 
-  // Find equipped skin
+  // Find equipped skin & tap style
   const equippedSkin = SKINS_CATALOG.find((s) => s.id === inventory.equippedSkin) || SKINS_CATALOG[0];
+  const equippedTapStyle = TAP_STYLES_CATALOG.find((s) => s.id === (inventory.equippedTapStyle || 'NORMAL')) || TAP_STYLES_CATALOG[0];
 
-  // Natural eye blinking timer loop
+  // Natural eye blinking
   useEffect(() => {
     const blinkInterval = setInterval(() => {
       setIsBlinking(true);
       setTimeout(() => setIsBlinking(false), 160);
-    }, 4000);
-
+    }, 3500);
     return () => clearInterval(blinkInterval);
   }, []);
 
-  const triggerTapReaction = (clientX?: number, clientY?: number) => {
-    setIsPressed(true);
-
-    const nextExpr = Math.floor(Math.random() * 6);
-    setExpressionIndex(nextExpr);
-
-    const randomAngle = (Math.random() - 0.5) * 26;
-    setWobbleAngle(randomAngle);
-
-    // Spawn comic text popup on Canvas
-    const randomText = TAP_SOUND_EFFECTS[Math.floor(Math.random() * TAP_SOUND_EFFECTS.length)];
-    if (clientX && clientY) {
-      spawnCanvasParticle(clientX, clientY - 40, randomText, '#FDE047');
+  // Show critical flash
+  useEffect(() => {
+    if (lastCritical) {
+      setShowCritFlash(true);
+      setTimeout(() => setShowCritFlash(false), 400);
     }
+  }, [lastCritical]);
 
-    onTap(clientX, clientY);
-  };
 
   const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.preventDefault();
     const touch = e.touches[0];
-    triggerTapReaction(touch.clientX, touch.clientY);
+    setIsPressed(true);
+    setExpressionIndex(Math.floor(Math.random() * 6));
+    setWobbleAngle((Math.random() - 0.5) * 22);
+    handleTapStart(touch.clientX, touch.clientY);
   };
 
-  const handleTouchEnd = () => {
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const touch = e.changedTouches[0];
     setIsPressed(false);
+    handleTapEnd(touch?.clientX, touch?.clientY);
   };
 
-  const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    triggerTapReaction(e.clientX, e.clientY);
-    setTimeout(() => setIsPressed(false), 150);
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsPressed(true);
+    setExpressionIndex(Math.floor(Math.random() * 6));
+    setWobbleAngle((Math.random() - 0.5) * 22);
+    handleTapStart(e.clientX, e.clientY);
   };
 
-  // Expression index logic
+  const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+    setIsPressed(false);
+    handleTapEnd(e.clientX, e.clientY);
+  };
+
+  // Expression based on combo
   const currentExpr = isPressed
     ? expressionIndex
-    : comboCount >= 50
-    ? 6  // PANIC / FRENZY
-    : comboCount >= 30
-    ? 4  // Amazed
-    : comboCount >= 15
-    ? 1  // Crazy face
-    : comboCount >= 8
-    ? 5  // Surprised
-    : 3; // Happy / Normal
+    : comboCount >= 50 ? 6
+    : comboCount >= 30 ? 4
+    : comboCount >= 15 ? 1
+    : comboCount >= 8 ? 5
+    : 3;
 
-  // Size scale difference between Small and Big evolutions
+  // Size based on evolution
   const isSmall = currentStage.size === 'SMALL';
-  const sizeContainerClass = isSmall
-    ? 'w-48 h-48 sm:w-52 sm:h-52 scale-75 sm:scale-80'
-    : 'w-72 h-72 sm:w-80 sm:h-80 scale-115 sm:scale-125';
+  const sizeClass = isSmall
+    ? 'w-36 h-36 sm:w-44 sm:h-44'
+    : 'w-64 h-64 sm:w-72 sm:h-72';
 
-  // Trembling intensity
+  // Tremble on high combos
   const trembleClass = comboCount >= 50
     ? 'animate-[combo-shake_0.15s_ease-in-out_infinite]'
     : comboCount >= 30
     ? 'animate-[combo-shake_0.3s_ease-in-out_infinite]'
     : '';
 
-  // Aura intensity
-  const auraScale = comboCount >= 50
-    ? 'scale-150 opacity-80'
-    : comboCount >= 25
-    ? 'scale-125 animate-pulse'
-    : 'scale-100 opacity-60';
+  // Charge progress ring color
+  const chargeColor = chargeLevel >= 0.8 ? equippedTapStyle.color : chargeLevel >= 0.4 ? '#FDE047' : '#34D399';
+  const chargeStroke = `conic-gradient(${chargeColor} ${chargeLevel * 360}deg, transparent 0deg)`;
+
+  // Aura scale
+  const auraScale = comboCount >= 50 ? 'scale-150 opacity-90'
+    : comboCount >= 25 ? 'scale-125 animate-pulse'
+    : 'scale-100 opacity-50';
+
+  // Energy percentage for display
+  const energyPct = Math.round((stats.energy / stats.maxEnergy) * 100);
 
   return (
-    <div className="relative flex flex-col items-center justify-center cursor-pointer my-4 select-none">
+    <div className="relative flex flex-col items-center justify-center cursor-pointer my-2 select-none">
+
+      {/* Teeth Celebration Overlay */}
+      {teethCelebration.active && (
+        <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className="relative animate-bounce">
+            <div
+              className="absolute -inset-4 rounded-full blur-2xl animate-pulse"
+              style={{ backgroundColor: 'rgba(250,204,21,0.4)' }}
+            />
+            <div className="relative bg-black/80 border-2 border-amber-400 rounded-2xl px-5 py-3 shadow-2xl text-center">
+              <div className="text-2xl font-black text-amber-400 tracking-wider">
+                +{teethCelebration.amount} 🦷
+              </div>
+              <div className="text-xs font-bold text-amber-300/80 uppercase tracking-widest">
+                DIENTES DE AJO
+              </div>
+              <div className="flex justify-center gap-0.5 mt-1">
+                {Array.from({ length: Math.min(5, teethCelebration.amount) }).map((_, i) => (
+                  <span key={i} className="text-base animate-bounce" style={{ animationDelay: `${i * 80}ms` }}>🧄</span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Critical hit screen flash */}
+      {showCritFlash && (
+        <div
+          className="fixed inset-0 pointer-events-none z-40 animate-ping"
+          style={{ backgroundColor: `${equippedTapStyle.glowColor}`, opacity: 0.25 }}
+        />
+      )}
+
+      {/* Tap Style Indicator Badge */}
+      <div
+        className="absolute -top-8 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border"
+        style={{
+          backgroundColor: `${equippedTapStyle.color}22`,
+          borderColor: `${equippedTapStyle.color}66`,
+          color: equippedTapStyle.color,
+        }}
+      >
+        <span>{equippedTapStyle.particleEmoji}</span>
+        <span>{equippedTapStyle.name.split(' ')[0]}</span>
+      </div>
+
       {/* Dynamic Evolution Glow Aura */}
       <div
         style={{ backgroundColor: currentStage.auraColor }}
-        className={`absolute w-72 h-72 rounded-full transition-all duration-500 pointer-events-none blur-3xl ${auraScale}`}
+        className={`absolute rounded-full transition-all duration-500 pointer-events-none blur-3xl ${auraScale} ${isSmall ? 'w-48 h-48' : 'w-72 h-72'}`}
       />
-      {comboCount >= 50 && (
-        <div className="absolute w-80 h-80 rounded-full pointer-events-none border-2 border-purple-400/40 animate-ping" />
+
+      {/* Tap Style Colored Aura Ring */}
+      {(isCharging || comboCount > 5) && (
+        <div
+          className="absolute rounded-full pointer-events-none transition-all duration-300"
+          style={{
+            width: isSmall ? '200px' : '290px',
+            height: isSmall ? '200px' : '290px',
+            boxShadow: `0 0 ${40 + chargeLevel * 60}px ${equippedTapStyle.glowColor}`,
+            opacity: 0.3 + chargeLevel * 0.6,
+          }}
+        />
       )}
 
-      {/* Floating Magic Dust Particles */}
-      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-2 h-2 rounded-full bg-emerald-400/60 animate-ping" />
-        <div className="absolute bottom-1/3 right-1/4 w-1.5 h-1.5 rounded-full bg-yellow-300/70 animate-pulse" />
-        <div className="absolute top-1/2 right-1/3 w-2.5 h-2.5 rounded-full bg-purple-400/50 animate-bounce" />
-      </div>
+      {/* Ping ring at max combo */}
+      {comboCount >= 50 && (
+        <div
+          className="absolute rounded-full pointer-events-none border-2 animate-ping"
+          style={{
+            width: isSmall ? '240px' : '340px',
+            height: isSmall ? '240px' : '340px',
+            borderColor: equippedTapStyle.color,
+          }}
+        />
+      )}
 
-      {/* Main Interactive Animated Character */}
+      {/* Charge Progress Ring */}
+      {isCharging && chargeLevel > 0 && (
+        <div className="absolute pointer-events-none z-20" style={{ width: isSmall ? '200px' : '300px', height: isSmall ? '200px' : '300px' }}>
+          <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+            <circle
+              cx="50" cy="50" r="46"
+              fill="none"
+              stroke="rgba(255,255,255,0.1)"
+              strokeWidth="4"
+            />
+            <circle
+              cx="50" cy="50" r="46"
+              fill="none"
+              stroke={chargeColor}
+              strokeWidth="5"
+              strokeLinecap="round"
+              strokeDasharray={`${chargeLevel * 289} 289`}
+              className="transition-all duration-75"
+              style={{ filter: `drop-shadow(0 0 6px ${chargeColor})` }}
+            />
+          </svg>
+          {chargeLevel >= 0.8 && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span
+                className="text-xs font-black animate-pulse"
+                style={{ color: chargeColor }}
+              >
+                {chargeLevel >= 1 ? '¡MAX!' : `${Math.floor(chargeLevel * 100)}%`}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Main Character Container */}
       <div
-        onClick={handleClick}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onMouseLeave={() => { if (isPressed) { setIsPressed(false); handleTapEnd(); } }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
         style={{
           transform: isPressed
-            ? `scale(0.82, 1.18) rotate(${wobbleAngle}deg)`
+            ? `scale(${isCharging ? 0.90 + chargeLevel * 0.1 : 0.85}, ${isCharging ? 1.1 + chargeLevel * 0.1 : 1.15}) rotate(${wobbleAngle}deg)`
             : `scale(1) rotate(0deg)`,
         }}
-        className={`relative z-10 flex items-center justify-center transition-all duration-150 ease-out active:scale-90 ${sizeContainerClass} ${trembleClass} ${
+        className={`relative z-10 flex items-center justify-center transition-all duration-100 ease-out ${sizeClass} ${trembleClass} ${
           isPressed ? '' : 'hover:scale-105 animate-float'
         }`}
       >
-        {/* Animated Drop Shadow beneath Character */}
+        {/* Drop shadow */}
         <div
-          className={`absolute bottom-2 w-44 h-8 rounded-full bg-black/40 blur-md pointer-events-none transition-transform duration-150 ${
-            isPressed ? 'scale-75 opacity-70' : 'scale-100 opacity-40'
+          className={`absolute bottom-1 rounded-full bg-black/40 blur-md pointer-events-none transition-all duration-150 ${
+            isPressed ? 'scale-75 opacity-70' : 'scale-100 opacity-35'
           }`}
+          style={{ width: isSmall ? '120px' : '200px', height: isSmall ? '20px' : '32px' }}
         />
 
-        {/* High Quality Vector Garlic Character SVG */}
+        {/* ======== ANIME-STYLE GARLIC CHARACTER SVG ======== */}
         <svg
-          viewBox="0 0 200 200"
-          className="w-full h-full drop-shadow-[0_15px_35px_rgba(16,185,129,0.4)] relative z-10"
+          viewBox="0 0 200 220"
+          className="w-full h-full relative z-10"
+          style={{ filter: `drop-shadow(0 12px 30px ${equippedTapStyle.glowColor})` }}
         >
           <defs>
-            {/* Body 3D Gradients */}
-            <linearGradient id="garlicBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <radialGradient id={`bodyGrad_${currentStage.id}`} cx="40%" cy="30%" r="70%">
               <stop offset="0%" stopColor={currentStage.garlicBodyStartColor} />
-              <stop offset="60%" stopColor={currentStage.garlicBodyStartColor} />
+              <stop offset="55%" stopColor={currentStage.garlicBodyStartColor} stopOpacity="0.9" />
               <stop offset="100%" stopColor={currentStage.garlicBodyEndColor} />
-            </linearGradient>
+            </radialGradient>
 
-            {/* Glossy 3D Highlight */}
-            <radialGradient id="garlicHighlight" cx="35%" cy="30%" r="65%">
-              <stop offset="0%" stopColor="rgba(255,255,255,0.9)" />
-              <stop offset="40%" stopColor="rgba(255,255,255,0.4)" />
+            <radialGradient id="glossShine" cx="30%" cy="20%" r="60%">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
+              <stop offset="45%" stopColor="rgba(255,255,255,0.35)" />
               <stop offset="100%" stopColor="rgba(255,255,255,0)" />
             </radialGradient>
 
-            {/* Sprout Leaf Gradient */}
-            <linearGradient id="sproutGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+            <linearGradient id="sproutLeafGrad" x1="0%" y1="100%" x2="0%" y2="0%">
               <stop offset="0%" stopColor="#059669" />
               <stop offset="60%" stopColor="#10B981" />
-              <stop offset="100%" stopColor="#34D399" />
+              <stop offset="100%" stopColor="#6EE7B7" />
             </linearGradient>
 
-            {/* Fire Skin Gradient */}
-            <linearGradient id="fireSkinGrad" x1="0%" y1="100%" x2="0%" y2="0%">
-              <stop offset="0%" stopColor="#EF4444" />
+            <linearGradient id="fireSkinGrad2" x1="0%" y1="100%" x2="0%" y2="0%">
+              <stop offset="0%" stopColor="#DC2626" />
               <stop offset="50%" stopColor="#F97316" />
-              <stop offset="100%" stopColor="#FACC15" />
+              <stop offset="100%" stopColor="#FDE047" />
             </linearGradient>
 
-            {/* Eye Iris Gradient */}
-            <radialGradient id="irisGrad" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#4C1D95" />
-              <stop offset="70%" stopColor="#2E1065" />
-              <stop offset="100%" stopColor="#0F172A" />
+            <radialGradient id="irisGradAnime" cx="40%" cy="35%" r="60%">
+              <stop offset="0%" stopColor="#7C3AED" />
+              <stop offset="45%" stopColor="#4C1D95" />
+              <stop offset="100%" stopColor="#1E0A3C" />
             </radialGradient>
+
+            <filter id="glowFilter">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feComposite in="SourceGraphic" in2="blur" operator="over" />
+            </filter>
+
+            {/* Charge glow filter */}
+            <filter id="chargeGlow">
+              <feGaussianBlur stdDeviation={2 + chargeLevel * 6} result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
           </defs>
 
-          {/* SKIN OVERLAY: FIRE AURA (Behind Garlic Body) */}
-          {equippedSkin.id === 'FIRE' && (
-            <g className="animate-pulse">
-              <path d="M 30 110 C 10 90, 20 60, 45 40 C 60 20, 85 5, 100 25 C 115 5, 140 20, 155 40 C 180 60, 190 90, 170 110 C 190 140, 175 180, 145 195 C 120 205, 80 205, 55 195 C 25 180, 10 140, 30 110 Z" fill="url(#fireSkinGrad)" opacity="0.45" />
-              <path d="M 45 120 C 35 100, 45 75, 60 55 C 75 35, 95 20, 100 35 C 105 20, 125 35, 140 55 C 155 75, 165 100, 155 120 C 165 150, 150 175, 130 185 C 110 195, 90 195, 70 185 C 50 175, 35 150, 45 120 Z" fill="url(#fireSkinGrad)" opacity="0.65" />
-            </g>
-          )}
-
-          {/* Animated Green Sprout Leaf Top */}
-          <g className={`transition-transform duration-200 origin-bottom ${isPressed ? 'scale-125 -rotate-12' : 'animate-[wiggle_3s_ease-in-out_infinite]'}`}>
-            <path d="M 100 35 C 95 15, 80 5, 70 10 C 85 25, 92 40, 95 50 Z" fill="url(#sproutGrad)" stroke="#047857" strokeWidth="1" />
-            <path d="M 100 35 C 105 10, 125 5, 135 15 C 120 28, 110 40, 105 50 Z" fill="url(#sproutGrad)" stroke="#047857" strokeWidth="1" />
-            <path d="M 100 30 C 98 10, 102 2, 100 0 C 98 10, 100 20, 100 30 Z" fill="#34D399" />
-          </g>
-
-          {/* Garlic Clove Ridges & Main Body */}
+          {/* === ARMS (Anime style short arms) === */}
+          {/* Left arm */}
           <path
-            d="M 100 45 C 50 45, 25 80, 25 125 C 25 170, 60 190, 100 190 C 140 190, 175 170, 175 125 C 175 80, 150 45, 100 45 Z"
-            fill="url(#garlicBodyGrad)"
+            d={isPressed
+              ? "M 48 130 C 25 115, 15 95, 22 80"
+              : "M 48 130 C 28 118, 20 105, 28 90"
+            }
+            fill="none"
+            stroke={currentStage.garlicBodyEndColor}
+            strokeWidth="14"
+            strokeLinecap="round"
+            className="transition-all duration-100"
+          />
+          <circle cx={isPressed ? 22 : 28} cy={isPressed ? 80 : 90} r="9"
+            fill={currentStage.garlicBodyStartColor}
             stroke={currentStage.strokeColor}
-            strokeWidth="3.5"
+            strokeWidth="2"
+            className="transition-all duration-100"
           />
 
-          {/* Curved 3D Clove Segment Lines */}
-          <path d="M 100 45 C 75 75, 60 110, 60 185" fill="none" stroke={currentStage.strokeColor} strokeWidth="2.5" strokeLinecap="round" opacity="0.7" />
-          <path d="M 100 45 C 125 75, 140 110, 140 185" fill="none" stroke={currentStage.strokeColor} strokeWidth="2.5" strokeLinecap="round" opacity="0.7" />
+          {/* Right arm */}
+          <path
+            d={isPressed
+              ? "M 152 130 C 175 115, 185 95, 178 80"
+              : "M 152 130 C 172 118, 180 105, 172 90"
+            }
+            fill="none"
+            stroke={currentStage.garlicBodyEndColor}
+            strokeWidth="14"
+            strokeLinecap="round"
+            className="transition-all duration-100"
+          />
+          <circle cx={isPressed ? 178 : 172} cy={isPressed ? 80 : 90} r="9"
+            fill={currentStage.garlicBodyStartColor}
+            stroke={currentStage.strokeColor}
+            strokeWidth="2"
+            className="transition-all duration-100"
+          />
 
-          {/* 3D Glossy Specular Highlight */}
-          <ellipse cx="80" cy="85" rx="35" ry="25" fill="url(#garlicHighlight)" opacity="0.7" />
+          {/* === LEGS (tiny cute anime feet) === */}
+          <path d="M 78 192 C 70 200, 62 205, 58 210" fill="none" stroke={currentStage.garlicBodyEndColor} strokeWidth="12" strokeLinecap="round" />
+          <ellipse cx="55" cy="213" rx="14" ry="6" fill={currentStage.garlicBodyEndColor} stroke={currentStage.strokeColor} strokeWidth="1.5" />
 
-          {/* SKIN OVERLAY: ROBOT CIRCUITS */}
-          {equippedSkin.id === 'ROBOT' && (
-            <g stroke="#06B6D4" strokeWidth="2" fill="none" opacity="0.8">
-              <path d="M 45 130 L 65 130 L 75 150 L 90 150" />
-              <path d="M 155 130 L 135 130 L 125 150 L 110 150" />
-              <circle cx="90" cy="150" r="3" fill="#22D3EE" />
-              <circle cx="110" cy="150" r="3" fill="#22D3EE" />
+          <path d="M 122 192 C 130 200, 138 205, 142 210" fill="none" stroke={currentStage.garlicBodyEndColor} strokeWidth="12" strokeLinecap="round" />
+          <ellipse cx="145" cy="213" rx="14" ry="6" fill={currentStage.garlicBodyEndColor} stroke={currentStage.strokeColor} strokeWidth="1.5" />
+
+          {/* === FIRE SKIN behind body === */}
+          {equippedSkin.id === 'FIRE' && (
+            <g className="animate-pulse">
+              <path d="M 25 115 C 8 90, 18 60, 48 38 C 65 20, 88 5, 100 28 C 112 5, 135 20, 152 38 C 182 60, 192 90, 175 115 C 195 148, 178 188, 145 200 C 120 212, 80 212, 55 200 C 22 188, 5 148, 25 115 Z"
+                fill="url(#fireSkinGrad2)" opacity="0.35" />
             </g>
           )}
 
-          {/* SKIN OVERLAY: ZOMBIE STITCHES */}
+          {/* === MAIN GARLIC BODY === */}
+          <path
+            d="M 100 42 C 48 42, 22 80, 22 128 C 22 175, 60 200, 100 200 C 140 200, 178 175, 178 128 C 178 80, 152 42, 100 42 Z"
+            fill={`url(#bodyGrad_${currentStage.id})`}
+            stroke={currentStage.strokeColor}
+            strokeWidth="3"
+          />
+
+          {/* Clove segment lines */}
+          <path d="M 100 42 C 72 78, 58 118, 60 196" fill="none" stroke={currentStage.strokeColor} strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+          <path d="M 100 42 C 128 78, 142 118, 140 196" fill="none" stroke={currentStage.strokeColor} strokeWidth="2" strokeLinecap="round" opacity="0.6" />
+
+          {/* 3D Specular highlight */}
+          <ellipse cx="78" cy="82" rx="32" ry="22" fill="url(#glossShine)" opacity="0.75" />
+
+          {/* === SKIN OVERLAYS === */}
+          {equippedSkin.id === 'ROBOT' && (
+            <g stroke="#06B6D4" strokeWidth="2" fill="none" opacity="0.85">
+              <path d="M 44 135 L 65 135 L 76 155 L 92 155" />
+              <path d="M 156 135 L 135 135 L 124 155 L 108 155" />
+              <circle cx="92" cy="155" r="3.5" fill="#22D3EE" />
+              <circle cx="108" cy="155" r="3.5" fill="#22D3EE" />
+            </g>
+          )}
+
           {equippedSkin.id === 'DEAD' && (
             <g stroke="#27272A" strokeWidth="2.5" strokeLinecap="round">
-              <path d="M 130 145 L 155 160" />
-              <path d="M 134 157 L 144 146" />
-              <path d="M 142 163 L 152 152" />
-              <path d="M 45 140 L 65 150" />
-              <path d="M 48 150 L 58 140" />
+              <path d="M 128 148 L 155 164" />
+              <path d="M 133 160 L 143 149" />
+              <path d="M 142 167 L 152 156" />
+              <path d="M 45 143 L 65 153" />
+              <path d="M 48 153 L 58 143" />
             </g>
           )}
 
-          {/* Glowing Blushing Cheeks */}
-          <ellipse cx="58" cy="128" rx="10" ry="6" fill={isPressed ? '#EF4444' : '#F472B6'} opacity={isPressed ? '0.9' : '0.65'} className="transition-all" />
-          <ellipse cx="142" cy="128" rx="10" ry="6" fill={isPressed ? '#EF4444' : '#F472B6'} opacity={isPressed ? '0.9' : '0.65'} className="transition-all" />
+          {/* Blushing Cheeks */}
+          <ellipse cx="56" cy="132" rx="11" ry="7" fill={isPressed ? '#EF4444' : '#F472B6'} opacity={isPressed ? 0.9 : 0.6} className="transition-all" />
+          <ellipse cx="144" cy="132" rx="11" ry="7" fill={isPressed ? '#EF4444' : '#F472B6'} opacity={isPressed ? 0.9 : 0.6} className="transition-all" />
 
-          {/* Sweat Drop on Tap */}
+          {/* Sweat drop on tap */}
           {isPressed && (
-            <path
-              d="M 152 95 C 152 90, 157 85, 157 85 C 157 85, 162 90, 162 95 C 162 98, 157 101, 152 95 Z"
-              fill="#60A5FA"
-              className="animate-bounce"
-            />
+            <path d="M 156 98 C 156 93, 162 87, 162 87 C 162 87, 168 93, 168 98 C 168 102, 162 106, 156 98 Z"
+              fill="#60A5FA" className="animate-bounce" />
           )}
 
-          {/* ========================================================================= */}
-          {/* HIGH-QUALITY ANIMATED FACIAL EXPRESSIONS WITH NATURAL BLINKING & GLOSS */}
-          {/* ========================================================================= */}
+          {/* Charge energy aura lines */}
+          {isCharging && chargeLevel > 0.3 && (
+            <g opacity={chargeLevel}>
+              <line x1="100" y1="42" x2="100" y2="10" stroke={equippedTapStyle.color} strokeWidth="3" strokeLinecap="round" className="animate-pulse" />
+              <line x1="22" y1="128" x2="5" y2="115" stroke={equippedTapStyle.color} strokeWidth="2.5" strokeLinecap="round" className="animate-pulse" />
+              <line x1="178" y1="128" x2="195" y2="115" stroke={equippedTapStyle.color} strokeWidth="2.5" strokeLinecap="round" className="animate-pulse" />
+            </g>
+          )}
 
-          {/* NATURAL EYE BLINK OVERRIDE */}
+          {/* ========= ANIME FACIAL EXPRESSIONS ========= */}
+
+          {/* BLINK OVERRIDE */}
           {isBlinking && !isPressed && currentExpr !== 6 ? (
-            <g key="expr-blink">
-              <path d="M 65 113 Q 75 118 85 113" fill="none" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
-              <path d="M 115 113 Q 125 118 135 113" fill="none" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
-              <path d="M 85 130 Q 100 142 115 130" fill="none" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
+            <g key="blink">
+              <path d="M 62 116 Q 73 122 84 116" fill="none" stroke="#1E0A3C" strokeWidth="4" strokeLinecap="round" />
+              <path d="M 116 116 Q 127 122 138 116" fill="none" stroke="#1E0A3C" strokeWidth="4" strokeLinecap="round" />
+              <path d="M 83 136 Q 100 148 117 136" fill="none" stroke="#1E0A3C" strokeWidth="4" strokeLinecap="round" />
             </g>
           ) : (
             <g key={`expr-${currentExpr}`}>
               {/* EXPR 0: OUCH / SQUINT */}
               {currentExpr === 0 && (
-                <g key="g-expr-0">
-                  <path d="M 65 110 L 80 117 L 65 124" fill="none" stroke="#2E1065" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M 135 110 L 120 117 L 135 124" fill="none" stroke="#2E1065" strokeWidth="4.5" strokeLinecap="round" strokeLinejoin="round" />
-                  <ellipse cx="100" cy="138" rx="14" ry="10" fill="#2E1065" />
-                  <ellipse cx="100" cy="142" rx="9" ry="5" fill="#EF4444" />
+                <g>
+                  <path d="M 62 112 L 78 120 L 62 127" fill="none" stroke="#1E0A3C" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M 138 112 L 122 120 L 138 127" fill="none" stroke="#1E0A3C" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" />
+                  <ellipse cx="100" cy="142" rx="15" ry="10" fill="#1E0A3C" />
+                  <ellipse cx="100" cy="146" rx="9" ry="5" fill="#EF4444" />
                 </g>
               )}
 
               {/* EXPR 1: CRAZY / WINK */}
               {currentExpr === 1 && (
-                <g key="g-expr-1">
-                  <circle cx="72" cy="113" r="14" fill="url(#irisGrad)" />
-                  <circle cx="75" cy="109" r="5" fill="#FFFFFF" />
-                  <circle cx="70" cy="116" r="2" fill="#FFFFFF" />
-                  <circle cx="128" cy="115" r="8" fill="url(#irisGrad)" />
-                  <circle cx="129" cy="113" r="3" fill="#FFFFFF" />
-                  <path d="M 85 132 Q 100 148 115 132" fill="none" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
-                  <path d="M 96 136 C 96 148, 108 148, 108 136 Z" fill="#F43F5E" />
+                <g>
+                  {/* Big left eye */}
+                  <circle cx="73" cy="116" r="15" fill="url(#irisGradAnime)" />
+                  <circle cx="73" cy="116" r="10" fill="#2E0D70" />
+                  <circle cx="77" cy="111" r="5.5" fill="#FFFFFF" />
+                  <circle cx="71" cy="119" r="2.5" fill="#FFFFFF" />
+                  {/* Wink right */}
+                  <path d="M 116 116 Q 127 122 138 116" fill="none" stroke="#1E0A3C" strokeWidth="4" strokeLinecap="round" />
+                  <path d="M 84 136 Q 100 150 116 136" fill="none" stroke="#1E0A3C" strokeWidth="4" strokeLinecap="round" />
+                  <path d="M 95 140 C 95 152, 108 152, 108 140 Z" fill="#F43F5E" />
                 </g>
               )}
 
               {/* EXPR 2: DIZZY / STARS */}
               {currentExpr === 2 && (
-                <g key="g-expr-2">
-                  <path d="M 68 108 L 82 122 M 82 108 L 68 122" stroke="#2E1065" strokeWidth="4.5" strokeLinecap="round" />
-                  <path d="M 118 108 L 132 122 M 132 108 L 118 122" stroke="#2E1065" strokeWidth="4.5" strokeLinecap="round" />
-                  <path d="M 82 136 Q 90 130 98 136 T 114 136" fill="none" stroke="#2E1065" strokeWidth="4" strokeLinecap="round" />
-                  <polygon points="65,90 67,95 72,95 68,98 70,103 65,100 60,103 62,98 58,95 63,95" fill="#F59E0B" />
-                  <polygon points="130,88 132,93 137,93 133,96 135,101 130,98 125,101 127,96 123,93 128,93" fill="#F59E0B" />
+                <g>
+                  <path d="M 65 110 L 82 126 M 82 110 L 65 126" stroke="#1E0A3C" strokeWidth="4.5" strokeLinecap="round" />
+                  <path d="M 118 110 L 135 126 M 135 110 L 118 126" stroke="#1E0A3C" strokeWidth="4.5" strokeLinecap="round" />
+                  <path d="M 82 138 Q 91 132 100 138 T 118 138" fill="none" stroke="#1E0A3C" strokeWidth="4" strokeLinecap="round" />
+                  <polygon points="63,92 66,98 72,98 67,102 70,108 63,104 56,108 59,102 54,98 60,98" fill="#F59E0B" />
+                  <polygon points="132,90 135,96 141,96 136,100 138,106 132,102 126,106 128,100 123,96 129,96" fill="#F59E0B" />
                 </g>
               )}
 
-              {/* EXPR 3: NORMAL HAPPY (Default Anime Eyes with Catchlights) */}
+              {/* EXPR 3: NORMAL HAPPY — Full anime eye */}
               {currentExpr === 3 && (
-                <g key="g-expr-3">
-                  {/* Left Eye */}
-                  <circle cx="75" cy="114" r="12" fill="url(#irisGrad)" />
-                  <circle cx="78" cy="110" r="4.5" fill="#FFFFFF" />
-                  <circle cx="72" cy="117" r="1.8" fill="#FFFFFF" />
-                  {/* Right Eye */}
-                  <circle cx="125" cy="114" r="12" fill="url(#irisGrad)" />
-                  <circle cx="128" cy="110" r="4.5" fill="#FFFFFF" />
-                  <circle cx="122" cy="117" r="1.8" fill="#FFFFFF" />
+                <g>
+                  {/* Left eye */}
+                  <circle cx="73" cy="117" r="14" fill="white" />
+                  <circle cx="73" cy="117" r="12" fill="url(#irisGradAnime)" />
+                  <circle cx="73" cy="117" r="7" fill="#130636" />
+                  <circle cx="77" cy="112" r="4.5" fill="white" />
+                  <circle cx="70" cy="120" r="2" fill="white" />
+                  {/* Right eye */}
+                  <circle cx="127" cy="117" r="14" fill="white" />
+                  <circle cx="127" cy="117" r="12" fill="url(#irisGradAnime)" />
+                  <circle cx="127" cy="117" r="7" fill="#130636" />
+                  <circle cx="131" cy="112" r="4.5" fill="white" />
+                  <circle cx="124" cy="120" r="2" fill="white" />
                   {/* Eyebrows */}
-                  <path d="M 66 98 Q 75 92 84 98" fill="none" stroke="#2E1065" strokeWidth="3" strokeLinecap="round" />
-                  <path d="M 116 98 Q 125 92 134 98" fill="none" stroke="#2E1065" strokeWidth="3" strokeLinecap="round" />
-                  {/* Smiling Mouth */}
-                  <path d="M 84 130 Q 100 148 116 130" fill="#2E1065" stroke="#2E1065" strokeWidth="2" />
-                  <path d="M 92 138 Q 100 146 108 138" fill="#EF4444" />
+                  <path d="M 62 100 Q 73 93 84 100" fill="none" stroke="#1E0A3C" strokeWidth="3.5" strokeLinecap="round" />
+                  <path d="M 116 100 Q 127 93 138 100" fill="none" stroke="#1E0A3C" strokeWidth="3.5" strokeLinecap="round" />
+                  {/* Smiling mouth */}
+                  <path d="M 83 136 Q 100 154 117 136" fill="#1E0A3C" stroke="#1E0A3C" strokeWidth="2" />
+                  <path d="M 92 144 Q 100 152 108 144" fill="#EF4444" />
+                  {/* Tongue tip */}
+                  <ellipse cx="100" cy="149" rx="6" ry="3.5" fill="#DC2626" />
                 </g>
               )}
 
               {/* EXPR 4: AMAZED / STAR EYES */}
               {currentExpr === 4 && (
-                <g key="g-expr-4">
-                  <polygon points="75,103 78,112 87,112 80,117 82,126 75,121 68,126 70,117 63,112 72,112" fill="#F59E0B" />
-                  <polygon points="125,103 128,112 137,112 130,117 132,126 125,121 118,126 120,117 113,112 122,112" fill="#F59E0B" />
-                  <path d="M 80 130 Q 100 155 120 130 Z" fill="#2E1065" />
-                  <path d="M 88 130 L 112 130 L 108 136 L 92 136 Z" fill="#FFFFFF" />
-                  <ellipse cx="100" cy="144" rx="8" ry="4" fill="#EF4444" />
+                <g>
+                  <polygon points="73,103 76,113 87,113 79,120 82,130 73,124 64,130 67,120 59,113 70,113" fill="#F59E0B" />
+                  <polygon points="127,103 130,113 141,113 133,120 136,130 127,124 118,130 121,120 113,113 124,113" fill="#F59E0B" />
+                  <path d="M 80 136 Q 100 158 120 136 Z" fill="#1E0A3C" />
+                  <path d="M 88 136 L 112 136 L 108 142 L 92 142 Z" fill="white" />
+                  <ellipse cx="100" cy="149" rx="9" ry="5" fill="#EF4444" />
                 </g>
               )}
 
               {/* EXPR 5: SURPRISED / WIDE EYES */}
               {currentExpr === 5 && (
-                <g key="g-expr-5">
-                  <circle cx="75" cy="114" r="13" fill="#FFFFFF" stroke="#2E1065" strokeWidth="3" />
-                  <circle cx="75" cy="114" r="6" fill="url(#irisGrad)" />
-                  <circle cx="77" cy="112" r="2.5" fill="#FFFFFF" />
-
-                  <circle cx="125" cy="114" r="13" fill="#FFFFFF" stroke="#2E1065" strokeWidth="3" />
-                  <circle cx="125" cy="114" r="6" fill="url(#irisGrad)" />
-                  <circle cx="127" cy="112" r="2.5" fill="#FFFFFF" />
-
-                  <circle cx="100" cy="138" r="11" fill="#2E1065" />
+                <g>
+                  <circle cx="73" cy="117" r="14" fill="white" stroke="#1E0A3C" strokeWidth="3" />
+                  <circle cx="73" cy="117" r="7" fill="url(#irisGradAnime)" />
+                  <circle cx="76" cy="114" r="3" fill="white" />
+                  <circle cx="127" cy="117" r="14" fill="white" stroke="#1E0A3C" strokeWidth="3" />
+                  <circle cx="127" cy="117" r="7" fill="url(#irisGradAnime)" />
+                  <circle cx="130" cy="114" r="3" fill="white" />
+                  <circle cx="100" cy="142" r="12" fill="#1E0A3C" />
                 </g>
               )}
 
-              {/* EXPR 6: PANIC / FRENZY MODE */}
+              {/* EXPR 6: PANIC / FRENZY */}
               {currentExpr === 6 && (
-                <g key="g-expr-6">
-                  <circle cx="75" cy="113" r="13" fill="#FFFFFF" stroke="#2E1065" strokeWidth="2.5" />
-                  <path d="M 75 113 m 0 -6 a 6 6 0 1 1 -0.01 0" fill="none" stroke="#2E1065" strokeWidth="2" />
-                  <path d="M 75 113 m 0 -4 a 4 4 0 1 1 -0.01 0" fill="none" stroke="#7C3AED" strokeWidth="1.5" />
-                  <circle cx="75" cy="113" r="2" fill="#2E1065" />
-
-                  <circle cx="125" cy="113" r="13" fill="#FFFFFF" stroke="#2E1065" strokeWidth="2.5" />
-                  <path d="M 125 113 m 0 -6 a 6 6 0 1 0 0.01 0" fill="none" stroke="#2E1065" strokeWidth="2" />
-                  <path d="M 125 113 m 0 -4 a 4 4 0 1 0 0.01 0" fill="none" stroke="#7C3AED" strokeWidth="1.5" />
-                  <circle cx="125" cy="113" r="2" fill="#2E1065" />
-
-                  <ellipse cx="100" cy="142" rx="18" ry="13" fill="#2E1065" />
-                  <ellipse cx="100" cy="146" rx="13" ry="8" fill="#EF4444" />
-                  <ellipse cx="100" cy="150" rx="7" ry="4" fill="#B91C1C" />
-
-                  <path d="M 152 88 C 152 83, 157 78, 157 78 C 157 78, 162 83, 162 88 C 162 91, 157 94, 152 88 Z" fill="#60A5FA" opacity="0.9" />
-                  <path d="M 160 100 C 160 97, 163 94, 163 94 C 163 94, 166 97, 166 100 C 166 102, 163 104, 160 100 Z" fill="#60A5FA" opacity="0.7" />
-                  <path d="M 40 85 C 40 82, 43 79, 43 79 C 43 79, 46 82, 46 85 C 46 87, 43 89, 40 85 Z" fill="#60A5FA" opacity="0.8" />
+                <g>
+                  <circle cx="73" cy="116" r="14" fill="white" stroke="#1E0A3C" strokeWidth="2.5" />
+                  <circle cx="73" cy="116" r="4" fill="#1E0A3C" className="animate-bounce" />
+                  <circle cx="127" cy="116" r="14" fill="white" stroke="#1E0A3C" strokeWidth="2.5" />
+                  <circle cx="127" cy="116" r="4" fill="#1E0A3C" className="animate-bounce" />
+                  <ellipse cx="100" cy="147" rx="20" ry="14" fill="#1E0A3C" />
+                  <ellipse cx="100" cy="151" rx="14" ry="9" fill="#EF4444" />
+                  <ellipse cx="100" cy="155" rx="8" ry="4.5" fill="#B91C1C" />
+                  {/* Stress marks */}
+                  <path d="M 50 90 C 54 82, 60 82, 64 90" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" />
+                  <path d="M 150 90 C 146 82, 140 82, 136 90" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round" />
+                  {/* Sweat drops */}
+                  <path d="M 155 95 C 155 90, 160 84, 160 84 C 160 84, 165 90, 165 95 C 165 98, 160 101, 155 95 Z" fill="#60A5FA" opacity="0.9" />
+                  <path d="M 38 88 C 38 85, 41 82, 41 82 C 41 82, 44 85, 44 88 C 44 90, 41 92, 38 88 Z" fill="#60A5FA" opacity="0.8" />
                 </g>
               )}
             </g>
           )}
 
-          {/* ========================================================================= */}
-          {/* HIGH-PRECISION SVG SKIN ACCESORIES & HEADGEAR RENDERED DIRECTLY ON GARLIC */}
-          {/* ========================================================================= */}
+          {/* ===== SKIN ACCESORIES ===== */}
 
-          {/* SKIN 1: NINJA (🥷) */}
+          {/* NINJA */}
           {equippedSkin.id === 'NINJA' && (
-            <g id="skin-ninja">
-              <path d="M 35 75 Q 15 90 20 115" fill="none" stroke="#18181B" strokeWidth="7" strokeLinecap="round" />
-              <path d="M 35 75 Q 10 105 10 130" fill="none" stroke="#27272A" strokeWidth="5" strokeLinecap="round" />
-              <path d="M 35 70 C 60 55, 140 55, 165 70 L 163 88 C 140 73, 60 73, 37 88 Z" fill="#18181B" />
-              <rect x="86" y="62" width="28" height="16" rx="4" fill="#E4E4E7" stroke="#71717A" strokeWidth="1.5" />
-              <path d="M 94 70 L 106 70 M 100 65 L 100 75" stroke="#18181B" strokeWidth="2" strokeLinecap="round" />
-              <path d="M 35 122 C 60 145, 140 145, 165 122 L 162 178 C 135 192, 65 192, 38 178 Z" fill="#18181B" stroke="#09090B" strokeWidth="2" />
-              <path d="M 60 145 Q 100 160 140 145" fill="none" stroke="#27272A" strokeWidth="2" />
+            <g>
+              <path d="M 32 75 Q 12 92 18 118" fill="none" stroke="#18181B" strokeWidth="7" strokeLinecap="round" />
+              <path d="M 32 75 Q 8 108 8 135" fill="none" stroke="#27272A" strokeWidth="5" strokeLinecap="round" />
+              <path d="M 32 68 C 58 52, 142 52, 168 68 L 165 87 C 140 70, 60 70, 35 87 Z" fill="#18181B" />
+              <rect x="85" y="60" width="30" height="18" rx="4" fill="#E4E4E7" stroke="#71717A" strokeWidth="1.5" />
+              <path d="M 94 70 L 106 70 M 100 64 L 100 76" stroke="#18181B" strokeWidth="2" strokeLinecap="round" />
+              <path d="M 32 125 C 60 148, 140 148, 168 125 L 165 185 C 138 198, 62 198, 35 185 Z" fill="#18181B" stroke="#09090B" strokeWidth="2" />
+              <path d="M 60 148 Q 100 163 140 148" fill="none" stroke="#27272A" strokeWidth="2" />
             </g>
           )}
 
-          {/* SKIN 2: KING (👑) */}
+          {/* KING */}
           {equippedSkin.id === 'KING' && (
-            <g id="skin-king">
-              <polygon points="55,55 65,22 82,42 100,12 118,42 135,22 145,55" fill="#F59E0B" stroke="#B45309" strokeWidth="2.5" />
-              <rect x="55" y="48" width="90" height="12" rx="3" fill="#D97706" stroke="#92400E" strokeWidth="2" />
-              <circle cx="100" cy="12" r="5" fill="#EF4444" stroke="#991B1B" strokeWidth="1" />
-              <circle cx="65" cy="22" r="4" fill="#3B82F6" stroke="#1E40AF" strokeWidth="1" />
-              <circle cx="135" cy="22" r="4" fill="#10B981" stroke="#065F46" strokeWidth="1" />
-              <circle cx="75" cy="54" r="3" fill="#EF4444" />
-              <circle cx="100" cy="54" r="3.5" fill="#3B82F6" />
-              <circle cx="125" cy="54" r="3" fill="#10B981" />
-              <path d="M 30 170 C 60 195, 140 195, 170 170 C 155 200, 45 200, 30 170 Z" fill="#DC2626" stroke="#991B1B" strokeWidth="2" />
-              <circle cx="100" cy="180" r="4" fill="#F59E0B" />
+            <g>
+              <polygon points="52,52 64,18 82,40 100,8 118,40 136,18 148,52" fill="#F59E0B" stroke="#B45309" strokeWidth="2.5" />
+              <rect x="52" y="45" width="96" height="13" rx="4" fill="#D97706" stroke="#92400E" strokeWidth="2" />
+              <circle cx="100" cy="8" r="6" fill="#EF4444" stroke="#991B1B" strokeWidth="1.5" />
+              <circle cx="64" cy="18" r="5" fill="#3B82F6" stroke="#1E40AF" strokeWidth="1" />
+              <circle cx="136" cy="18" r="5" fill="#10B981" stroke="#065F46" strokeWidth="1" />
+              <circle cx="73" cy="52" r="3.5" fill="#EF4444" />
+              <circle cx="100" cy="52" r="4" fill="#3B82F6" />
+              <circle cx="127" cy="52" r="3.5" fill="#10B981" />
+              <path d="M 28 178 C 60 202, 140 202, 172 178 C 155 208, 45 208, 28 178 Z" fill="#DC2626" stroke="#991B1B" strokeWidth="2" />
+              <circle cx="100" cy="190" r="5" fill="#F59E0B" />
             </g>
           )}
 
-          {/* SKIN 3: ROBOT (🤖) */}
+          {/* ROBOT */}
           {equippedSkin.id === 'ROBOT' && (
-            <g id="skin-robot">
-              <rect x="55" y="100" width="90" height="26" rx="8" fill="#0F172A" stroke="#06B6D4" strokeWidth="2.5" />
-              <line x1="60" y1="113" x2="140" y2="113" stroke="#22D3EE" strokeWidth="4" strokeLinecap="round" className="animate-pulse" />
-              <circle cx="100" cy="113" r="5" fill="#67E8F9" />
-              <rect x="20" y="115" width="10" height="20" rx="3" fill="#64748B" stroke="#334155" strokeWidth="2" />
-              <rect x="170" y="115" width="10" height="20" rx="3" fill="#64748B" stroke="#334155" strokeWidth="2" />
-              <line x1="100" y1="35" x2="100" y2="10" stroke="#64748B" strokeWidth="4" />
-              <circle cx="100" cy="8" r="6" fill="#EF4444" className="animate-ping" />
-              <circle cx="100" cy="8" r="6" fill="#EF4444" />
+            <g>
+              <rect x="52" y="103" width="96" height="28" rx="9" fill="#0F172A" stroke="#06B6D4" strokeWidth="2.5" />
+              <line x1="58" y1="117" x2="142" y2="117" stroke="#22D3EE" strokeWidth="5" strokeLinecap="round" className="animate-pulse" />
+              <circle cx="100" cy="117" r="6" fill="#67E8F9" />
+              <rect x="18" y="118" width="11" height="22" rx="3" fill="#64748B" stroke="#334155" strokeWidth="2" />
+              <rect x="171" y="118" width="11" height="22" rx="3" fill="#64748B" stroke="#334155" strokeWidth="2" />
+              <line x1="100" y1="42" x2="100" y2="14" stroke="#64748B" strokeWidth="4" />
+              <circle cx="100" cy="10" r="7" fill="#EF4444" className="animate-ping" />
+              <circle cx="100" cy="10" r="7" fill="#EF4444" />
             </g>
           )}
 
-          {/* SKIN 4: FIRE (🔥) */}
+          {/* FIRE accesory */}
           {equippedSkin.id === 'FIRE' && (
-            <g id="skin-fire">
-              <path d="M 60 50 C 50 30, 65 15, 75 35 C 85 15, 100 0, 115 25 C 130 5, 145 30, 140 50 Z" fill="#F97316" />
-              <path d="M 70 50 C 65 35, 75 25, 80 40 C 90 25, 100 10, 110 30 C 120 15, 135 35, 130 50 Z" fill="#FACC15" />
+            <g>
+              <path d="M 58 50 C 48 28, 64 13, 74 34 C 84 14, 100 0, 116 24 C 132 5, 148 28, 142 50 Z" fill="#F97316" />
+              <path d="M 68 50 C 63 33, 74 23, 80 40 C 90 24, 100 10, 111 30 C 122 14, 136 33, 130 50 Z" fill="#FACC15" />
             </g>
           )}
 
-          {/* SKIN 5: ALIEN (👽) */}
+          {/* ALIEN */}
           {equippedSkin.id === 'ALIEN' && (
-            <g id="skin-alien">
-              <path d="M 80 40 Q 65 20 55 8" fill="none" stroke="#22C55E" strokeWidth="4" strokeLinecap="round" />
-              <circle cx="55" cy="8" r="7" fill="#4ADE80" stroke="#15803D" strokeWidth="2" className="animate-bounce" />
-
-              <path d="M 120 40 Q 135 20 145 8" fill="none" stroke="#22C55E" strokeWidth="4" strokeLinecap="round" />
-              <circle cx="145" cy="8" r="7" fill="#4ADE80" stroke="#15803D" strokeWidth="2" className="animate-bounce" />
-
-              <ellipse cx="100" cy="80" rx="10" ry="7" fill="#FFFFFF" stroke="#A855F7" strokeWidth="2" />
-              <circle cx="100" cy="80" r="4" fill="#A855F7" />
-              <circle cx="101" cy="79" r="1.5" fill="#FFFFFF" />
-              <ellipse cx="100" cy="115" rx="86" ry="80" fill="rgba(34, 197, 94, 0.08)" stroke="rgba(74, 222, 128, 0.5)" strokeWidth="3" />
+            <g>
+              <path d="M 78 42 Q 62 20 52 7" fill="none" stroke="#22C55E" strokeWidth="4" strokeLinecap="round" />
+              <circle cx="52" cy="7" r="8" fill="#4ADE80" stroke="#15803D" strokeWidth="2" className="animate-bounce" />
+              <path d="M 122 42 Q 138 20 148 7" fill="none" stroke="#22C55E" strokeWidth="4" strokeLinecap="round" />
+              <circle cx="148" cy="7" r="8" fill="#4ADE80" stroke="#15803D" strokeWidth="2" className="animate-bounce" />
+              <ellipse cx="100" cy="117" rx="90" ry="82" fill="rgba(34,197,94,0.07)" stroke="rgba(74,222,128,0.4)" strokeWidth="3" />
             </g>
           )}
 
-          {/* SKIN 6: DEAD / ZOMBIE (💀) */}
+          {/* DEAD */}
           {equippedSkin.id === 'DEAD' && (
-            <g id="skin-dead">
-              <line x1="30" y1="90" x2="120" y2="130" stroke="#18181B" strokeWidth="3" />
-              <ellipse cx="75" cy="113" rx="15" ry="15" fill="#18181B" stroke="#27272A" strokeWidth="2" />
-              <circle cx="75" cy="111" r="4" fill="#E4E4E7" />
-              <path d="M 72 118 L 78 118" stroke="#E4E4E7" strokeWidth="2" />
+            <g>
+              <line x1="28" y1="92" x2="122" y2="134" stroke="#18181B" strokeWidth="3" />
+              <ellipse cx="73" cy="116" rx="16" ry="16" fill="#18181B" stroke="#27272A" strokeWidth="2" />
+              <circle cx="73" cy="114" r="5" fill="#E4E4E7" />
+              <path d="M 70 121 L 76 121" stroke="#E4E4E7" strokeWidth="2" />
             </g>
           )}
 
-          {/* SKIN 7: RICH (🎩) */}
+          {/* RICH */}
           {equippedSkin.id === 'RICH' && (
-            <g id="skin-rich">
-              <ellipse cx="100" cy="50" rx="45" ry="9" fill="#18181B" stroke="#09090B" strokeWidth="2" />
-              <rect x="68" y="10" width="64" height="40" rx="3" fill="#18181B" stroke="#09090B" strokeWidth="2" />
-              <rect x="68" y="38" width="64" height="10" fill="#9333EA" />
-              <rect x="94" y="37" width="12" height="12" rx="2" fill="#F59E0B" />
-
-              <circle cx="125" cy="114" r="13" fill="rgba(255,255,255,0.2)" stroke="#F59E0B" strokeWidth="2.5" />
-              <path d="M 137 121 Q 148 145 142 165" fill="none" stroke="#F59E0B" strokeWidth="2" strokeDasharray="2,2" />
-
-              <polygon points="85,178 100,185 85,192" fill="#EF4444" stroke="#991B1B" strokeWidth="1" />
-              <polygon points="115,178 100,185 115,192" fill="#EF4444" stroke="#991B1B" strokeWidth="1" />
-              <circle cx="100" cy="185" r="3.5" fill="#B91C1C" />
+            <g>
+              <ellipse cx="100" cy="48" rx="48" ry="10" fill="#18181B" stroke="#09090B" strokeWidth="2" />
+              <rect x="66" y="8" width="68" height="42" rx="4" fill="#18181B" stroke="#09090B" strokeWidth="2" />
+              <rect x="66" y="37" width="68" height="11" fill="#9333EA" />
+              <rect x="93" y="36" width="14" height="13" rx="2" fill="#F59E0B" />
+              <circle cx="127" cy="117" r="14" fill="rgba(255,255,255,0.18)" stroke="#F59E0B" strokeWidth="2.5" />
+              <path d="M 139 124 Q 150 148, 144 168" fill="none" stroke="#F59E0B" strokeWidth="2" strokeDasharray="2,2" />
+              <polygon points="84,183 100,190 84,197" fill="#EF4444" stroke="#991B1B" strokeWidth="1" />
+              <polygon points="116,183 100,190 116,197" fill="#EF4444" stroke="#991B1B" strokeWidth="1" />
+              <circle cx="100" cy="190" r="4" fill="#B91C1C" />
             </g>
           )}
+
+          {/* Sprout at top */}
+          <g className={`transition-transform duration-200 origin-bottom ${isPressed ? 'scale-110 -rotate-8' : 'animate-[wiggle_3s_ease-in-out_infinite]'}`}>
+            <path d="M 100 34 C 94 13, 78 3, 68 8 C 84 23, 93 38, 96 50 Z" fill="url(#sproutLeafGrad)" stroke="#047857" strokeWidth="1.5" />
+            <path d="M 100 34 C 106 9, 128 3, 138 14 C 122 26, 110 40, 104 50 Z" fill="url(#sproutLeafGrad)" stroke="#047857" strokeWidth="1.5" />
+            <path d="M 100 28 C 98 8, 102 0, 100 0 C 98 8, 100 20, 100 28 Z" fill="#34D399" />
+          </g>
         </svg>
 
-        {/* Emoji Reaction Badge on Top Corner */}
-        <div className={`absolute -top-3 right-2 text-3xl drop-shadow-md ${currentExpr === 6 ? 'animate-spin' : 'animate-bounce'}`}>
-          {currentExpr === 0 && '💥'}
-          {currentExpr === 1 && '🤪'}
-          {currentExpr === 2 && '😵'}
-          {currentExpr === 3 && '😜'}
-          {currentExpr === 4 && '🔥'}
-          {currentExpr === 5 && '😱'}
-          {currentExpr === 6 && '🌪️'}
+        {/* Critical hit badge */}
+        {lastCritical && (
+          <div
+            className="absolute -top-5 left-1/2 -translate-x-1/2 font-black text-sm tracking-wider animate-bounce z-30 px-3 py-0.5 rounded-full border"
+            style={{
+              color: equippedTapStyle.color,
+              borderColor: equippedTapStyle.color,
+              backgroundColor: `${equippedTapStyle.color}22`,
+            }}
+          >
+            CRITICO!
+          </div>
+        )}
+      </div>
+
+      {/* Evolution size badge */}
+      <div className="mt-2 z-20 flex items-center gap-1.5">
+        <div
+          className={`text-[10px] font-black uppercase px-3 py-0.5 rounded-full border shadow-md inline-flex items-center gap-1 ${
+            isSmall
+              ? 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+              : 'bg-purple-500/15 text-purple-300 border-purple-500/30 animate-pulse'
+          }`}
+        >
+          <span>{isSmall ? '🌱' : '🌿'}</span>
+          <span>{isSmall ? 'Pequeño' : 'Grande (Evolucionado)'}</span>
         </div>
 
-        {/* Dynamic Size Badge under character */}
-        <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 whitespace-nowrap z-20">
-          <span className={`text-[10px] font-black uppercase px-3 py-0.5 rounded-full border shadow-md inline-flex items-center gap-1 ${
-            isSmall
-              ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
-              : 'bg-purple-500/20 text-purple-300 border-purple-500/40 animate-pulse'
-          }`}>
-            <span>{isSmall ? '🤏' : '🐘'}</span>
-            <span>{isSmall ? 'Ajo Pequeño' : 'Ajo Grande (Evolución)'}</span>
-          </span>
+        {/* Energy mini bar */}
+        <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-300 bg-black/30 px-2 py-0.5 rounded-full border border-emerald-500/20">
+          <span>⚡</span>
+          <span>{stats.energy}/{stats.maxEnergy}</span>
         </div>
       </div>
     </div>
