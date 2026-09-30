@@ -19,6 +19,7 @@ import { DEFAULT_GAME_CONFIG } from '../config/gameConfig';
 import { EVOLUTION_STAGES, getStageById, TAP_STYLES_CATALOG } from '../config/gameBalance';
 import { StorageAdapter, SavedGameState } from '../services/StorageAdapter';
 import { GameService } from '../services/GameService';
+import { saveGameStateToSupabase, loadGameStateFromSupabase } from '../services/SupabaseService';
 import { triggerHaptic } from '../utils/haptics';
 import { playTapSound, playHarvestSound, playCoinSound } from '../utils/audio';
 import { spawnCanvasParticle } from '../utils/particleSystem';
@@ -42,6 +43,8 @@ interface GameContextType {
   achievements: AchievementItem[];
   presale: PresaleInfo;
   comboCount: number;
+  rhythmStreak: number;
+  isLastTapPerfectRhythm: boolean;
   toast: ToastMessage | null;
   currentStage: EvolutionStage;
   isEvolutionModalOpen: boolean;
@@ -64,6 +67,7 @@ interface GameContextType {
   equipSkin: (skinId: SkinId) => void;
   purchaseTapStyle: (styleId: TapStyleId) => void;
   equipTapStyle: (styleId: TapStyleId) => void;
+  buyEnergyRefill: (refillType: 'REFILL_100' | 'BOOST_500' | 'SUPER_ELIXIR') => void;
   resetLocalProgress: () => void;
   isWalletModalOpen: boolean;
   setIsWalletModalOpen: (open: boolean) => void;
@@ -141,8 +145,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isPresaleActive: true,
   });
 
-  // Combo & Particle Effects
+  // Combo, Rhythm & Particle Effects
   const [comboCount, setComboCount] = useState<number>(0);
+  const [rhythmStreak, setRhythmStreak] = useState<number>(0);
+  const [isLastTapPerfectRhythm, setIsLastTapPerfectRhythm] = useState<boolean>(false);
+  const lastTapTimeRef = useRef<number>(0);
   const comboTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [floatingParticles, setFloatingParticles] = useState<{ id: number; x: number; y: number; text: string }[]>([]);
   const [toast, setToast] = useState<ToastMessage | null>(null);
@@ -155,18 +162,39 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Get current evolution stage
   const currentStage = getStageById(stats.currentStageId || 'COMMON_SMALL');
 
-  // Auto-Save game state whenever stats/inventory/boxes/upgrades/quests change
+  // Sync state on initial mount from Supabase Cloud if available
   useEffect(() => {
-    StorageAdapter.saveState({
-      version: 2,
+    if (user && user.id) {
+      loadGameStateFromSupabase(user.id).then((cloudState) => {
+        if (cloudState) {
+          if (cloudState.stats) setStats(cloudState.stats);
+          if (cloudState.inventory) setInventory(cloudState.inventory);
+          if (cloudState.boxes) setBoxes(cloudState.boxes);
+          if (cloudState.upgrades) setUpgrades(cloudState.upgrades);
+          if (cloudState.quests) setQuests(cloudState.quests);
+          if (cloudState.achievements) setAchievements(cloudState.achievements);
+          showToast('Sincronizado con Supabase ☁️', 'Tu progreso ha sido restaurado desde la nube.', 'success');
+        }
+      });
+    }
+  }, [user?.id]);
+
+  // Auto-Save game state to localStorage & Supabase whenever stats/inventory/boxes/upgrades/quests change
+  useEffect(() => {
+    const fullState: SavedGameState = {
+      version: 3,
       stats,
       inventory,
       boxes,
       upgrades,
       quests,
       achievements,
-    });
-  }, [stats, inventory, boxes, upgrades, quests, achievements]);
+    };
+    StorageAdapter.saveState(fullState);
+    if (user && user.id) {
+      saveGameStateToSupabase(user.id, fullState);
+    }
+  }, [stats, inventory, boxes, upgrades, quests, achievements, user?.id]);
 
   // Energy Auto Regeneration Timer (1 energy every X seconds)
   useEffect(() => {
@@ -255,13 +283,28 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const diffMult = getDifficultyMultiplier();
     const critBonus = getCriticalBonus();
 
+    // Calculate base tap power
+    let tapPower = stats.powerPerTap;
+
+    // Precision Rhythm Check (~550ms - 1100ms interval between taps for rhythm bonus)
+    const now = Date.now();
+    const intervalMs = lastTapTimeRef.current ? now - lastTapTimeRef.current : 0;
+    lastTapTimeRef.current = now;
+    const isPerfectRhythm = intervalMs >= 550 && intervalMs <= 1100;
+    setIsLastTapPerfectRhythm(isPerfectRhythm);
+
+    if (isPerfectRhythm) {
+      setRhythmStreak((prev) => prev + 1);
+      tapPower = Math.floor(tapPower * 1.75); // +75% power on rhythm taps!
+    } else {
+      setRhythmStreak(0);
+    }
+
     // Check for critical hit
     const critChance = tapStyle.criticalChance + critBonus;
     const isCritical = Math.random() < critChance;
     setLastCritical(isCritical);
 
-    // Calculate tap power
-    let tapPower = stats.powerPerTap;
     if (chargeRatio > 0) {
       tapPower = Math.floor(tapPower * (1 + chargeRatio * (tapStyle.chargeMultiplier - 1)));
     }
@@ -659,6 +702,48 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     showToast('Aspecto Equipado', 'Has cambiado tu aspecto correctamente.', 'info');
   };
 
+  // Buy Energy Refills & Boosts
+  const buyEnergyRefill = (refillType: 'REFILL_100' | 'BOOST_500' | 'SUPER_ELIXIR') => {
+    if (refillType === 'REFILL_100') {
+      if (inventory.rawGarlic >= 5) {
+        setInventory((prev) => ({ ...prev, rawGarlic: prev.rawGarlic - 5 }));
+        setStats((prev) => ({ ...prev, energy: prev.maxEnergy }));
+        showToast('¡Energía Recargada! ⚡', 'Energía restaurada al 100% (-5 Ajos Crudos).', 'success');
+        triggerHaptic('success');
+      } else if (inventory.gcBalance >= 100) {
+        setInventory((prev) => ({ ...prev, gcBalance: prev.gcBalance - 100 }));
+        setStats((prev) => ({ ...prev, energy: prev.maxEnergy }));
+        showToast('¡Energía Recargada! ⚡', 'Energía restaurada al 100% (-100 GC).', 'success');
+        triggerHaptic('success');
+      } else {
+        showToast('Sin Recursos', 'Requieres 5 Ajos Crudos o 100 GC para recargar energía.', 'warning');
+      }
+    } else if (refillType === 'BOOST_500') {
+      if (inventory.rawGarlic >= 20) {
+        setInventory((prev) => ({ ...prev, rawGarlic: prev.rawGarlic - 20 }));
+        setStats((prev) => ({ ...prev, maxEnergy: prev.maxEnergy + 500, energy: prev.energy + 500 }));
+        showToast('¡Límite Aumentado! 🔋', '+500 de Energía Máxima permanente (-20 Ajos Crudos).', 'success');
+        triggerHaptic('success');
+      } else if (inventory.gcBalance >= 500) {
+        setInventory((prev) => ({ ...prev, gcBalance: prev.gcBalance - 500 }));
+        setStats((prev) => ({ ...prev, maxEnergy: prev.maxEnergy + 500, energy: prev.energy + 500 }));
+        showToast('¡Límite Aumentado! 🔋', '+500 de Energía Máxima permanente (-500 GC).', 'success');
+        triggerHaptic('success');
+      } else {
+        showToast('Sin Recursos', 'Requieres 20 Ajos Crudos o 500 GC para aumentar tu tanque de energía.', 'warning');
+      }
+    } else if (refillType === 'SUPER_ELIXIR') {
+      if (inventory.rawGarlic >= 10) {
+        setInventory((prev) => ({ ...prev, rawGarlic: prev.rawGarlic - 10 }));
+        setStats((prev) => ({ ...prev, energy: prev.maxEnergy }));
+        showToast('¡Super Elixir! 🚀', 'Energía 100% restaurada (-10 Ajos Crudos).', 'success');
+        triggerHaptic('success');
+      } else {
+        showToast('Sin Recursos', 'Requieres 10 Ajos Crudos para activar el Super Elixir.', 'warning');
+      }
+    }
+  };
+
   // Reset Progress for Dev/Testing
   const resetLocalProgress = () => {
     const reset = StorageAdapter.resetState();
@@ -685,6 +770,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         achievements,
         presale,
         comboCount,
+        rhythmStreak,
+        isLastTapPerfectRhythm,
         toast,
         currentStage,
         isEvolutionModalOpen,
@@ -707,6 +794,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         equipSkin,
         purchaseTapStyle,
         equipTapStyle,
+        buyEnergyRefill,
         resetLocalProgress,
         isWalletModalOpen,
         setIsWalletModalOpen,

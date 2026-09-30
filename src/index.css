@@ -138,3 +138,24 @@ body {
   0%, 100% { box-shadow: 0 0 6px rgba(251, 191, 36, 0.4); }
   50% { box-shadow: 0 0 14px rgba(251, 191, 36, 0.8); }
 }
+
+/* Goku Super Saiyan Charge Animations */
+@keyframes ssj-rumble {
+  0% { transform: translate(0, 0) scale(1.04) rotate(0deg); }
+  20% { transform: translate(-4px, 3px) scale(1.07) rotate(-2deg); }
+  40% { transform: translate(4px, -3px) scale(1.05) rotate(2deg); }
+  60% { transform: translate(-3px, 4px) scale(1.08) rotate(-1.5deg); }
+  80% { transform: translate(3px, -4px) scale(1.06) rotate(1.5deg); }
+  100% { transform: translate(0, 0) scale(1.04) rotate(0deg); }
+}
+
+@keyframes ssj-aura-rise {
+  0% { transform: translateY(10px) scale(0.9); opacity: 0.5; }
+  50% { transform: translateY(-15px) scale(1.25); opacity: 1; }
+  100% { transform: translateY(-35px) scale(1.45); opacity: 0; }
+}
+
+.animate-ssj-aura {
+  animation: ssj-aura-rise 0.5s ease-out infinite;
+}
+

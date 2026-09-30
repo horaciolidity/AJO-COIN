@@ -18,6 +18,8 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
     lastCritical,
     teethCelebration,
     stats,
+    rhythmStreak,
+    isLastTapPerfectRhythm,
   } = useGame();
 
   const [isPressed, setIsPressed] = useState(false);
@@ -76,8 +78,10 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
     handleTapEnd(e.clientX, e.clientY);
   };
 
-  // Expression based on combo
-  const currentExpr = isPressed
+  // Expression based on combo or Goku SSJ charging
+  const currentExpr = isCharging
+    ? 6 // Screaming Super Saiyan mode while charging
+    : isPressed
     ? expressionIndex
     : comboCount >= 50 ? 6
     : comboCount >= 30 ? 4
@@ -91,8 +95,10 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
     ? 'w-36 h-36 sm:w-44 sm:h-44'
     : 'w-64 h-64 sm:w-72 sm:h-72';
 
-  // Tremble on high combos
-  const trembleClass = comboCount >= 50
+  // Tremble/Rumble on Goku SSJ Charge or high combos
+  const trembleClass = isCharging
+    ? 'animate-[ssj-rumble_0.07s_ease-in-out_infinite] scale-105'
+    : comboCount >= 50
     ? 'animate-[combo-shake_0.15s_ease-in-out_infinite]'
     : comboCount >= 30
     ? 'animate-[combo-shake_0.3s_ease-in-out_infinite]'
@@ -164,6 +170,34 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
         style={{ backgroundColor: currentStage.auraColor }}
         className={`absolute rounded-full transition-all duration-500 pointer-events-none blur-3xl ${auraScale} ${isSmall ? 'w-48 h-48' : 'w-72 h-72'}`}
       />
+
+      {/* GOKU SUPER SAIYAN CHARGING FLAME AURA */}
+      {isCharging && (
+        <div className="absolute pointer-events-none z-10 inset-0 flex items-center justify-center">
+          {/* Outer glowing plasma aura */}
+          <div className="absolute -inset-14 rounded-full bg-gradient-to-t from-yellow-500 via-amber-400/80 to-transparent blur-2xl animate-pulse" />
+          {/* Ascending energy rays */}
+          <div className="absolute -inset-10 rounded-full border-4 border-yellow-300/80 blur-md animate-ping" />
+          {/* Rising Goku energy flame particles */}
+          <div className="absolute -top-16 inset-x-0 flex justify-center gap-4 text-2xl animate-ssj-aura">
+            <span>🔥</span>
+            <span>⚡</span>
+            <span>🔥</span>
+          </div>
+          {/* Charging Banner */}
+          <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-black/90 border-2 border-yellow-400 text-yellow-300 px-3 py-1 rounded-full text-xs font-black tracking-widest whitespace-nowrap shadow-2xl animate-bounce">
+            🔥 ¡CARGANDO PODER SAYAYIN! (3x CRÍTICO) 🔥
+          </div>
+        </div>
+      )}
+
+      {/* RHYTHM PRECISION BADGE */}
+      {isLastTapPerfectRhythm && !isCharging && (
+        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 bg-emerald-950/90 border-2 border-emerald-400 text-emerald-300 px-3 py-1 rounded-full text-[11px] font-black tracking-wider whitespace-nowrap shadow-xl animate-bounce z-30 flex items-center gap-1">
+          <span>🎯</span>
+          <span>¡RITMO PERFECTO! (+75% PODER)</span>
+        </div>
+      )}
 
       {/* Tap Style Colored Aura Ring */}
       {(isCharging || comboCount > 5) && (
@@ -612,6 +646,16 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
               <polygon points="84,183 100,190 84,197" fill="#EF4444" stroke="#991B1B" strokeWidth="1" />
               <polygon points="116,183 100,190 116,197" fill="#EF4444" stroke="#991B1B" strokeWidth="1" />
               <circle cx="100" cy="190" r="4" fill="#B91C1C" />
+            </g>
+          )}
+
+          {/* GOKU SUPER SAIYAN SPIKY GOLDEN HAIR ON CHARGE */}
+          {isCharging && (
+            <g className="animate-pulse">
+              <path d="M 45 45 C 20 15, 50 -15, 72 25 Z" fill="#FDE047" stroke="#CA8A04" strokeWidth="2" />
+              <path d="M 68 28 C 55 -20, 85 -35, 100 12 Z" fill="#FACC15" stroke="#CA8A04" strokeWidth="2" />
+              <path d="M 95 15 C 108 -38, 138 -18, 128 28 Z" fill="#FDE047" stroke="#CA8A04" strokeWidth="2" />
+              <path d="M 122 30 C 145 -10, 172 15, 152 48 Z" fill="#FACC15" stroke="#CA8A04" strokeWidth="2" />
             </g>
           )}
 

@@ -9,7 +9,7 @@ interface GarlicBoxesProps {
 }
 
 export const GarlicBoxes: React.FC<GarlicBoxesProps> = ({ onSelectClaimBox }) => {
-  const { boxes, buyBox, inventory } = useGame();
+  const { boxes, buyBox, inventory, buyEnergyRefill } = useGame();
 
   const boxCatalog: { type: 'BASIC' | 'FARM' | 'MEGA'; label: string; price: number; capacity: number; icon: string }[] = [
     { type: 'BASIC', label: 'BASIC BOX', price: DEFAULT_GAME_CONFIG.boxPrices.BASIC, capacity: DEFAULT_GAME_CONFIG.boxCapacities.BASIC, icon: '📦' },
@@ -101,10 +101,74 @@ export const GarlicBoxes: React.FC<GarlicBoxesProps> = ({ onSelectClaimBox }) =>
         </div>
       </div>
 
+      {/* Energy Refill Station */}
+      <div className="pt-3 border-t border-amber-500/20">
+        <h3 className="text-xs font-black text-amber-400 uppercase tracking-wider mb-2.5 flex items-center justify-between">
+          <span className="flex items-center gap-1.5">
+            <span className="text-base">⚡</span> ESTACIÓN DE RECARGA DE ENERGÍA
+          </span>
+          <span className="text-[10px] text-gray-400 font-normal">Usa Ajos Crudos o GC</span>
+        </h3>
+
+        <div className="grid grid-cols-2 gap-2.5">
+          {/* Option 1: 100% Energy Refill */}
+          <div className="glass-card p-3 rounded-2xl border border-amber-500/30 bg-gradient-to-b from-amber-500/10 to-transparent flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-2xl">⚡</span>
+                <span className="text-[9px] bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded-full border border-amber-500/30">100% REFILL</span>
+              </div>
+              <h5 className="font-extrabold text-xs text-white">Recarga Instantánea</h5>
+              <p className="text-[10px] text-gray-400 mt-0.5">Restaura toda tu energía al máximo inmediatamente.</p>
+            </div>
+            <div className="mt-3 space-y-1.5">
+              <button
+                onClick={() => buyEnergyRefill('REFILL_100')}
+                className="w-full py-1.5 px-2 rounded-xl text-[10px] font-black bg-gradient-to-r from-emerald-600 to-sprout-500 text-white shadow-md hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-1"
+              >
+                <span>5 Ajos Crudos 🧄</span>
+              </button>
+              <button
+                onClick={() => buyEnergyRefill('REFILL_100')}
+                className="w-full py-1 px-2 rounded-xl text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition-all flex items-center justify-center gap-1"
+              >
+                <span>o 100 GC 🪙</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Option 2: +500 Max Energy Boost */}
+          <div className="glass-card p-3 rounded-2xl border border-emerald-500/30 bg-gradient-to-b from-emerald-500/10 to-transparent flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-2xl">🔋</span>
+                <span className="text-[9px] bg-emerald-500/20 text-emerald-300 font-bold px-2 py-0.5 rounded-full border border-emerald-500/30">+500 MAX</span>
+              </div>
+              <h5 className="font-extrabold text-xs text-white">Tanque Expandido</h5>
+              <p className="text-[10px] text-gray-400 mt-0.5">Aumenta tu capacidad máxima de energía de forma permanente.</p>
+            </div>
+            <div className="mt-3 space-y-1.5">
+              <button
+                onClick={() => buyEnergyRefill('BOOST_500')}
+                className="w-full py-1.5 px-2 rounded-xl text-[10px] font-black bg-gradient-to-r from-amber-600 to-yellow-500 text-white shadow-md hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-1"
+              >
+                <span>20 Ajos Crudos 🧄</span>
+              </button>
+              <button
+                onClick={() => buyEnergyRefill('BOOST_500')}
+                className="w-full py-1 px-2 rounded-xl text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all flex items-center justify-center gap-1"
+              >
+                <span>o 500 GC 🪙</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Buy Boxes Shop */}
       <div className="pt-2">
         <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2.5">
-          BUY MORE BOXES
+          COMPRAR CAJAS DE AJO
         </h3>
 
         <div className="grid grid-cols-3 gap-2">

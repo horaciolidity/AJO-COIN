@@ -262,10 +262,34 @@ export class StorageAdapter {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (!raw) return INITIAL_DEFAULT_STATE;
       const parsed = JSON.parse(raw);
-      if (!parsed || parsed.version !== CURRENT_VERSION) {
+      if (!parsed || typeof parsed !== 'object') {
         return INITIAL_DEFAULT_STATE;
       }
-      return parsed as SavedGameState;
+      
+      // Merge saved state with defaults to ensure all fields exist & preserve progress across versions
+      const mergedState: SavedGameState = {
+        version: CURRENT_VERSION,
+        stats: {
+          ...INITIAL_DEFAULT_STATE.stats,
+          ...(parsed.stats || {}),
+        },
+        inventory: {
+          ...INITIAL_DEFAULT_STATE.inventory,
+          ...(parsed.inventory || {}),
+          unlockedSkins: Array.isArray(parsed.inventory?.unlockedSkins)
+            ? parsed.inventory.unlockedSkins
+            : INITIAL_DEFAULT_STATE.inventory.unlockedSkins,
+          unlockedTapStyles: Array.isArray(parsed.inventory?.unlockedTapStyles)
+            ? parsed.inventory.unlockedTapStyles
+            : INITIAL_DEFAULT_STATE.inventory.unlockedTapStyles,
+        },
+        boxes: Array.isArray(parsed.boxes) && parsed.boxes.length > 0 ? parsed.boxes : INITIAL_DEFAULT_STATE.boxes,
+        upgrades: Array.isArray(parsed.upgrades) && parsed.upgrades.length > 0 ? parsed.upgrades : INITIAL_DEFAULT_STATE.upgrades,
+        quests: Array.isArray(parsed.quests) && parsed.quests.length > 0 ? parsed.quests : INITIAL_DEFAULT_STATE.quests,
+        achievements: Array.isArray(parsed.achievements) && parsed.achievements.length > 0 ? parsed.achievements : INITIAL_DEFAULT_STATE.achievements,
+      };
+
+      return mergedState;
     } catch (e) {
       console.warn('Failed to load local game state, using default:', e);
       return INITIAL_DEFAULT_STATE;
