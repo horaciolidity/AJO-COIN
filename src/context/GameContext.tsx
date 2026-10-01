@@ -56,6 +56,8 @@ interface GameContextType {
   handleTapEnd: (clientX?: number, clientY?: number) => void;
   chargeLevel: number; // 0-1 charge progress
   isCharging: boolean;
+  isChargeUnlocked: boolean;
+  maxChargeMultiplier: number;
   lastCritical: boolean;
   sellGarlic: (amount: number) => void;
   buyBox: (boxType: 'BASIC' | 'FARM' | 'MEGA') => void;
@@ -179,7 +181,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user?.id]);
 
-  // Auto-Save game state to localStorage & Supabase whenever stats/inventory/boxes/upgrades/quests change
+  // Auto-Save game state to localStorage & Supabase (debounced 3.5s to protect the DB)
+  const cloudSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   useEffect(() => {
     const fullState: SavedGameState = {
       version: 3,
@@ -191,8 +195,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       achievements,
     };
     StorageAdapter.saveState(fullState);
+
     if (user && user.id) {
-      saveGameStateToSupabase(user.id, fullState);
+      if (cloudSaveTimerRef.current) clearTimeout(cloudSaveTimerRef.current);
+      cloudSaveTimerRef.current = setTimeout(() => {
+        saveGameStateToSupabase(user.id, fullState);
+      }, 3500); // 3.5s debounce to avoid exploding DB
     }
   }, [stats, inventory, boxes, upgrades, quests, achievements, user?.id]);
 
@@ -219,7 +227,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Get difficulty multiplier based on evolution stage
   const getDifficultyMultiplier = useCallback(() => {
     const stageOrder = currentStage.order || 1;
-    // Higher stage = taps per garlic increases (harder)
     return 1 + (stageOrder - 1) * 0.15;
   }, [currentStage.order]);
 
@@ -229,41 +236,70 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return (critUpgrade?.currentLevel || 0) * 0.05;
   }, [upgrades]);
 
-  // Handle Tap Start (for hold-to-charge)
+  // Check if Charge Ability is unlocked (Requires Stage Order >= 2)
+  const isChargeUnlocked = (currentStage.order || 1) >= 2;
+
+  // Max charge multiplier scales with evolution rank:
+  // Order 2: 2.0x, Order 3: 2.8x, Order 4: 3.6x, Order 5+: 5.0x
+  const getMaxChargeMultiplier = useCallback(() => {
+    const order = currentStage.order || 1;
+    if (order < 2) return 1.0;
+    if (order === 2) return 2.0;
+    if (order === 3) return 2.8;
+    if (order === 4) return 3.6;
+    return 5.0; // Super Saiyan Max Charge
+  }, [currentStage.order]);
+
+  const maxChargeMultiplier = getMaxChargeMultiplier();
+
+  // Ref for 700ms hold delay before starting charge animation
+  const chargeHoldDelayTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handle Tap Start (Requires holding for at least 700ms before charge starts)
   const handleTapStart = useCallback((clientX?: number, clientY?: number) => {
     chargeStartRef.current = Date.now();
-    setIsCharging(true);
-    setChargeLevel(0);
 
-    // Animate charge level
+    if (chargeHoldDelayTimerRef.current) clearTimeout(chargeHoldDelayTimerRef.current);
     if (chargeIntervalRef.current) clearInterval(chargeIntervalRef.current);
-    chargeIntervalRef.current = setInterval(() => {
-      const elapsed = Date.now() - chargeStartRef.current;
-      const maxCharge = 1500; // 1.5s for full charge
-      const level = Math.min(1, elapsed / maxCharge);
-      setChargeLevel(level);
 
-      if (level >= 1) {
-        if (chargeIntervalRef.current) clearInterval(chargeIntervalRef.current);
-        triggerHaptic('success');
-      }
-    }, 50);
-  }, []);
+    // If charge is not unlocked for this stage, do not start charge
+    if ((currentStage.order || 1) < 2) return;
 
-  // Handle Tap End (release = execute charged tap)
-  // Uses ref to avoid stale closure — handleTap is assigned to the ref after definition
+    // Require holding for at least 700ms before starting charge!
+    chargeHoldDelayTimerRef.current = setTimeout(() => {
+      setIsCharging(true);
+      setChargeLevel(0);
+
+      chargeIntervalRef.current = setInterval(() => {
+        const elapsed = Date.now() - (chargeStartRef.current + 700);
+        const maxChargeTime = 1400; // 1.4s past the 700ms delay
+        const level = Math.min(1, Math.max(0, elapsed / maxChargeTime));
+        setChargeLevel(level);
+
+        if (level >= 1) {
+          if (chargeIntervalRef.current) clearInterval(chargeIntervalRef.current);
+          triggerHaptic('success');
+        }
+      }, 40);
+    }, 700); // 700ms hold delay
+  }, [currentStage.order]);
+
+  // Handle Tap End (release = execute tap)
   const handleTapRef = useRef<(clientX?: number, clientY?: number, chargeRatio?: number) => void>(() => {});
 
   const handleTapEnd = useCallback((clientX?: number, clientY?: number) => {
+    if (chargeHoldDelayTimerRef.current) clearTimeout(chargeHoldDelayTimerRef.current);
     if (chargeIntervalRef.current) clearInterval(chargeIntervalRef.current);
+
     const heldMs = Date.now() - chargeStartRef.current;
-    const wasCharged = heldMs > 200; // min 200ms to count as charge
-    const chargedRatio = Math.min(1, heldMs / 1500);
+    const wasCharged = heldMs >= 700;
+    const chargedRatio = wasCharged ? Math.min(1, Math.max(0, (heldMs - 700) / 1400)) : 0;
+
     setIsCharging(false);
     setChargeLevel(0);
 
-    // Execute the tap with charge bonus via ref (avoids stale closure)
-    handleTapRef.current(clientX, clientY, wasCharged ? chargedRatio : 0);
+    // Execute the tap with charge bonus via ref
+    handleTapRef.current(clientX, clientY, wasCharged && chargedRatio > 0.05 ? chargedRatio : 0);
   }, []);
 
   // Handle Tap Action
@@ -305,8 +341,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const isCritical = Math.random() < critChance;
     setLastCritical(isCritical);
 
-    if (chargeRatio > 0) {
-      tapPower = Math.floor(tapPower * (1 + chargeRatio * (tapStyle.chargeMultiplier - 1)));
+    if (chargeRatio > 0 && maxChargeMultiplier > 1.0) {
+      tapPower = Math.floor(tapPower * (1 + chargeRatio * (maxChargeMultiplier - 1)));
     }
     if (isCritical) {
       tapPower = Math.floor(tapPower * tapStyle.criticalMultiplier);
@@ -783,6 +819,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         handleTapEnd,
         chargeLevel,
         isCharging,
+        isChargeUnlocked,
+        maxChargeMultiplier,
         lastCritical,
         sellGarlic,
         buyBox,

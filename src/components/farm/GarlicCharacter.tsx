@@ -15,6 +15,8 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
     handleTapEnd,
     chargeLevel,
     isCharging,
+    isChargeUnlocked,
+    maxChargeMultiplier,
     lastCritical,
     teethCelebration,
     stats,
@@ -186,7 +188,7 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
           </div>
           {/* Charging Banner */}
           <div className="absolute -top-14 left-1/2 -translate-x-1/2 bg-black/90 border-2 border-yellow-400 text-yellow-300 px-3 py-1 rounded-full text-xs font-black tracking-widest whitespace-nowrap shadow-2xl animate-bounce">
-            🔥 ¡CARGANDO PODER SAYAYIN! (3x CRÍTICO) 🔥
+            🔥 ¡CARGANDO PODER SAYAYIN! ({maxChargeMultiplier}x CRÍTICO) 🔥
           </div>
         </div>
       )}
