@@ -273,7 +273,7 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
             : `scale(1) rotate(0deg)`,
         }}
         className={`relative z-10 flex items-center justify-center transition-all duration-100 ease-out ${sizeClass} ${trembleClass} ${
-          isPressed ? '' : 'hover:scale-105 animate-float'
+          isPressed ? '' : 'hover:scale-105 animate-anime-breath'
         }`}
       >
         {/* Drop shadow */}
@@ -661,25 +661,35 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
             </g>
           )}
 
-          {/* Sprout at top */}
-          <g className={`transition-transform duration-200 origin-bottom ${isPressed ? 'scale-110 -rotate-8' : 'animate-[wiggle_3s_ease-in-out_infinite]'}`}>
+          {/* Sprout at top with leaf sway animation */}
+          <g className={`transition-transform duration-200 origin-bottom ${isPressed ? 'scale-110 -rotate-8' : 'animate-leaf-sway'}`}>
             <path d="M 100 34 C 94 13, 78 3, 68 8 C 84 23, 93 38, 96 50 Z" fill="url(#sproutLeafGrad)" stroke="#047857" strokeWidth="1.5" />
             <path d="M 100 34 C 106 9, 128 3, 138 14 C 122 26, 110 40, 104 50 Z" fill="url(#sproutLeafGrad)" stroke="#047857" strokeWidth="1.5" />
             <path d="M 100 28 C 98 8, 102 0, 100 0 C 98 8, 100 20, 100 28 Z" fill="#34D399" />
           </g>
         </svg>
 
-        {/* Critical hit badge */}
+        {/* DEVASTATING CRITICAL HIT MANGA SPEEDLINES & BADGE */}
         {lastCritical && (
-          <div
-            className="absolute -top-5 left-1/2 -translate-x-1/2 font-black text-sm tracking-wider animate-bounce z-30 px-3 py-0.5 rounded-full border"
-            style={{
-              color: equippedTapStyle.color,
-              borderColor: equippedTapStyle.color,
-              backgroundColor: `${equippedTapStyle.color}22`,
-            }}
-          >
-            CRITICO!
+          <div className="absolute inset-0 pointer-events-none z-40 flex items-center justify-center">
+            {/* Manga speedlines impact circle */}
+            <div className="absolute -inset-10 rounded-full border-4 border-red-500/80 animate-ping" />
+            <div className="absolute -inset-16 rounded-full bg-red-500/20 blur-xl animate-pulse" />
+            
+            {/* Critical Banner */}
+            <div
+              className="relative px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase shadow-2xl border-2 animate-bounce z-50 flex items-center gap-1.5"
+              style={{
+                color: '#FFFFFF',
+                borderColor: '#EF4444',
+                backgroundColor: 'rgba(185, 28, 28, 0.95)',
+                boxShadow: '0 0 25px rgba(239, 68, 68, 0.9)',
+              }}
+            >
+              <span>💥</span>
+              <span>¡GOLPE DEVASTADOR!</span>
+              <span>💥</span>
+            </div>
           </div>
         )}
       </div>

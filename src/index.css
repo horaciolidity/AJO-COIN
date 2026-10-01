@@ -159,3 +159,47 @@ body {
   animation: ssj-aura-rise 0.5s ease-out infinite;
 }
 
+/* 2D Anime Idle Breathing Animation */
+@keyframes animeBreath {
+  0%, 100% { transform: scale(1, 1) translateY(0); }
+  50% { transform: scale(1.03, 0.97) translateY(-3px); }
+}
+
+.animate-anime-breath {
+  animation: animeBreath 2.8s ease-in-out infinite;
+}
+
+/* Leaf Sway Physics Animation */
+@keyframes leafSway {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-5deg); }
+  75% { transform: rotate(5deg); }
+}
+
+.animate-leaf-sway {
+  animation: leafSway 4s ease-in-out infinite;
+}
+
+/* Manga Speedlines Flash for Heavy Critical Hits */
+@keyframes mangaSpeedlines {
+  0% { opacity: 0; transform: scale(0.8); }
+  50% { opacity: 0.9; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1.2); }
+}
+
+.animate-manga-crit {
+  animation: mangaSpeedlines 0.35s ease-out forwards;
+}
+
+/* Enemy Spawn Pop Animation */
+@keyframes enemyPop {
+  0% { transform: scale(0) rotate(-15deg); opacity: 0; }
+  70% { transform: scale(1.15) rotate(5deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+.animate-enemy-pop {
+  animation: enemyPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+

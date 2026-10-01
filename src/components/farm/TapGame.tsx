@@ -1,6 +1,7 @@
 import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { GarlicCharacter } from './GarlicCharacter';
+import { EnemyTargets } from './EnemyTargets';
 import { EnergyBar } from './EnergyBar';
 import { ComboMeter } from './ComboMeter';
 import { EvolutionCelebrationModal } from './EvolutionCelebrationModal';
@@ -168,8 +169,11 @@ export const TapGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Character */}
-      <GarlicCharacter comboCount={comboCount} />
+      {/* Main Character Stage & Interactive Enemy Targets */}
+      <div className="relative w-full flex items-center justify-center min-h-[260px]">
+        <EnemyTargets />
+        <GarlicCharacter comboCount={comboCount} />
+      </div>
 
       {/* Rhythm Bar */}
       {rhythmActive && (

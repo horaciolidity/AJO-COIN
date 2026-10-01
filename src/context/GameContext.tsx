@@ -298,6 +298,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsCharging(false);
     setChargeLevel(0);
 
+    // Dispatch enemy wipeout event on charged attack release
+    if (wasCharged && chargedRatio > 0.1) {
+      window.dispatchEvent(new CustomEvent('CHARGE_WIPEOUT_RELEASE'));
+    }
+
     // Execute the tap with charge bonus via ref
     handleTapRef.current(clientX, clientY, wasCharged && chargedRatio > 0.05 ? chargedRatio : 0);
   }, []);
@@ -373,19 +378,23 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (comboTimeoutRef.current) clearTimeout(comboTimeoutRef.current);
     comboTimeoutRef.current = setTimeout(() => setComboCount(0), 1200);
 
-    // Spawn floating particle text on Canvas
-    if (clientX && clientY) {
+    // Throttled Particle Spawning (Prevents UI lag during fast tapping)
+    const shouldSpawnParticle = isCritical || chargeRatio > 0.3 || isPerfectRhythm || comboCount % 5 === 0;
+
+    if (clientX && clientY && shouldSpawnParticle) {
       const particleText = isCritical
-        ? `CRITICO! +${tapPower} XP`
+        ? `💥 CRÍTICO! +${tapPower}`
         : chargeRatio > 0.5
-        ? `CARGADO! +${tapPower} XP`
-        : `+${tapPower} XP`;
-      const color = isCritical ? tapStyle.glowColor : chargeRatio > 0.5 ? '#FDE047' : '#34D399';
+        ? `🔥 CARGADO! +${tapPower}`
+        : isPerfectRhythm
+        ? `🎯 RITMO! +${tapPower}`
+        : `+${tapPower}`;
+      const color = isCritical ? '#EF4444' : chargeRatio > 0.5 ? '#FDE047' : isPerfectRhythm ? '#34D399' : '#A7F3D0';
       spawnCanvasParticle(clientX, clientY - 30, particleText, color);
 
-      // Spawn style emoji particle
-      if (isCritical || chargeRatio > 0.3) {
-        spawnCanvasParticle(clientX + 30, clientY - 60, tapStyle.particleEmoji, '#FFFFFF');
+      // Spawn style emoji particle on critical or charge
+      if (isCritical || chargeRatio > 0.5) {
+        spawnCanvasParticle(clientX + 25, clientY - 55, tapStyle.particleEmoji, '#FFFFFF');
       }
     }
 
