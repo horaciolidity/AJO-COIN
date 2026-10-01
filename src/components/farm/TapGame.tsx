@@ -54,7 +54,7 @@ export const TapGame: React.FC = () => {
   const activeTapStyle = TAP_STYLES_CATALOG.find((s) => s.id === (inventory.equippedTapStyle || 'NORMAL')) || TAP_STYLES_CATALOG[0];
 
   return (
-    <div className="relative flex flex-col items-center justify-between min-h-[calc(100vh-140px)] p-4 max-w-md mx-auto">
+    <div className="relative flex flex-col items-center justify-between h-[calc(100vh-130px)] p-3 max-w-md mx-auto overflow-hidden">
       {/* Evolution Celebration Modal */}
       {isEvolutionModalOpen && justEvolvedStage && (
         <EvolutionCelebrationModal
@@ -170,7 +170,7 @@ export const TapGame: React.FC = () => {
       </div>
 
       {/* Main Character Stage & Interactive Enemy Targets */}
-      <div className="relative w-full flex items-center justify-center min-h-[260px]">
+      <div className="relative w-full flex-1 flex items-center justify-center" style={{ minHeight: '220px', maxHeight: '320px' }}>
         <EnemyTargets />
         <GarlicCharacter comboCount={comboCount} />
       </div>
@@ -187,7 +187,7 @@ export const TapGame: React.FC = () => {
       )}
 
       {/* Bottom Controls */}
-      <div className="w-full space-y-2">
+      <div className="w-full space-y-1.5 pb-1">
         <EnergyBar />
 
         <div className="grid grid-cols-2 gap-2">

@@ -191,15 +191,56 @@ body {
   animation: mangaSpeedlines 0.35s ease-out forwards;
 }
 
-/* Enemy Spawn Pop Animation */
+/* ── Enemy Animations ─────────────────────────────────────────────── */
+
+/* Normal enemy floating bob */
+@keyframes enemyFloat {
+  0%, 100% { transform: translateY(0px) rotate(-2deg); }
+  25%       { transform: translateY(-6px) rotate(2deg); }
+  75%       { transform: translateY(4px) rotate(-1deg); }
+}
+
+/* Boss dramatic float */
+@keyframes enemyBossFloat {
+  0%, 100% { transform: translateY(0px) scale(1) rotate(-1deg); }
+  33%       { transform: translateY(-10px) scale(1.06) rotate(2deg); }
+  66%       { transform: translateY(5px) scale(0.97) rotate(-2deg); }
+}
+
+/* Enemy spawn pop */
 @keyframes enemyPop {
-  0% { transform: scale(0) rotate(-15deg); opacity: 0; }
-  70% { transform: scale(1.15) rotate(5deg); opacity: 1; }
-  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  0%   { transform: scale(0) rotate(-15deg); opacity: 0; }
+  70%  { transform: scale(1.2) rotate(5deg);  opacity: 1; }
+  100% { transform: scale(1) rotate(0deg);    opacity: 1; }
 }
-
 .animate-enemy-pop {
-  animation: enemyPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+  animation: enemyPop 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
+/* Hit flash red when enemy is tapped */
+@keyframes enemyHitFlash {
+  0%, 100% { filter: brightness(1) saturate(1); }
+  50%       { filter: brightness(2.5) saturate(0) sepia(1) hue-rotate(-30deg); }
+}
+.enemy-hit-flash {
+  animation: enemyHitFlash 0.15s ease-out;
+}
+
+/* Boss glow pulse */
+@keyframes bossGlow {
+  0%, 100% { box-shadow: 0 0 20px #dc262990, 0 0 40px #dc262940; }
+  50%       { box-shadow: 0 0 35px #ef4444cc, 0 0 70px #dc262660; }
+}
+.enemy-boss-glow {
+  animation: bossGlow 1.4s ease-in-out infinite;
+}
+
+/* Garlic damage flash */
+@keyframes garlicHitFlash {
+  0%, 100% { filter: brightness(1); }
+  50%       { filter: brightness(0.4) sepia(1) hue-rotate(-20deg) saturate(4); }
+}
+.garlic-hit-flash {
+  animation: garlicHitFlash 0.25s ease-out;
+}
 

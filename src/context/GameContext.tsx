@@ -181,6 +181,19 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user?.id]);
 
+  // Enemy shots → reduce XP (min 0)
+  useEffect(() => {
+    const onEnemyHit = (ev: Event) => {
+      const drain = (ev as CustomEvent<{ drain: number }>).detail?.drain ?? 2;
+      setStats(prev => ({
+        ...prev,
+        xp: Math.max(0, prev.xp - drain),
+      }));
+    };
+    window.addEventListener('ENEMY_HIT_GARLIC', onEnemyHit);
+    return () => window.removeEventListener('ENEMY_HIT_GARLIC', onEnemyHit);
+  }, []);
+
   // Auto-Save game state to localStorage & Supabase (debounced 3.5s to protect the DB)
   const cloudSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
