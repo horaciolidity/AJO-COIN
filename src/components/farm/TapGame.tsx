@@ -54,7 +54,7 @@ export const TapGame: React.FC = () => {
   const activeTapStyle = TAP_STYLES_CATALOG.find((s) => s.id === (inventory.equippedTapStyle || 'NORMAL')) || TAP_STYLES_CATALOG[0];
 
   return (
-    <div className="relative flex flex-col items-center justify-between h-[calc(100vh-130px)] p-3 max-w-md mx-auto overflow-hidden">
+    <div className="relative flex flex-col items-center justify-between min-h-[calc(100vh-140px)] p-3 max-w-md mx-auto space-y-3">
       {/* Evolution Celebration Modal */}
       {isEvolutionModalOpen && justEvolvedStage && (
         <EvolutionCelebrationModal
@@ -64,7 +64,7 @@ export const TapGame: React.FC = () => {
       )}
 
       {/* Top: Stage Badge + Combo + Buttons */}
-      <div className="w-full space-y-2">
+      <div className="w-full space-y-2 shrink-0">
         <ComboMeter comboCount={comboCount} />
 
         <div className="flex items-center justify-between px-1">
@@ -170,14 +170,14 @@ export const TapGame: React.FC = () => {
       </div>
 
       {/* Main Character Stage & Interactive Enemy Targets */}
-      <div className="relative w-full flex-1 flex items-center justify-center" style={{ minHeight: '220px', maxHeight: '320px' }}>
+      <div className="relative w-full flex-1 flex items-center justify-center py-2" style={{ minHeight: '190px', maxHeight: '280px' }}>
         <EnemyTargets />
         <GarlicCharacter comboCount={comboCount} />
       </div>
 
       {/* Rhythm Bar */}
       {rhythmActive && (
-        <div className="w-full px-2">
+        <div className="w-full px-2 shrink-0">
           <RhythmBar
             isActive={rhythmActive}
             onPerfectHit={() => showToast('⚡ PERFECT HIT!', '+2x XP bonus de ritmo activado', 'success')}
@@ -187,42 +187,42 @@ export const TapGame: React.FC = () => {
       )}
 
       {/* Bottom Controls */}
-      <div className="w-full space-y-1.5 pb-1">
+      <div className="w-full space-y-2 shrink-0 pt-1">
         <EnergyBar />
 
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-2.5">
           <button
             onClick={() => setActiveTab('inventory')}
-            className="glass-card-gold p-2.5 rounded-2xl flex items-center justify-between text-xs font-bold text-amber-200 hover:scale-[1.02] transition-transform"
+            className="glass-card-gold p-3 rounded-2xl flex items-center justify-between text-xs font-bold text-amber-200 hover:scale-[1.02] active:scale-95 transition-transform border border-amber-400/40 shadow-lg"
           >
-            <div className="flex items-center gap-2">
-              <span className="text-lg">📦</span>
-              <div className="text-left">
-                <span className="block text-[10px] text-amber-400/80 uppercase">Inventario</span>
-                <span>{inventory.rawGarlic} Ajos</span>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span className="text-xl shrink-0">📦</span>
+              <div className="text-left min-w-0">
+                <span className="block text-[10px] text-amber-400/90 uppercase tracking-wider font-extrabold">Inventario</span>
+                <span className="truncate block">{inventory.rawGarlic} Ajos</span>
               </div>
             </div>
-            <ArrowRight className="w-4 h-4 text-amber-400" />
+            <ArrowRight className="w-4 h-4 text-amber-400 shrink-0 ml-1" />
           </button>
 
           <button
             onClick={() => setActiveTab('skins')}
-            className="glass-card p-2.5 rounded-2xl flex items-center justify-between text-xs font-bold hover:scale-[1.02] transition-transform border"
+            className="glass-card p-3 rounded-2xl flex items-center justify-between text-xs font-bold hover:scale-[1.02] active:scale-95 transition-transform border shadow-lg"
             style={{
-              borderColor: `${activeTapStyle.color}40`,
+              borderColor: `${activeTapStyle.color}50`,
               color: activeTapStyle.color,
             }}
           >
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg border" style={{ backgroundColor: `${activeTapStyle.color}22`, borderColor: `${activeTapStyle.color}44` }}>
-                <Swords className="w-3.5 h-3.5" style={{ color: activeTapStyle.color }} />
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="p-1.5 rounded-lg border shrink-0" style={{ backgroundColor: `${activeTapStyle.color}22`, borderColor: `${activeTapStyle.color}44` }}>
+                <Swords className="w-4 h-4" style={{ color: activeTapStyle.color }} />
               </div>
-              <div className="text-left">
-                <span className="block text-[10px] opacity-70 uppercase">Ataque</span>
-                <span className="text-[10px] truncate max-w-[60px] block">{activeTapStyle.name.split(' ').slice(0, 2).join(' ')}</span>
+              <div className="text-left min-w-0">
+                <span className="block text-[10px] opacity-80 uppercase tracking-wider font-extrabold">Estilo Ataque</span>
+                <span className="text-[11px] truncate max-w-[80px] block font-bold">{activeTapStyle.name.split(' ')[0]}</span>
               </div>
             </div>
-            <span className="text-lg">{activeTapStyle.particleEmoji}</span>
+            <span className="text-xl shrink-0 ml-1">{activeTapStyle.particleEmoji}</span>
           </button>
         </div>
       </div>

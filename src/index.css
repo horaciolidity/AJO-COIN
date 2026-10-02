@@ -244,3 +244,27 @@ body {
   animation: garlicHitFlash 0.25s ease-out;
 }
 
+/* Enemy Death Explosion Animation */
+@keyframes enemyDeathExplode {
+  0% { transform: scale(1) rotate(0deg); opacity: 1; filter: brightness(2.5) contrast(1.5); }
+  50% { transform: scale(1.6) rotate(15deg); opacity: 0.8; filter: brightness(3) hue-rotate(-30deg); }
+  100% { transform: scale(2.2) rotate(30deg); opacity: 0; filter: brightness(4); }
+}
+
+.animate-enemy-death {
+  animation: enemyDeathExplode 0.45s ease-out forwards;
+}
+
+/* Floating Reward Text Animation */
+@keyframes floatUpFade {
+  0% { transform: translateY(0px) scale(0.8); opacity: 0; }
+  25% { transform: translateY(-12px) scale(1.15); opacity: 1; }
+  75% { transform: translateY(-30px) scale(1); opacity: 0.9; }
+  100% { transform: translateY(-50px) scale(0.85); opacity: 0; }
+}
+
+.animate-float-up-fade {
+  animation: floatUpFade 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+
+

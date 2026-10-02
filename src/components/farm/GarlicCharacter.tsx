@@ -94,8 +94,8 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
   // Size based on evolution
   const isSmall = currentStage.size === 'SMALL';
   const sizeClass = isSmall
-    ? 'w-36 h-36 sm:w-44 sm:h-44'
-    : 'w-64 h-64 sm:w-72 sm:h-72';
+    ? 'w-32 h-32 sm:w-36 sm:h-36'
+    : 'w-48 h-48 sm:w-56 sm:h-56';
 
   // Tremble/Rumble on Goku SSJ Charge or high combos
   const trembleClass = isCharging

@@ -55,7 +55,7 @@ export const AppContent: React.FC = () => {
       <TopPlayerBar />
 
       {/* Main Screen View */}
-      <main className="flex-1 w-full relative z-10 animate-fadeIn">
+      <main className="flex-1 w-full relative z-10 animate-fadeIn pb-20">
         {renderTabContent()}
       </main>
 
