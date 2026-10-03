@@ -13,27 +13,22 @@ interface Enemy {
   currentHp: number;
   rewardGc: number;
   rewardTeeth: number;
-  // Position (% of arena)
   x: number;
   y: number;
-  // Movement direction
   dx: number;
   dy: number;
-  // Animation phase offset
   phase: number;
-  // Speed multiplier
   speed: number;
-  // Whether this enemy is "hitting" (flashing)
   hitting: boolean;
 }
 
 interface Projectile {
   id: string;
-  x: number; // start x %
-  y: number; // start y %
-  tx: number; // target x %
-  ty: number; // target y %
-  progress: number; // 0 → 1
+  x: number;
+  y: number;
+  tx: number;
+  ty: number;
+  progress: number;
   color: string;
 }
 
@@ -47,29 +42,78 @@ interface DeathEffect {
   rewardTeeth: number;
 }
 
+// Wave state machine
+type WavePhase = 'IDLE' | 'SPAWNING' | 'FIGHTING' | 'COOLDOWN';
+
 // ── Config per type ────────────────────────────────────────────────────────
-// Balanced base stats: Enemies are easier to defeat and spawn gradually
 const ENEMY_DEFS = {
-  BUG:  { name: 'Mosca Plaga',    emoji: '🦟', baseHp: 18, gc: 25,  teeth: 2,  speed: 0.35, color: '#ef4444' },
-  WORM: { name: 'Oruga Veneno',   emoji: '🐛', baseHp: 12, gc: 15,  teeth: 1,  speed: 0.25, color: '#a16207' },
-  MOLD: { name: 'Hongo Tóxico',   emoji: '🍄', baseHp: 25, gc: 40,  teeth: 3,  speed: 0.20, color: '#7e22ce' },
-  BOSS: { name: 'JEFE PLAGA',     emoji: '👾', baseHp: 75, gc: 150, teeth: 10, speed: 0.30, color: '#dc2626' },
+  BUG:  { name: 'Mosca Plaga',  emoji: '🦟', baseHp: 18,  gc: 25,  teeth: 2,  speed: 0.35, color: '#ef4444' },
+  WORM: { name: 'Oruga Veneno', emoji: '🐛', baseHp: 12,  gc: 15,  teeth: 1,  speed: 0.25, color: '#a16207' },
+  MOLD: { name: 'Hongo Tóxico', emoji: '🍄', baseHp: 25,  gc: 40,  teeth: 3,  speed: 0.20, color: '#7e22ce' },
+  BOSS: { name: 'JEFE PLAGA',   emoji: '👾', baseHp: 75,  gc: 150, teeth: 10, speed: 0.30, color: '#dc2626' },
 } as const;
 
-// Gradual enemy cap by level (Silver tier levels 4-6 have max 2 enemies)
-function maxEnemiesByLevel(level: number): number {
-  if (level <= 3) return 1;
-  if (level <= 6) return 2; // Silver tier: maximum 2 enemies at once
-  if (level <= 9) return 3;
-  return 4;
+// ── Wave helpers ──────────────────────────────────────────────────────────
+// XP milestones that trigger a new wave
+const XP_MILESTONES = [50, 150, 300, 500, 800, 1200, 1800, 2600, 3600, 5000];
+
+// Stagger between each enemy spawn inside a wave (ms)
+const SPAWN_STAGGER_MS = 1800;
+
+function enemiesForMilestone(idx: number): number {
+  if (idx <= 1) return 1;
+  if (idx <= 3) return 2;
+  if (idx <= 6) return 3;
+  return Math.min(4, 2 + Math.floor(idx / 3));
 }
 
-// Spawn interval in ms — gradual pacing so enemies spawn one by one
-function spawnIntervalByLevel(level: number): number {
-  return Math.max(8000, 16000 - level * 500);
+function shouldSpawnBoss(idx: number, level: number): boolean {
+  if (idx === 2 || idx === 5) return true;
+  if (idx >= 8) return Math.random() < 0.6;
+  return Math.random() < 0.05 + level * 0.008;
 }
 
-// XP drain per shot (reduced so it doesn't drain player progression instantly)
+// Cooldown after wave is cleared (ms) — between 6s and 14s
+function waveCooldownMs(idx: number): number {
+  return Math.max(6000, 14000 - idx * 800);
+}
+
+function buildWaveEnemies(idx: number, level: number): Omit<Enemy, 'id'>[] {
+  const count = enemiesForMilestone(idx);
+  const withBoss = shouldSpawnBoss(idx, level);
+  const result: Omit<Enemy, 'id'>[] = [];
+  const hpMult = 1 + (level - 1) * 0.08;
+  for (let i = 0; i < count; i++) {
+    let type: Enemy['type'];
+    if (i === 0 && withBoss) {
+      type = 'BOSS';
+    } else {
+      const roll = Math.random();
+      if (roll < 0.50) type = 'BUG';
+      else if (roll < 0.80) type = 'WORM';
+      else type = 'MOLD';
+    }
+    const def = ENEMY_DEFS[type];
+    const edge = Math.floor(Math.random() * 4);
+    let x = 50, y = 50, dx = 0, dy = 0;
+    const speed = def.speed + Math.random() * 0.1;
+    if (edge === 0) { x = Math.random() * 80 + 10; y = 5;  dx = (Math.random() - 0.5) * 0.25; dy = speed; }
+    if (edge === 1) { x = Math.random() * 80 + 10; y = 90; dx = (Math.random() - 0.5) * 0.25; dy = -speed; }
+    if (edge === 2) { x = 5;  y = Math.random() * 70 + 10; dx = speed; dy = (Math.random() - 0.5) * 0.25; }
+    if (edge === 3) { x = 90; y = Math.random() * 70 + 10; dx = -speed; dy = (Math.random() - 0.5) * 0.25; }
+    result.push({
+      type, name: def.name, emoji: def.emoji,
+      maxHp: Math.floor(def.baseHp * hpMult),
+      currentHp: Math.floor(def.baseHp * hpMult),
+      rewardGc: def.gc, rewardTeeth: def.teeth,
+      x, y, dx, dy,
+      phase: Math.random() * Math.PI * 2,
+      speed, hitting: false,
+    });
+  }
+  return result;
+}
+
 function enemyShotXpDrain(type: Enemy['type']): number {
   const base = { BUG: 1, WORM: 1, MOLD: 2, BOSS: 4 };
   return base[type];
@@ -78,80 +122,132 @@ function enemyShotXpDrain(type: Enemy['type']): number {
 // ── Component ──────────────────────────────────────────────────────────────
 export const EnemyTargets: React.FC = () => {
   const { stats, showToast } = useGame();
+
+  // ── All state hooks at top level (fixes React error #185) ────────────
   const [enemies, setEnemies] = useState<Enemy[]>([]);
   const [projectiles, setProjectiles] = useState<Projectile[]>([]);
   const [deathEffects, setDeathEffects] = useState<DeathEffect[]>([]);
-  const [hitFlash, setHitFlash] = useState(false); // flash garlic when hit
+  const [hitFlash, setHitFlash] = useState(false);
+  const [wavePhase, setWavePhase] = useState<WavePhase>('IDLE');
+  const [cooldownRemaining, setCooldownRemaining] = useState(0);
+  const [currentMilestoneIdx, setCurrentMilestoneIdx] = useState(0);
+
+  // ── Refs ────────────────────────────────────────────────────────────
   const animFrameRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
-  const shotTimersRef = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const shotTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const wavePhaseRef = useRef<WavePhase>('IDLE');
+  const milestoneIdxRef = useRef<number>(0);
+  const prevXpRef = useRef<number>(stats.xp);
+  const cooldownTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cooldownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const spawnQueueRef = useRef<Omit<Enemy, 'id'>[]>([]);
+  const spawnStaggerTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Helper to trigger visible enemy death explosion & score popups
-  const triggerDeathEffect = (enemy: Enemy) => {
+  // Keep refs in sync with state
+  useEffect(() => { wavePhaseRef.current = wavePhase; }, [wavePhase]);
+  useEffect(() => { milestoneIdxRef.current = currentMilestoneIdx; }, [currentMilestoneIdx]);
+
+  // ── Death effect helper ──────────────────────────────────────────────
+  const triggerDeathEffect = useCallback((enemy: Enemy) => {
     const effect: DeathEffect = {
       id: 'd_' + Date.now() + Math.random().toString(36).slice(2, 5),
-      x: enemy.x,
-      y: enemy.y,
-      name: enemy.name,
-      emoji: enemy.emoji,
-      rewardGc: enemy.rewardGc,
-      rewardTeeth: enemy.rewardTeeth,
+      x: enemy.x, y: enemy.y, name: enemy.name, emoji: enemy.emoji,
+      rewardGc: enemy.rewardGc, rewardTeeth: enemy.rewardTeeth,
     };
     setDeathEffects(prev => [...prev.slice(-6), effect]);
+    setTimeout(() => { setDeathEffects(prev => prev.filter(d => d.id !== effect.id)); }, 850);
+  }, []);
 
-    // Clean up death effect after 850ms
-    setTimeout(() => {
-      setDeathEffects(prev => prev.filter(d => d.id !== effect.id));
-    }, 850);
-  };
+  // ── Spawn next enemy from queue (staggered) ──────────────────────────
+  const spawnNextFromQueue = useCallback(() => {
+    const queue = spawnQueueRef.current;
+    if (queue.length === 0) return;
+    const def = queue.shift()!;
+    const enemy: Enemy = { ...def, id: 'e_' + Date.now() + Math.random().toString(36).slice(2, 5) };
+    if (enemy.type === 'BOSS') showToast('👾 ¡JEFE PLAGA!', 'Elimínalo antes de que destruya tu ajo', 'warning');
+    setEnemies(prev => [...prev, enemy]);
+    if (queue.length > 0) {
+      spawnStaggerTimerRef.current = setTimeout(spawnNextFromQueue, SPAWN_STAGGER_MS);
+    } else {
+      setWavePhase('FIGHTING');
+    }
+  }, [showToast]);
 
-  // ── Spawn ────────────────────────────────────────────────────────────────
-  const spawnEnemy = useCallback(() => {
-    setEnemies(prev => {
-      const cap = maxEnemiesByLevel(stats.level);
-      if (prev.length >= cap) return prev;
+  // ── Start cooldown after wave cleared ────────────────────────────────
+  const startCooldown = useCallback((idx: number) => {
+    const cd = waveCooldownMs(idx);
+    setCooldownRemaining(cd);
+    setWavePhase('COOLDOWN');
+    if (cooldownIntervalRef.current) clearInterval(cooldownIntervalRef.current);
+    cooldownIntervalRef.current = setInterval(() => {
+      setCooldownRemaining(prev => {
+        const next = prev - 500;
+        if (next <= 0) { if (cooldownIntervalRef.current) clearInterval(cooldownIntervalRef.current); return 0; }
+        return next;
+      });
+    }, 500);
+    if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
+    cooldownTimerRef.current = setTimeout(() => {
+      setWavePhase('IDLE');
+      showToast('😮‍💨 Zona tranquila', 'Sigue tapeando para el siguiente hito', 'info');
+    }, cd);
+  }, [showToast]);
 
-      const hasBoss = prev.some(e => e.type === 'BOSS');
-      const isBoss = !hasBoss && Math.random() < 0.05 + stats.level * 0.008;
+  // ── Start a wave ─────────────────────────────────────────────────────
+  const startWave = useCallback((milestoneIdx: number, level: number) => {
+    if (wavePhaseRef.current === 'SPAWNING' || wavePhaseRef.current === 'FIGHTING') return;
+    const waveDefs = buildWaveEnemies(milestoneIdx, level);
+    const hasBoss = waveDefs.some(e => e.type === 'BOSS');
+    const count = waveDefs.length;
+    showToast(
+      hasBoss ? '👾 ¡OLEADA CON JEFE!' : `⚔️ ¡OLEADA ${milestoneIdx + 1}!`,
+      `${count} enemigo${count > 1 ? 's' : ''} en camino...`,
+      'warning'
+    );
+    spawnQueueRef.current = waveDefs;
+    setWavePhase('SPAWNING');
+    spawnStaggerTimerRef.current = setTimeout(spawnNextFromQueue, 600);
+  }, [showToast, spawnNextFromQueue]);
 
-      let type: Enemy['type'];
-      if (isBoss) {
-        type = 'BOSS';
-      } else {
-        const roll = Math.random();
-        if (roll < 0.50) type = 'BUG';
-        else if (roll < 0.80) type = 'WORM';
-        else type = 'MOLD';
-      }
+  // ── Detect XP milestones → trigger wave ──────────────────────────────
+  useEffect(() => {
+    const prevXp = prevXpRef.current;
+    const currXp = stats.xp;
+    prevXpRef.current = currXp;
+    const phase = wavePhaseRef.current;
+    if (phase === 'SPAWNING' || phase === 'FIGHTING' || phase === 'COOLDOWN') return;
+    const nextIdx = milestoneIdxRef.current;
+    if (nextIdx >= XP_MILESTONES.length) return;
+    const threshold = XP_MILESTONES[nextIdx];
+    if (prevXp < threshold && currXp >= threshold) {
+      setCurrentMilestoneIdx(nextIdx + 1);
+      milestoneIdxRef.current = nextIdx + 1;
+      startWave(nextIdx, stats.level);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stats.xp, stats.level, startWave]);
 
-      const def = ENEMY_DEFS[type];
-      const hpMult = 1 + (stats.level - 1) * 0.08;
+  // ── Auto-detect wave cleared ─────────────────────────────────────────
+  useEffect(() => {
+    if (wavePhase === 'FIGHTING' && enemies.length === 0) {
+      triggerHaptic('success');
+      showToast('🎉 ¡Oleada eliminada!', 'Descansá, la próxima viene pronto...', 'success');
+      startCooldown(milestoneIdxRef.current - 1);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enemies.length, wavePhase]);
 
-      // Spawn on a random edge
-      const edge = Math.floor(Math.random() * 4);
-      let x = 0, y = 0, dx = 0, dy = 0;
-      const speed = def.speed + Math.random() * 0.1;
-      if (edge === 0) { x = Math.random() * 80 + 10; y = 5;  dx = (Math.random()-0.5)*0.25; dy = speed; }
-      if (edge === 1) { x = Math.random() * 80 + 10; y = 90; dx = (Math.random()-0.5)*0.25; dy = -speed; }
-      if (edge === 2) { x = 5;  y = Math.random() * 70 + 10; dx = speed; dy = (Math.random()-0.5)*0.25; }
-      if (edge === 3) { x = 90; y = Math.random() * 70 + 10; dx = -speed; dy = (Math.random()-0.5)*0.25; }
-
-      const enemy: Enemy = {
-        id: 'e_' + Date.now() + Math.random().toString(36).slice(2, 5),
-        type, name: def.name, emoji: def.emoji,
-        maxHp: Math.floor(def.baseHp * hpMult),
-        currentHp: Math.floor(def.baseHp * hpMult),
-        rewardGc: def.gc, rewardTeeth: def.teeth,
-        x, y, dx, dy,
-        phase: Math.random() * Math.PI * 2,
-        speed,
-        hitting: false,
-      };
-
-      if (isBoss) showToast('👾 ¡JEFE PLAGA!', 'Elimínalo antes de que moleste a tu ajo', 'warning');
-      return [...prev, enemy];
-    });
-  }, [stats.level, showToast]);
+  // ── Global cleanup on unmount ────────────────────────────────────────
+  useEffect(() => {
+    return () => {
+      cancelAnimationFrame(animFrameRef.current);
+      shotTimersRef.current.forEach(t => clearTimeout(t));
+      if (cooldownTimerRef.current) clearTimeout(cooldownTimerRef.current);
+      if (cooldownIntervalRef.current) clearInterval(cooldownIntervalRef.current);
+      if (spawnStaggerTimerRef.current) clearTimeout(spawnStaggerTimerRef.current);
+    };
+  }, []);
 
   // ── Movement loop (rAF) ───────────────────────────────────────────────────
   useEffect(() => {
@@ -253,13 +349,6 @@ export const EnemyTargets: React.FC = () => {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enemies.map(e => e.id).join('|'), scheduleShotForEnemy]);
-
-  // ── Spawn interval ────────────────────────────────────────────────────────
-  useEffect(() => {
-    spawnEnemy();
-    const interval = setInterval(spawnEnemy, spawnIntervalByLevel(stats.level));
-    return () => clearInterval(interval);
-  }, [spawnEnemy, stats.level]);
 
   // ── Wipeout listener (charged attack) ────────────────────────────────────
   useEffect(() => {
@@ -488,12 +577,19 @@ export const EnemyTargets: React.FC = () => {
         );
       })}
 
-      {/* Level indicator overlay */}
+      {/* Status overlay when no enemies */}
       {enemies.length === 0 && (
-        <div className="absolute bottom-8 inset-x-0 flex justify-center pointer-events-none">
-          <span className="text-[10px] text-white/30 animate-pulse">
-            Zona tranquila... por ahora
-          </span>
+        <div className="absolute bottom-8 inset-x-0 flex flex-col items-center pointer-events-none gap-1">
+          {wavePhase === 'COOLDOWN' && cooldownRemaining > 0 && (
+            <span className="text-[10px] text-orange-300/70 animate-pulse font-bold">
+              ⏳ Próxima oleada en {Math.ceil(cooldownRemaining / 1000)}s
+            </span>
+          )}
+          {wavePhase === 'IDLE' && (
+            <span className="text-[10px] text-white/30 animate-pulse">
+              Zona tranquila... tapea para subir XP
+            </span>
+          )}
         </div>
       )}
     </div>
