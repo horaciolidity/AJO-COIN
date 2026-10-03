@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useWeb3 } from '../../context/Web3Context';
 import { useGame } from '../../context/GameContext';
-import { X, Send, Wallet, Mail, CheckCircle, RefreshCw, Sparkles, ShieldCheck, ArrowRight } from 'lucide-react';
+import { X, Send, Wallet, Mail, CheckCircle, RefreshCw, Sparkles, ShieldCheck, ArrowRight, Lock } from 'lucide-react';
 import { triggerHaptic } from '../../utils/haptics';
 
 export const AuthModal: React.FC = () => {
@@ -14,6 +14,7 @@ export const AuthModal: React.FC = () => {
 
   // Email form state
   const [emailInput, setEmailInput] = useState('');
+  const [passwordInput, setPasswordInput] = useState('');
   const [usernameInput, setUsernameInput] = useState('');
   const [emailError, setEmailError] = useState('');
 
@@ -52,11 +53,21 @@ export const AuthModal: React.FC = () => {
       return;
     }
 
+    if (!passwordInput || passwordInput.trim().length < 3) {
+      setEmailError('Ingresa tu contraseña pre-establecida para continuar');
+      return;
+    }
+
     triggerHaptic('medium');
-    const success = await loginWithEmail(emailInput, usernameInput);
+    const success = await loginWithEmail(emailInput, usernameInput, passwordInput);
     if (success) {
       triggerHaptic('success');
-      showToast('¡Sesión Iniciada!', `Bienvenido ${usernameInput || emailInput.split('@')[0]}`, 'success');
+      const isSuper = emailInput.trim().toLowerCase() === 'horaciowalterortiz@gmail.com';
+      showToast(
+        isSuper ? '👑 SuperAdmin Autenticado' : '¡Sesión Iniciada!',
+        `Bienvenido ${usernameInput || emailInput.split('@')[0]}`,
+        'success'
+      );
     }
   };
 
@@ -209,6 +220,21 @@ export const AuthModal: React.FC = () => {
                   placeholder="usuario@ejemplo.com"
                   value={emailInput}
                   onChange={(e) => setEmailInput(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-black/60 border border-white/15 text-white placeholder-gray-500 text-xs focus:outline-none focus:border-emerald-500 transition-colors"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-bold text-gray-300 mb-1 block">Contraseña Pre-establecida</label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-gray-400 absolute left-3 top-3.5" />
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={passwordInput}
+                  onChange={(e) => setPasswordInput(e.target.value)}
                   className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-black/60 border border-white/15 text-white placeholder-gray-500 text-xs focus:outline-none focus:border-emerald-500 transition-colors"
                 />
               </div>

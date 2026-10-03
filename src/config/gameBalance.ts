@@ -474,3 +474,21 @@ export function checkEvolutionRequirements(
     missing,
   };
 }
+
+export interface HitPowerTier {
+  level: number;
+  bonusPower: number;
+  costTeeth: number;
+  label: string;
+}
+
+export const HIT_POWER_TIERS: HitPowerTier[] = [
+  { level: 1, bonusPower: 1.5, costTeeth: 90, label: '+1.5 Poder de Golpe' },
+  { level: 2, bonusPower: 2.0, costTeeth: 120, label: '+2.0 Poder de Golpe' },
+  { level: 3, bonusPower: 2.5, costTeeth: 200, label: '+2.5 Poder de Golpe' },
+  { level: 4, bonusPower: 3.5, costTeeth: 400, label: '+3.5 Poder de Golpe' },
+  { level: 5, bonusPower: 5.5, costTeeth: 750, label: '+5.5 Poder de Golpe' },
+  { level: 6, bonusPower: 6.0, costTeeth: 1200, label: '+6.0 Poder de Golpe' },
+  { level: 7, bonusPower: 7.5, costTeeth: 1800, label: '+7.5 Poder de Golpe (MÁXIMO)' },
+];
+

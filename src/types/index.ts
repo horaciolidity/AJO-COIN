@@ -148,6 +148,7 @@ export interface InventoryState {
   unlockedSkins: SkinId[];
   equippedTapStyle: TapStyleId;
   unlockedTapStyles: TapStyleId[];
+  hitPowerLevel?: number;
   teethTransactions: GarlicTeethTransaction[];
 }
 

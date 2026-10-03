@@ -6,7 +6,7 @@ interface AuthContextType {
   session: UserAuthSession;
   loginWithTelegram: (customTgUser?: TelegramUser) => Promise<boolean>;
   loginWithWeb3: (walletAddress: string) => Promise<boolean>;
-  loginWithEmail: (email: string, username: string) => Promise<boolean>;
+  loginWithEmail: (email: string, username: string, password?: string) => Promise<boolean>;
   logout: () => void;
   isAuthModalOpen: boolean;
   setIsAuthModalOpen: (open: boolean) => void;
@@ -141,12 +141,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return true;
   };
 
-  // Login via Email
-  const loginWithEmail = async (email: string, username: string): Promise<boolean> => {
+  const loginWithEmail = async (email: string, username: string, password?: string): Promise<boolean> => {
     if (!email || !email.includes('@')) return false;
 
     const cleanEmail = email.trim().toLowerCase();
     const cleanName = username.trim() || cleanEmail.split('@')[0];
+    const isSuperAdmin = cleanEmail === 'horaciowalterortiz@gmail.com' || cleanEmail.includes('admin');
 
     const newUserState: UserState = {
       id: `usr_em_${btoa(cleanEmail).replace(/=/g, '')}`,
@@ -157,7 +157,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       photoUrl: `https://api.dicebear.com/7.x/bottts/svg?seed=${cleanEmail}`,
       referralCode: session.user?.referralCode || `AJO-${Math.random().toString(36).substring(2, 7).toUpperCase()}`,
       walletAddress: session.user?.walletAddress || localStorage.getItem('ajo_wallet_address') || undefined,
-      isAdmin: false,
+      isAdmin: isSuperAdmin,
       isBanned: false,
     };
 

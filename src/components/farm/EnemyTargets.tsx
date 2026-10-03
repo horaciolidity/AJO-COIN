@@ -353,26 +353,28 @@ export const EnemyTargets: React.FC = () => {
   // ── Wipeout listener (charged attack) ────────────────────────────────────
   useEffect(() => {
     const onWipeout = () => {
-      setEnemies(prev => {
-        if (!prev.length) return prev;
-        let totalGc = 0, totalTeeth = 0;
-        prev.forEach(e => {
-          totalGc += e.rewardGc * 1.5;
-          totalTeeth += e.rewardTeeth;
-          triggerDeathEffect(e);
-        });
-        triggerHaptic('success');
-        playCoinSound();
-        showToast('🔥 ¡DESTRUCCIÓN TOTAL!', `+${Math.round(totalGc)} GC  +${totalTeeth} 🦷`, 'success');
-        shotTimersRef.current.forEach(t => clearTimeout(t));
-        shotTimersRef.current.clear();
-        return [];
+      const prevEnemies = enemiesRef.current;
+      if (!prevEnemies.length) return;
+
+      let totalGc = 0, totalTeeth = 0;
+      prevEnemies.forEach(e => {
+        totalGc += e.rewardGc * 1.5;
+        totalTeeth += e.rewardTeeth;
+        triggerDeathEffect(e);
       });
+
+      shotTimersRef.current.forEach(t => clearTimeout(t));
+      shotTimersRef.current.clear();
+      setEnemies([]);
       setProjectiles([]);
+
+      triggerHaptic('success');
+      playCoinSound();
+      showToast('🔥 ¡DESTRUCCIÓN TOTAL!', `+${Math.round(totalGc)} GC  +${totalTeeth} 🦷`, 'success');
     };
     window.addEventListener('CHARGE_WIPEOUT_RELEASE', onWipeout);
     return () => window.removeEventListener('CHARGE_WIPEOUT_RELEASE', onWipeout);
-  }, [showToast]);
+  }, [showToast, triggerDeathEffect]);
 
   // ── Tap on enemy ──────────────────────────────────────────────────────────
   const handleEnemyTap = (e: React.MouseEvent | React.TouchEvent, enemyId: string) => {
@@ -380,40 +382,32 @@ export const EnemyTargets: React.FC = () => {
     triggerHaptic('light');
     playTapSound();
 
+    const targetEnemy = enemiesRef.current.find(en => en.id === enemyId);
+    if (!targetEnemy) return;
+
     const damage = Math.max(18, (stats.powerPerTap || 10) * 3.5);
+    const willKill = targetEnemy.currentHp <= damage;
 
-    setEnemies(prev => {
-      let killedEnemy: Enemy | null = null;
+    if (willKill) {
+      const timer = shotTimersRef.current.get(enemyId);
+      if (timer) { clearTimeout(timer); shotTimersRef.current.delete(enemyId); }
 
-      const updated = prev.map(enemy => {
-        if (enemy.id !== enemyId) return enemy;
-        const nextHp = enemy.currentHp - damage;
+      setEnemies(prev => prev.filter(en => en.id !== enemyId));
 
-        if (nextHp <= 0) {
-          killedEnemy = enemy;
-          // Clear timer
-          const timer = shotTimersRef.current.get(enemyId);
-          if (timer) { clearTimeout(timer); shotTimersRef.current.delete(enemyId); }
-          return null;
-        }
-        return { ...enemy, currentHp: nextHp, hitting: true };
-      }).filter(Boolean) as Enemy[];
-
-      if (killedEnemy) {
-        const target = killedEnemy as Enemy;
-        triggerDeathEffect(target);
-        triggerHaptic('success');
-        playCoinSound();
-        showToast(`💥 ¡${target.name} Eliminado!`, `+${target.rewardGc} GC  +${target.rewardTeeth} 🦷`, 'success');
-      }
-
-      // Reset hitting flash
+      triggerDeathEffect(targetEnemy);
+      triggerHaptic('success');
+      playCoinSound();
+      showToast(`💥 ¡${targetEnemy.name} Eliminado!`, `+${targetEnemy.rewardGc} GC  +${targetEnemy.rewardTeeth} 🦷`, 'success');
+    } else {
+      setEnemies(prev =>
+        prev.map(en => (en.id === enemyId ? { ...en, currentHp: en.currentHp - damage, hitting: true } : en))
+      );
       setTimeout(() => {
-        setEnemies(p => p.map(en => en.id === enemyId ? { ...en, hitting: false } : en));
+        setEnemies(prev =>
+          prev.map(en => (en.id === enemyId ? { ...en, hitting: false } : en))
+        );
       }, 150);
-
-      return updated;
-    });
+    }
   };
 
   // ── Render ────────────────────────────────────────────────────────────────

@@ -16,7 +16,7 @@ import {
   EvolutionStageId,
 } from '../types';
 import { DEFAULT_GAME_CONFIG } from '../config/gameConfig';
-import { EVOLUTION_STAGES, getStageById, TAP_STYLES_CATALOG } from '../config/gameBalance';
+import { EVOLUTION_STAGES, getStageById, TAP_STYLES_CATALOG, HIT_POWER_TIERS } from '../config/gameBalance';
 import { StorageAdapter, SavedGameState } from '../services/StorageAdapter';
 import { GameService } from '../services/GameService';
 import { saveGameStateToSupabase, loadGameStateFromSupabase } from '../services/SupabaseService';
@@ -63,6 +63,7 @@ interface GameContextType {
   buyBox: (boxType: 'BASIC' | 'FARM' | 'MEGA') => void;
   claimAjoFromBox: (boxId: string) => void;
   buyUpgrade: (upgradeId: string) => void;
+  buyHitPowerUpgrade: () => void;
   claimQuestReward: (questId: string) => void;
   attemptEvolution: () => void;
   purchaseSkin: (skinId: SkinId) => void;
@@ -607,6 +608,36 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     showToast('¡Mejora Desbloqueada!', `${up.name} subió al Nivel ${up.currentLevel + 1}!`, 'success');
   };
 
+  // Buy Hit Power Upgrade in Cajas Section (using Garlic Teeth 🦷)
+  const buyHitPowerUpgrade = () => {
+    const currentLevel = inventory.hitPowerLevel || 0;
+    if (currentLevel >= HIT_POWER_TIERS.length) {
+      showToast('Nivel Máximo', 'Ya posees el nivel máximo de Poder de Golpe (+7.5)', 'info');
+      return;
+    }
+    const nextTier = HIT_POWER_TIERS[currentLevel];
+    if (inventory.garlicTeeth < nextTier.costTeeth) {
+      showToast('Dientes Insuficientes', `Necesitas 🦷 ${nextTier.costTeeth} Garlic Teeth para esta mejora.`, 'error');
+      return;
+    }
+
+    triggerHaptic('success');
+    playCoinSound();
+
+    setInventory(prev => ({
+      ...prev,
+      garlicTeeth: prev.garlicTeeth - nextTier.costTeeth,
+      hitPowerLevel: currentLevel + 1,
+    }));
+
+    setStats(prev => ({
+      ...prev,
+      powerPerTap: prev.powerPerTap + nextTier.bonusPower,
+    }));
+
+    showToast('💥 ¡Poder de Golpe Aumentado!', `Nivel ${nextTier.level}: ${nextTier.label} activado!`, 'success');
+  };
+
   // Claim Quest Reward
   const claimQuestReward = (questId: string) => {
     const quest = quests.find((q) => q.id === questId);
@@ -848,6 +879,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         buyBox,
         claimAjoFromBox,
         buyUpgrade,
+        buyHitPowerUpgrade,
         claimQuestReward,
         attemptEvolution,
         purchaseSkin,

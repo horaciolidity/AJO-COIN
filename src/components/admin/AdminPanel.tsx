@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { useGame } from '../../context/GameContext';
 import { DEFAULT_GAME_CONFIG } from '../../config/gameConfig';
-import { ShieldCheck, Save, Users, Settings, AlertOctagon, Activity, Lock } from 'lucide-react';
+import { ShieldCheck, Save, Settings, AlertOctagon, Lock, Timer } from 'lucide-react';
 
 export const AdminPanel: React.FC = () => {
   const { user, showToast } = useGame();
+
   const [config, setConfig] = useState({
     tapsPerGarlic: DEFAULT_GAME_CONFIG.tapsPerGarlic,
     garlicSellPrice: DEFAULT_GAME_CONFIG.garlicSellPrice,
@@ -14,6 +15,14 @@ export const AdminPanel: React.FC = () => {
     megaBoxPrice: DEFAULT_GAME_CONFIG.boxPrices.MEGA,
   });
 
+  const [airdropDateInput, setAirdropDateInput] = useState(() => {
+    const saved = localStorage.getItem('ajo_airdrop_target_date');
+    if (saved) return saved.slice(0, 16);
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().slice(0, 16);
+  });
+
   const [banUserId, setBanUserId] = useState('');
   const [banReason, setBanReason] = useState('');
 
@@ -21,19 +30,26 @@ export const AdminPanel: React.FC = () => {
     return (
       <div className="p-8 text-center space-y-3">
         <Lock className="w-12 h-12 text-red-500 mx-auto" />
-        <h2 className="text-xl font-bold text-white">Access Denied</h2>
-        <p className="text-xs text-gray-400">Admin privileges required to access this panel.</p>
+        <h2 className="text-xl font-bold text-white">Acceso Denegado</h2>
+        <p className="text-xs text-gray-400">Se requieren permisos de SuperAdmin para acceder a este panel.</p>
       </div>
     );
   }
 
   const handleSaveConfig = () => {
-    showToast('Admin Config Saved!', 'Game economic parameters updated successfully.', 'success');
+    showToast('¡Configuración Guardada!', 'Parámetros económicos del juego actualizados.', 'success');
+  };
+
+  const handleSaveAirdropDate = () => {
+    if (!airdropDateInput) return;
+    const isoDate = new Date(airdropDateInput).toISOString();
+    localStorage.setItem('ajo_airdrop_target_date', isoDate);
+    showToast('¡Fecha de Airdrop Actualizada!', `Nueva fecha objetivo: ${new Date(isoDate).toLocaleString()}`, 'success');
   };
 
   const handleBanUser = () => {
     if (!banUserId) return;
-    showToast('User Suspended', `User ${banUserId} has been banned. Reason: ${banReason || 'Rule violation'}`, 'warning');
+    showToast('Usuario Suspendido', `Usuario ${banUserId} ha sido suspendido. Razon: ${banReason || 'Infracción'}`, 'warning');
     setBanUserId('');
     setBanReason('');
   };
@@ -44,21 +60,47 @@ export const AdminPanel: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6 text-purple-400" /> ADMIN CONTROL PANEL
+            <ShieldCheck className="w-6 h-6 text-purple-400" /> SUPERADMIN PANEL
           </h2>
-          <p className="text-xs text-gray-400">Configure game economics, user bans & anti-cheat settings</p>
+          <p className="text-xs text-purple-300 font-medium">SuperAdmin: {user.email || user.username}</p>
         </div>
       </div>
 
       {/* Analytics Overview Cards */}
       <div className="grid grid-cols-2 gap-2">
         <div className="glass-panel p-3 rounded-2xl border border-purple-500/30 text-center">
-          <span className="text-[10px] text-gray-400 block uppercase">Total Registered DAU</span>
+          <span className="text-[10px] text-gray-400 block uppercase">Usuarios Registrados</span>
           <span className="text-lg font-black text-white">12,450 Users</span>
         </div>
         <div className="glass-panel p-3 rounded-2xl border border-purple-500/30 text-center">
-          <span className="text-[10px] text-gray-400 block uppercase">Anti-Cheat Flags</span>
-          <span className="text-lg font-black text-amber-400">3 Flags</span>
+          <span className="text-[10px] text-gray-400 block uppercase">Alertas Anti-Cheat</span>
+          <span className="text-lg font-black text-amber-400">0 Flags</span>
+        </div>
+      </div>
+
+      {/* Airdrop Target Date Configuration */}
+      <div className="glass-panel p-4 rounded-3xl border border-amber-500/30 space-y-3 bg-gradient-to-br from-amber-950/20 via-black/40 to-purple-950/20">
+        <h3 className="font-extrabold text-sm text-amber-300 flex items-center gap-2">
+          <Timer className="w-4 h-4 text-amber-400" /> CONFIGURACIÓN DE FECHA AIRDROP
+        </h3>
+
+        <div className="space-y-2 text-xs">
+          <div>
+            <label className="text-gray-300 font-semibold block mb-1">Fecha y Hora de Inicio de Airdrop</label>
+            <input
+              type="datetime-local"
+              value={airdropDateInput}
+              onChange={(e) => setAirdropDateInput(e.target.value)}
+              className="w-full bg-black/60 border border-amber-500/30 rounded-xl p-2.5 text-white font-mono text-xs focus:border-amber-400 outline-none"
+            />
+          </div>
+
+          <button
+            onClick={handleSaveAirdropDate}
+            className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-yellow-500 hover:from-amber-500 hover:to-yellow-400 text-black font-extrabold text-xs shadow-md transition-all flex items-center justify-center gap-1.5 mt-2"
+          >
+            <Save className="w-4 h-4" /> GUARDAR FECHA OBJETIVO AIRDROP
+          </button>
         </div>
       </div>
 
