@@ -44,10 +44,15 @@ export const ComboMeter: React.FC<ComboMeterProps> = ({ comboCount }) => {
     glowColor = 'shadow-amber-500/50';
   }
 
+  // Calculate next frenzy milestone countdown
+  const MILESTONES = [50, 100, 250, 500, 1000, 2000, 3000, 5000, 10000];
+  const nextMilestone = MILESTONES.find((m) => m > comboCount) || (comboCount + 1000);
+  const remainingTaps = nextMilestone - comboCount;
+
   return (
     <div
       ref={containerRef}
-      className="flex items-center justify-center mb-1"
+      className="flex flex-col items-center justify-center mb-1 space-y-1"
     >
       <div
         className={`
@@ -66,6 +71,15 @@ export const ComboMeter: React.FC<ComboMeterProps> = ({ comboCount }) => {
         <span>{title} x{comboCount}</span>
         {isFrenzy && <Zap className="w-4 h-4 fill-white animate-spin" />}
       </div>
+
+      {/* Countdown to Next Frenzy Milestone Bonus */}
+      {isFrenzy && (
+        <div className="bg-purple-950/90 border border-pink-500/40 px-3 py-0.5 rounded-full text-[10px] font-black text-pink-300 flex items-center gap-1 shadow-md animate-pulse">
+          <span>🎯 Próximo Hito ({nextMilestone}):</span>
+          <span className="text-yellow-300 font-extrabold">¡Faltan {remainingTaps} taps!</span>
+          <span className="text-emerald-400 font-bold">(+500 GC & +1 🦷)</span>
+        </div>
+      )}
     </div>
   );
 };

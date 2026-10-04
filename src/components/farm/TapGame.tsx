@@ -7,7 +7,8 @@ import { ComboMeter } from './ComboMeter';
 import { EvolutionCelebrationModal } from './EvolutionCelebrationModal';
 import { getNextStage, checkEvolutionRequirements, getSkinLevel, TAP_STYLES_CATALOG } from '../../config/gameBalance';
 import { RhythmBar } from './RhythmBar';
-import { Sparkles, ArrowRight, Trophy, ChevronRight, Zap, Palette, Swords } from 'lucide-react';
+import { SkinBackground } from './SkinBackground';
+import { Sparkles, ArrowRight, Trophy, ChevronRight, Zap, Palette, Swords, Scroll } from 'lucide-react';
 
 export const TapGame: React.FC = () => {
   const {
@@ -28,7 +29,8 @@ export const TapGame: React.FC = () => {
   const rhythmQuest = quests.find((q) => q.mechanicType === 'RHYTHM' && !q.isCompleted && !q.isClaimed);
   const rhythmActive = Boolean(rhythmQuest) && comboCount >= 3;
 
-  const completedQuestsCount = quests.filter((q) => q.isCompleted).length;
+  const completedQuestsCount = quests.filter((q) => q.isCompleted || q.isClaimed).length;
+  const nextIncompleteQuest = quests.find((q) => !q.isCompleted && !q.isClaimed);
   const nextStage = getNextStage(currentStage.id);
 
   const skinLevel = getSkinLevel(stats.xp, stats.totalTaps);
@@ -185,6 +187,21 @@ export const TapGame: React.FC = () => {
                       <span>{item}</span>
                     </div>
                   ))}
+
+                  {/* Specific quest requirement guidance if missing quests */}
+                  {completedQuestsCount < (nextStage?.requiredQuests || 0) && (
+                    <div className="mt-1 pt-1 border-t border-red-500/20 text-amber-300 font-medium">
+                      <span className="block text-[9px] font-bold uppercase text-amber-400">📜 Misión Sugerida:</span>
+                      <span className="block text-[9.5px] font-bold text-white truncate">&ldquo;{nextIncompleteQuest ? nextIncompleteQuest.title : 'Completar tareas diarias'}&rdquo;</span>
+                      <button
+                        onClick={() => setActiveTab('profile')}
+                        className="mt-1.5 w-full py-1 bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 text-[10px] font-black rounded-lg flex items-center justify-center gap-1 shadow-sm transition-all"
+                      >
+                        <Scroll className="w-3 h-3 text-amber-400" />
+                        <span>IR A SECCIÓN DE MISIONES 📜</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -226,8 +243,9 @@ export const TapGame: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Character Stage & Interactive Enemy Targets */}
-      <div className="relative w-full flex-1 flex items-center justify-center py-2" style={{ minHeight: '190px', maxHeight: '280px' }}>
+      {/* Main Character Stage with Dynamic Skin Background & Interactive Enemy Targets */}
+      <div className="relative w-full flex-1 flex items-center justify-center py-2 overflow-hidden rounded-3xl shadow-2xl border border-white/10" style={{ minHeight: '190px', maxHeight: '280px' }}>
+        <SkinBackground skinId={inventory.equippedSkin || 'DEFAULT'} />
         <EnemyTargets />
         <GarlicCharacter comboCount={comboCount} />
       </div>

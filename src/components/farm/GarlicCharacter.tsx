@@ -521,6 +521,14 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
             <path d="M 68 126 C 92 152, 118 152, 120 152 M 172 126 C 148 152, 122 152, 120 152" fill="none" stroke="#451A03" strokeWidth="2.5" strokeLinecap="round" />
             <line x1="120" y1="114" x2="120" y2="198" stroke="#451A03" strokeWidth="2" strokeLinecap="round" opacity="0.7" />
 
+            {/* --- 💥 AJO COIN CHEST EMBLEM TATTOO 💥 --- */}
+            <g id="ajo-coin-chest-tattoo" className="animate-pulse">
+              <circle cx="120" cy="136" r="13" fill="#F59E0B" stroke="#B45309" strokeWidth="2" />
+              <circle cx="120" cy="136" r="10.5" fill="#FEF08A" stroke="#D97706" strokeWidth="1" />
+              <text x="120" y="140" textAnchor="middle" fontSize="10" fontWeight="900" fill="#78350F">🧄</text>
+              <path d="M 104 136 L 98 136 M 136 L 142 136 M 120 120 L 120 115 M 120 152 L 120 157" stroke="#F59E0B" strokeWidth="2" strokeLinecap="round" />
+            </g>
+
             {/* --- ABS DEFINITION (4-pack, 6-pack or 8-pack depending on Tier) --- */}
             {/* Upper Abs Pair */}
             <rect x="92" y="156" width="22" height="12" rx="3" fill="rgba(0,0,0,0.12)" stroke="#451A03" strokeWidth="1.5" />
@@ -882,6 +890,42 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
               <path d="M 120 20 C 128 -2, 150 -12, 162 0 C 144 15, 130 32, 125 42 Z" fill="url(#sproutLeafGrad)" stroke="#047857" strokeWidth="1.5" />
               <path d="M 120 14 C 118 -8, 122 -18, 120 -18 C 118 -8, 120 6, 120 14 Z" fill="#34D399" />
             </g>
+          </g>
+
+          {/* ========================================================================= */}
+          {/* === COMPANION PETS: ANGELITO (👼) & DIABLITO (👿) AUTO-FARM HELPERS === */}
+          {/* ========================================================================= */}
+          {/* 👼 ANGELITO PET (HOVERING TOP-RIGHT) */}
+          <g id="angelito-companion" className="animate-bounce" style={{ animationDuration: '2.5s' }}>
+            {/* Angel Golden Halo */}
+            <ellipse cx="205" cy="18" rx="14" ry="4" fill="none" stroke="#F59E0B" strokeWidth="2.5" className="animate-pulse" />
+            {/* Angel Wings */}
+            <path d="M 205 32 C 220 15, 232 25, 222 42 Z" fill="#FEF3C7" stroke="#F59E0B" strokeWidth="1.5" />
+            {/* Angel Body */}
+            <ellipse cx="205" cy="35" rx="12" ry="14" fill="#FFFBEB" stroke="#F59E0B" strokeWidth="2" />
+            {/* Angel Face */}
+            <circle cx="202" cy="33" r="1.5" fill="#78350F" />
+            <circle cx="208" cy="33" r="1.5" fill="#78350F" />
+            <path d="M 203 37 Q 205 40 207 37" fill="none" stroke="#78350F" strokeWidth="1.2" />
+            <text x="205" y="58" textAnchor="middle" fontSize="9" fontWeight="black" fill="#F59E0B">👼</text>
+          </g>
+
+          {/* 👿 DIABLITO PET (HOVERING TOP-LEFT) */}
+          <g id="diablito-companion" className="animate-bounce" style={{ animationDuration: '2.2s', animationDelay: '300ms' }}>
+            {/* Devil Horns */}
+            <path d="M 30 22 Q 26 12 22 18 Q 28 24 32 26 Z" fill="#EF4444" stroke="#991B1B" strokeWidth="1" />
+            <path d="M 40 22 Q 44 12 48 18 Q 42 24 38 26 Z" fill="#EF4444" stroke="#991B1B" strokeWidth="1" />
+            {/* Devil Wings */}
+            <path d="M 35 32 C 18 15, 6 25, 16 42 Z" fill="#7F1D1D" stroke="#EF4444" strokeWidth="1.5" />
+            {/* Devil Body */}
+            <ellipse cx="35" cy="35" rx="12" ry="14" fill="#DC2626" stroke="#7F1D1D" strokeWidth="2" />
+            {/* Devil Face */}
+            <circle cx="32" cy="33" r="1.5" fill="#FFFFFF" />
+            <circle cx="38" cy="33" r="1.5" fill="#FFFFFF" />
+            <path d="M 32 38 Q 35 34 38 38" fill="none" stroke="#FFFFFF" strokeWidth="1.2" />
+            {/* Devil Pitchfork */}
+            <path d="M 18 22 L 18 48 M 14 22 L 22 22 M 14 22 L 14 28 M 22 22 L 22 28" stroke="#EF4444" strokeWidth="1.5" strokeLinecap="round" />
+            <text x="35" y="58" textAnchor="middle" fontSize="9" fontWeight="black" fill="#EF4444">👿</text>
           </g>
 
           {/* DEVASTATING CRITICAL HIT IMPACT BADGE */}

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useGame } from '../../context/GameContext';
 import { SKINS_CATALOG, TAP_STYLES_CATALOG, getSkinLevel } from '../../config/gameBalance';
 import { SkinId, TapStyleId } from '../../types';
+import { SkinBackground } from '../farm/SkinBackground';
 import { Sparkles, Check, Lock, Palette, Swords, Zap, Shield, Star, TrendingUp } from 'lucide-react';
 
 type StoreTab = 'skins' | 'attacks';
@@ -291,12 +292,15 @@ export const SkinsStore: React.FC = () => {
                     </div>
                   )}
 
-                  {/* SVG Skin illustration */}
+                  {/* SVG Skin illustration with dynamic backdrop */}
                   <div
-                    className="rounded-xl p-1.5 mb-2"
-                    style={{ backgroundColor: 'rgba(0,0,0,0.3)', border: `1px solid ${accent}44` }}
+                    className="relative rounded-xl p-1.5 mb-2 overflow-hidden w-24 h-24 flex items-center justify-center border shadow-inner"
+                    style={{ backgroundColor: 'rgba(0,0,0,0.4)', borderColor: `${accent}44` }}
                   >
-                    <SkinIllustration skinId={skin.id} size={72} />
+                    <SkinBackground skinId={skin.id} />
+                    <div className="relative z-10">
+                      <SkinIllustration skinId={skin.id} size={70} />
+                    </div>
                   </div>
 
                   {/* Name + tag */}
