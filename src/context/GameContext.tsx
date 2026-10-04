@@ -70,7 +70,7 @@ interface GameContextType {
   equipSkin: (skinId: SkinId) => void;
   purchaseTapStyle: (styleId: TapStyleId) => void;
   equipTapStyle: (styleId: TapStyleId) => void;
-  buyEnergyRefill: (refillType: 'REFILL_100' | 'BOOST_500' | 'SUPER_ELIXIR') => void;
+  buyEnergyRefill: (refillType: 'REFILL_100' | 'BOOST_500' | 'SUPER_ELIXIR', paymentCurrency?: 'GARLIC' | 'GC') => void;
   resetLocalProgress: () => void;
   isWalletModalOpen: boolean;
   setIsWalletModalOpen: (open: boolean) => void;
@@ -373,6 +373,17 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Increment combo
     setComboCount((prev) => {
       const nextCombo = prev + 1;
+
+      // Frenzy reward: +1 Garlic Teeth 🦷 every 100 combo!
+      if (nextCombo > 0 && nextCombo % 100 === 0) {
+        setInventory((inv) => ({
+          ...inv,
+          garlicTeeth: inv.garlicTeeth + 1,
+        }));
+        setTeethCelebration({ active: true, amount: 1 });
+        showToast('🔥 ¡GARLIC FRENZY 100!', '¡Ganaste +1 Diente de Ajo 🦷 por tu combo Frenzy!', 'success');
+      }
+
       setQuests((qList) =>
         qList.map((q) => {
           if (q.mechanicType === 'RHYTHM' && !q.isCompleted) {
@@ -791,35 +802,47 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     showToast('Aspecto Equipado', 'Has cambiado tu aspecto correctamente.', 'info');
   };
 
-  // Buy Energy Refills & Boosts
-  const buyEnergyRefill = (refillType: 'REFILL_100' | 'BOOST_500' | 'SUPER_ELIXIR') => {
+  // Buy Energy Refills & Boosts with explicit payment currency choice
+  const buyEnergyRefill = (refillType: 'REFILL_100' | 'BOOST_500' | 'SUPER_ELIXIR', paymentCurrency?: 'GARLIC' | 'GC') => {
     if (refillType === 'REFILL_100') {
-      if (inventory.rawGarlic >= 5) {
-        setInventory((prev) => ({ ...prev, rawGarlic: prev.rawGarlic - 5 }));
-        setStats((prev) => ({ ...prev, energy: prev.maxEnergy }));
-        showToast('¡Energía Recargada! ⚡', 'Energía restaurada al 100% (-5 Ajos Crudos).', 'success');
-        triggerHaptic('success');
-      } else if (inventory.gcBalance >= 100) {
-        setInventory((prev) => ({ ...prev, gcBalance: prev.gcBalance - 100 }));
-        setStats((prev) => ({ ...prev, energy: prev.maxEnergy }));
-        showToast('¡Energía Recargada! ⚡', 'Energía restaurada al 100% (-100 GC).', 'success');
-        triggerHaptic('success');
+      if (paymentCurrency === 'GC' || (!paymentCurrency && inventory.rawGarlic < 5)) {
+        if (inventory.gcBalance >= 100) {
+          setInventory((prev) => ({ ...prev, gcBalance: prev.gcBalance - 100 }));
+          setStats((prev) => ({ ...prev, energy: prev.maxEnergy }));
+          showToast('¡Energía Recargada! ⚡', 'Energía restaurada al 100% (-100 GC).', 'success');
+          triggerHaptic('success');
+        } else {
+          showToast('GC Insuficiente', 'Requieres 100 GC para recargar tu energía.', 'error');
+        }
       } else {
-        showToast('Sin Recursos', 'Requieres 5 Ajos Crudos o 100 GC para recargar energía.', 'warning');
+        if (inventory.rawGarlic >= 5) {
+          setInventory((prev) => ({ ...prev, rawGarlic: prev.rawGarlic - 5 }));
+          setStats((prev) => ({ ...prev, energy: prev.maxEnergy }));
+          showToast('¡Energía Recargada! ⚡', 'Energía restaurada al 100% (-5 Ajos Crudos).', 'success');
+          triggerHaptic('success');
+        } else {
+          showToast('Ajos Insuficientes', 'Requieres 5 Ajos Crudos para recargar tu energía.', 'error');
+        }
       }
     } else if (refillType === 'BOOST_500') {
-      if (inventory.rawGarlic >= 20) {
-        setInventory((prev) => ({ ...prev, rawGarlic: prev.rawGarlic - 20 }));
-        setStats((prev) => ({ ...prev, maxEnergy: prev.maxEnergy + 500, energy: prev.energy + 500 }));
-        showToast('¡Límite Aumentado! 🔋', '+500 de Energía Máxima permanente (-20 Ajos Crudos).', 'success');
-        triggerHaptic('success');
-      } else if (inventory.gcBalance >= 500) {
-        setInventory((prev) => ({ ...prev, gcBalance: prev.gcBalance - 500 }));
-        setStats((prev) => ({ ...prev, maxEnergy: prev.maxEnergy + 500, energy: prev.energy + 500 }));
-        showToast('¡Límite Aumentado! 🔋', '+500 de Energía Máxima permanente (-500 GC).', 'success');
-        triggerHaptic('success');
+      if (paymentCurrency === 'GC' || (!paymentCurrency && inventory.rawGarlic < 20)) {
+        if (inventory.gcBalance >= 500) {
+          setInventory((prev) => ({ ...prev, gcBalance: prev.gcBalance - 500 }));
+          setStats((prev) => ({ ...prev, maxEnergy: prev.maxEnergy + 500, energy: prev.energy + 500 }));
+          showToast('¡Límite Aumentado! 🔋', '+500 de Energía Máxima permanente (-500 GC).', 'success');
+          triggerHaptic('success');
+        } else {
+          showToast('GC Insuficiente', 'Requieres 500 GC para aumentar tu tanque de energía.', 'error');
+        }
       } else {
-        showToast('Sin Recursos', 'Requieres 20 Ajos Crudos o 500 GC para aumentar tu tanque de energía.', 'warning');
+        if (inventory.rawGarlic >= 20) {
+          setInventory((prev) => ({ ...prev, rawGarlic: prev.rawGarlic - 20 }));
+          setStats((prev) => ({ ...prev, maxEnergy: prev.maxEnergy + 500, energy: prev.energy + 500 }));
+          showToast('¡Límite Aumentado! 🔋', '+500 de Energía Máxima permanente (-20 Ajos Crudos).', 'success');
+          triggerHaptic('success');
+        } else {
+          showToast('Ajos Insuficientes', 'Requieres 20 Ajos Crudos para aumentar tu tanque de energía.', 'error');
+        }
       }
     } else if (refillType === 'SUPER_ELIXIR') {
       if (inventory.rawGarlic >= 10) {
@@ -828,7 +851,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         showToast('¡Super Elixir! 🚀', 'Energía 100% restaurada (-10 Ajos Crudos).', 'success');
         triggerHaptic('success');
       } else {
-        showToast('Sin Recursos', 'Requieres 10 Ajos Crudos para activar el Super Elixir.', 'warning');
+        showToast('Ajos Insuficientes', 'Requieres 10 Ajos Crudos para activar el Super Elixir.', 'error');
       }
     }
   };

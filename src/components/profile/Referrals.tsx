@@ -1,87 +1,123 @@
 import React, { useState } from 'react';
 import { useGame } from '../../context/GameContext';
-import { Users, Copy, Check, Share2, Award } from 'lucide-react';
+import { Users, Copy, Check, Share2, Award, Sparkles, Gift } from 'lucide-react';
 import { triggerHaptic } from '../../utils/haptics';
 
 export const Referrals: React.FC = () => {
   const { user, showToast } = useGame();
   const [copied, setCopied] = useState(false);
 
-  const referralLink = `https://t.me/AJOCOINbot?start=ref_${user.referralCode}`;
+  const referralCode = user.referralCode || 'AJO-X7K29';
+  const referralLink = `https://t.me/AjoCoinBot?start=ref_${referralCode}`;
 
   const handleCopyLink = () => {
     triggerHaptic('light');
-    navigator.clipboard.writeText(referralLink);
-    setCopied(true);
-    showToast('Link Copied!', 'Referral link copied to clipboard.', 'success');
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      navigator.clipboard.writeText(referralLink);
+      setCopied(true);
+      showToast('¡Enlace Copiado!', 'Tu enlace de referido ha sido copiado al portapapeles.', 'success');
+      setTimeout(() => setCopied(false), 2200);
+    } catch (e) {
+      showToast('Error', 'No se pudo copiar el enlace.', 'error');
+    }
   };
 
   const handleShareTelegram = () => {
     triggerHaptic('medium');
-    const text = encodeURIComponent('🧄 Join me in AJO COIN Garlic Farming! Tap garlics, fill boxes and earn $AJO tokens!');
-    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${text}`;
-    window.open(shareUrl, '_blank');
+    const viralMessage =
+      `🧄 ¡Únete a la fiebre de AJO COIN en Telegram! 🚀\n\n` +
+      `🔥 Tapea la cabeza de Ajo, activa el Modo Frenzy, derrota plagas de vampiros y acumula tokens $AJO reales para el Airdrop proyectado a 0.0001 USDC! 💰\n\n` +
+      `🎁 ¡Entra con mi enlace exclusivo y recibe +500 GC y +50 Dientes de Ajo 🦷 gratis de bienvenida!\n\n` +
+      `👇 ¡Haz clic y empieza a cultivar tu Ajo ahora!`;
+
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(viralMessage)}`;
+
+    // If inside Telegram WebApp
+    const tg = (window as any).Telegram?.WebApp;
+    if (tg && tg.openTelegramLink) {
+      tg.openTelegramLink(shareUrl);
+    } else {
+      window.open(shareUrl, '_blank');
+    }
   };
 
   return (
-    <div className="space-y-4">
-      {/* Invite Card */}
-      <div className="glass-card-green p-4 rounded-3xl border border-emerald-500/40 space-y-3 shadow-xl text-center">
-        <span className="text-4xl block">👥</span>
-        <h3 className="text-lg font-black text-white">REFER & EARN GARLIC COINS</h3>
-        <p className="text-xs text-gray-300">
-          Invite friends to AJO COIN and earn <span className="text-amber-300 font-bold">+500 GC</span> for every friend who joins!
-        </p>
+    <div className="space-y-4 p-1 max-w-md mx-auto pb-20">
+      {/* Banner Principal de Referidos */}
+      <div className="glass-card-green p-4 rounded-3xl border border-emerald-500/40 space-y-3 shadow-2xl text-center relative overflow-hidden bg-gradient-to-b from-emerald-950/40 via-black/80 to-purple-950/30">
+        <div className="absolute top-0 right-0 bg-amber-400 text-black text-[9px] font-black px-3 py-1 rounded-bl-xl uppercase tracking-wider shadow">
+          BONO RECOMPENSA 🎁
+        </div>
 
-        {/* Link box */}
-        <div className="bg-black/50 p-2.5 rounded-2xl border border-white/10 flex items-center justify-between gap-2">
-          <span className="font-mono text-xs text-purple-200 truncate pl-1">
+        <div className="pt-2">
+          <span className="text-4xl inline-block animate-bounce">👥🧄</span>
+          <h3 className="text-lg font-black text-white mt-1">INVITA AMIGOS Y GANA CRIPTO</h3>
+          <p className="text-xs text-gray-300 mt-1">
+            Gana <span className="text-amber-300 font-extrabold">+500 GC</span> y <span className="text-emerald-300 font-extrabold">+50 Dientes 🦷</span> por cada amigo que se una con tu enlace.
+          </p>
+        </div>
+
+        {/* Link Box */}
+        <div className="bg-black/60 p-2.5 rounded-2xl border border-white/10 flex items-center justify-between gap-2 shadow-inner">
+          <span className="font-mono text-xs text-amber-200 truncate pl-1">
             {referralLink}
           </span>
           <button
             onClick={handleCopyLink}
-            className="px-3 py-1.5 rounded-xl bg-sprout-500/20 text-sprout-300 border border-sprout-500/40 text-xs font-bold hover:bg-sprout-500/30 transition-all flex items-center gap-1 shrink-0"
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-sprout-500 to-emerald-600 text-white text-xs font-black hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5 shrink-0 shadow-md"
           >
-            {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-            <span>{copied ? 'COPIED' : 'COPY'}</span>
+            {copied ? <Check className="w-4 h-4 text-white" /> : <Copy className="w-4 h-4" />}
+            <span>{copied ? 'COPIADO' : 'COPIAR'}</span>
           </button>
         </div>
 
+        {/* Botón Compartir Telegram */}
         <button
           onClick={handleShareTelegram}
-          className="w-full py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs shadow-lg transition-all flex items-center justify-center gap-2"
+          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white font-black text-xs shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
         >
           <Share2 className="w-4 h-4" />
-          <span>SHARE TO TELEGRAM FRIENDS</span>
+          <span>COMPARTIR EN TELEGRAM A MIS AMIGOS</span>
         </button>
       </div>
 
-      {/* Referral Tier Levels */}
+      {/* Tarjeta de Recomendación Viral */}
+      <div className="glass-panel p-4 rounded-3xl border border-amber-500/30 bg-amber-950/20 space-y-2">
+        <h4 className="font-extrabold text-xs text-amber-300 flex items-center gap-1.5 uppercase tracking-wider">
+          <Sparkles className="w-4 h-4 text-amber-400" /> Por qué recomendar AJO COIN:
+        </h4>
+        <ul className="text-[11px] text-gray-300 space-y-1.5 list-disc list-inside">
+          <li><strong className="text-white">Airdrop $AJO:</strong> Tokens proyectados a 0.0001 USDC en el lanzamiento.</li>
+          <li><strong className="text-white">Modo Frenzy & Plagas:</strong> Juego adictivo con jefes plaga y multiplicadores.</li>
+          <li><strong className="text-white">Bono de Bienvenida:</strong> Tus referidos reciben 500 GC gratis para empezar.</li>
+        </ul>
+      </div>
+
+      {/* Hitos de Referencia */}
       <div className="glass-panel p-4 rounded-3xl border border-purple-500/30 space-y-3">
         <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
-          <Award className="w-4 h-4 text-amber-400" /> REFERRAL MILESTONES
+          <Award className="w-4 h-4 text-amber-400" /> HITOS DE RECOMPENSAS
         </h4>
 
         <div className="space-y-2 text-xs">
           {[
-            { level: 'LEVEL 1', target: '5 Referrals', reward: '+2,500 GC Bonus', icon: '🥉', count: 1 },
-            { level: 'LEVEL 2', target: '25 Referrals', reward: '+15,000 GC + 2 AJO', icon: '🥈', count: 0 },
-            { level: 'LEVEL 3', target: '100 Referrals', reward: '+100,000 GC + 10 AJO', icon: '🥇', count: 0 },
+            { level: 'NIVEL 1', target: '5 Referidos', reward: '+2,500 GC Bonus + 50 🦷', icon: '🥉', count: 1 },
+            { level: 'NIVEL 2', target: '25 Referidos', reward: '+15,000 GC + 2 AJO', icon: '🥈', count: 0 },
+            { level: 'NIVEL 3', target: '100 Referidos', reward: '+100,000 GC + 10 AJO', icon: '🥇', count: 0 },
           ].map((tier) => (
             <div
               key={tier.level}
               className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between"
             >
               <div className="flex items-center gap-2.5">
-                <span className="text-xl">{tier.icon}</span>
+                <span className="text-2xl">{tier.icon}</span>
                 <div>
                   <h5 className="font-extrabold text-white text-xs">{tier.level} ({tier.target})</h5>
                   <p className="text-[10px] text-amber-300 font-semibold">{tier.reward}</p>
                 </div>
               </div>
-              <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-0.5 rounded-full font-bold">
-                {tier.count} Invited
+              <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2.5 py-1 rounded-full font-bold border border-purple-500/30">
+                {tier.count} Invitados
               </span>
             </div>
           ))}

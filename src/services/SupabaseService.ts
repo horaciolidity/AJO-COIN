@@ -94,4 +94,26 @@ export const loadGameStateFromSupabase = async (userId: string): Promise<SavedGa
   }
 };
 
+/**
+ * Fetch top real player game states from Supabase for the real Leaderboard
+ */
+export const fetchRealLeaderboardFromSupabase = async (): Promise<{ user_id: string; state_data: SavedGameState; updated_at: string }[] | null> => {
+  const canUseTable = await checkTableAvailability();
+  if (!canUseTable) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from('user_game_state')
+      .select('user_id, state_data, updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(50);
+
+    if (error || !data) return null;
+    return data as { user_id: string; state_data: SavedGameState; updated_at: string }[];
+  } catch (e) {
+    return null;
+  }
+};
+
+
 

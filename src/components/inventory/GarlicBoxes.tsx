@@ -189,13 +189,13 @@ export const GarlicBoxes: React.FC<GarlicBoxesProps> = ({ onSelectClaimBox }) =>
             </div>
             <div className="mt-3 space-y-1.5">
               <button
-                onClick={() => buyEnergyRefill('REFILL_100')}
+                onClick={() => buyEnergyRefill('REFILL_100', 'GARLIC')}
                 className="w-full py-1.5 px-2 rounded-xl text-[10px] font-black bg-gradient-to-r from-emerald-600 to-sprout-500 text-white shadow-md hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-1"
               >
                 <span>5 Ajos Crudos 🧄</span>
               </button>
               <button
-                onClick={() => buyEnergyRefill('REFILL_100')}
+                onClick={() => buyEnergyRefill('REFILL_100', 'GC')}
                 className="w-full py-1 px-2 rounded-xl text-[9px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 hover:bg-amber-500/30 transition-all flex items-center justify-center gap-1"
               >
                 <span>o 100 GC 🪙</span>
@@ -215,13 +215,13 @@ export const GarlicBoxes: React.FC<GarlicBoxesProps> = ({ onSelectClaimBox }) =>
             </div>
             <div className="mt-3 space-y-1.5">
               <button
-                onClick={() => buyEnergyRefill('BOOST_500')}
+                onClick={() => buyEnergyRefill('BOOST_500', 'GARLIC')}
                 className="w-full py-1.5 px-2 rounded-xl text-[10px] font-black bg-gradient-to-r from-amber-600 to-yellow-500 text-white shadow-md hover:brightness-110 active:scale-95 transition-all flex items-center justify-center gap-1"
               >
                 <span>20 Ajos Crudos 🧄</span>
               </button>
               <button
-                onClick={() => buyEnergyRefill('BOOST_500')}
+                onClick={() => buyEnergyRefill('BOOST_500', 'GC')}
                 className="w-full py-1 px-2 rounded-xl text-[9px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/30 transition-all flex items-center justify-center gap-1"
               >
                 <span>o 500 GC 🪙</span>
