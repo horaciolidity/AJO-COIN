@@ -4,15 +4,77 @@ import { useWeb3 } from '../../context/Web3Context';
 import { useAuth } from '../../context/AuthContext';
 import { Referrals } from './Referrals';
 import { formatAddress } from '../../utils/format';
-import { User, Wallet, Trophy, Flame, Package, Coins, Award, ShieldCheck, RefreshCw, Star, Send, Mail, LogOut, CheckCircle } from 'lucide-react';
+import { Wallet, Flame, Package, Award, ShieldCheck, RefreshCw, Star, Send, Mail, LogOut, CheckCircle, Lock, Sparkles } from 'lucide-react';
 
 export const PlayerProfile: React.FC = () => {
-  const { user, stats, inventory, currentStage, achievements, setIsWalletModalOpen, resetLocalProgress } = useGame();
+  const { user, stats, inventory, currentStage, setIsWalletModalOpen, resetLocalProgress } = useGame();
   const { wallet } = useWeb3();
-  const { setIsAuthModalOpen, logout } = useAuth();
+  const { setIsAuthModalOpen } = useAuth();
   const [tab, setTab] = useState<'profile' | 'referrals'>('profile');
 
   const activeWalletAddress = wallet.isConnected ? wallet.address : user.walletAddress;
+
+  // ── Dynamic Real-Time Achievements Evaluator ──────────────────────────────
+  const dynamicAchievements = [
+    {
+      id: 'a1',
+      code: 'FIRST_GARLIC',
+      name: 'Primer Ajo',
+      description: 'Cosechaste tu primer ajo crudo',
+      icon: '🧄',
+      unlocked: stats.totalGarlicHarvested >= 1 || inventory.rawGarlic > 0 || stats.totalTaps >= 10,
+    },
+    {
+      id: 'a2',
+      code: 'FIRST_EVOLUTION',
+      name: 'Primera Evolución',
+      description: 'Evolucionaste tu ajo por primera vez',
+      icon: '🌟',
+      unlocked: currentStage.order > 1 || stats.currentStageId !== 'COMMON_SMALL',
+    },
+    {
+      id: 'a4',
+      code: 'BRONZE_MASTERY',
+      name: 'Maestro de Bronce',
+      description: 'Alcanzaste la etapa Ajo de Bronce o superior',
+      icon: '🥉',
+      unlocked: currentStage.rank !== 'COMMON',
+    },
+    {
+      id: 'a5',
+      code: 'GOLDEN_LEGEND',
+      name: 'Leyenda Dorada',
+      description: 'Alcanzaste la etapa Ajo de Oro, Platino o Diamante',
+      icon: '🥇',
+      unlocked: ['GOLD', 'PLATINUM', 'DIAMOND'].includes(currentStage.rank),
+    },
+    {
+      id: 'a6',
+      code: 'TEETH_COLLECTOR',
+      name: 'Coleccionista de Dientes',
+      description: 'Acumulaste 50 o más Garlic Teeth',
+      icon: '🦷',
+      unlocked: inventory.garlicTeeth >= 50,
+    },
+    {
+      id: 'a7',
+      code: 'BOX_MASTER',
+      name: 'Maestro de Cajas',
+      description: 'Completaste y canjeaste tu primera caja de ajo',
+      icon: '📦',
+      unlocked: stats.totalBoxesCompleted >= 1,
+    },
+    {
+      id: 'a8',
+      code: 'HIT_POWER_BOOST',
+      name: 'Golpe Potenciado',
+      description: 'Compraste tu primer aumento de Poder de Golpe con dientes',
+      icon: '💥',
+      unlocked: (inventory.hitPowerLevel || 0) >= 1 || stats.powerPerTap > 1,
+    },
+  ];
+
+  const unlockedCount = dynamicAchievements.filter(a => a.unlocked).length;
 
   const renderAuthBadge = () => {
     switch (user.authMethod) {
@@ -54,7 +116,7 @@ export const PlayerProfile: React.FC = () => {
             />
             {user.isAdmin && (
               <span className="absolute bottom-0 right-0 bg-purpleAjo-700 text-white rounded-full p-1 border-2 border-black" title="Admin">
-                <ShieldCheck className="w-4 h-4" />
+                <ShieldCheck className="w-4 h-4 text-purple-300" />
               </span>
             )}
           </div>
@@ -73,7 +135,7 @@ export const PlayerProfile: React.FC = () => {
             </div>
           </div>
 
-          {/* Wallet Address badge - Syncs Web3 login without redundancy */}
+          {/* Wallet Address badge */}
           <div className="space-y-2">
             {user.authMethod === 'WEB3' || activeWalletAddress ? (
               <div className="inline-flex flex-col items-center gap-1 px-3 py-1.5 rounded-xl bg-purple-900/50 border border-purple-500/40 text-xs">
@@ -96,7 +158,6 @@ export const PlayerProfile: React.FC = () => {
               </button>
             )}
 
-            {/* Switch account / login method button */}
             <div className="pt-1">
               <button
                 onClick={() => setIsAuthModalOpen(true)}
@@ -110,7 +171,7 @@ export const PlayerProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* Sub Tabs: Stats & Achievements vs Referrals */}
+      {/* Sub Tabs */}
       <div className="flex bg-black/40 p-1 rounded-2xl border border-white/10 text-xs font-bold">
         <button
           onClick={() => setTab('profile')}
@@ -167,30 +228,39 @@ export const PlayerProfile: React.FC = () => {
             </div>
           </div>
 
-          {/* Achievements Badges */}
+          {/* Real-Time Achievements & Badges */}
           <div className="glass-panel p-4 rounded-3xl border border-purple-500/30 space-y-3">
-            <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
-              <Award className="w-4 h-4 text-yellow-400" /> LOGROS & INSIGNIAS
-            </h4>
+            <div className="flex items-center justify-between">
+              <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
+                <Award className="w-4 h-4 text-yellow-400" /> LOGROS & INSIGNIAS REALES
+              </h4>
+              <span className="text-xs font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/40 px-2.5 py-0.5 rounded-full">
+                {unlockedCount} / {dynamicAchievements.length} Desbloqueados
+              </span>
+            </div>
 
             <div className="grid grid-cols-1 gap-2">
-              {achievements.map((ach) => (
+              {dynamicAchievements.map((ach) => (
                 <div
                   key={ach.id}
                   className={`p-3 rounded-2xl border flex items-center gap-3 transition-all ${
                     ach.unlocked
-                      ? 'bg-purple-900/30 border-purple-500/40 text-white'
+                      ? 'bg-gradient-to-r from-purple-950/50 to-emerald-950/40 border-emerald-500/40 text-white shadow-md'
                       : 'bg-white/5 border-white/5 opacity-50'
                   }`}
                 >
-                  <span className="text-3xl">{ach.icon}</span>
-                  <div>
-                    <h5 className="font-extrabold text-xs text-white">{ach.name}</h5>
+                  <span className="text-3xl shrink-0">{ach.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <h5 className="font-extrabold text-xs text-white truncate">{ach.name}</h5>
                     <p className="text-[10px] text-gray-300">{ach.description}</p>
                   </div>
-                  {ach.unlocked && (
-                    <span className="ml-auto text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold uppercase border border-emerald-500/30">
-                      DESBLOQUEADO
+                  {ach.unlocked ? (
+                    <span className="ml-auto shrink-0 text-[9px] bg-emerald-500/20 text-emerald-300 px-2 py-0.5 rounded-full font-bold uppercase border border-emerald-500/40 flex items-center gap-1">
+                      <Sparkles className="w-3 h-3 text-emerald-400" /> DESBLOQUEADO
+                    </span>
+                  ) : (
+                    <span className="ml-auto shrink-0 text-[9px] bg-white/5 text-gray-400 px-2 py-0.5 rounded-full font-bold uppercase border border-white/10 flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-gray-500" /> BLOQUEADO
                     </span>
                   )}
                 </div>

@@ -210,30 +210,45 @@ export const EnemyTargets: React.FC = () => {
     spawnStaggerTimerRef.current = setTimeout(spawnNextFromQueue, 600);
   }, [showToast, spawnNextFromQueue]);
 
-  // ── Detect XP milestones → trigger wave ──────────────────────────────
+  // ── Detect XP milestones or auto-start wave ──────────────────────────
   useEffect(() => {
-    const prevXp = prevXpRef.current;
-    const currXp = stats.xp;
-    prevXpRef.current = currXp;
     const phase = wavePhaseRef.current;
-    if (phase === 'SPAWNING' || phase === 'FIGHTING' || phase === 'COOLDOWN') return;
-    const nextIdx = milestoneIdxRef.current;
-    if (nextIdx >= XP_MILESTONES.length) return;
-    const threshold = XP_MILESTONES[nextIdx];
-    if (prevXp < threshold && currXp >= threshold) {
-      setCurrentMilestoneIdx(nextIdx + 1);
-      milestoneIdxRef.current = nextIdx + 1;
-      startWave(nextIdx, stats.level);
+    if (phase === 'SPAWNING' || phase === 'FIGHTING') return;
+
+    // Find milestone index corresponding to current XP level
+    let targetIdx = XP_MILESTONES.findIndex(m => stats.xp < m);
+    if (targetIdx === -1) targetIdx = XP_MILESTONES.length - 1;
+
+    const currentIdx = milestoneIdxRef.current;
+
+    // Trigger wave if player reached milestone or if no enemies exist
+    if (currentIdx <= targetIdx || enemies.length === 0) {
+      milestoneIdxRef.current = targetIdx + 1;
+      setCurrentMilestoneIdx(targetIdx + 1);
+      startWave(targetIdx, stats.level);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stats.xp, stats.level, startWave]);
+
+  // ── Continuous spawn fallback: ensure enemies exist across ALL ranks ─────
+  useEffect(() => {
+    if (wavePhase === 'IDLE' && enemies.length === 0) {
+      const autoTimer = setTimeout(() => {
+        if (wavePhaseRef.current === 'IDLE') {
+          const idx = Math.max(0, milestoneIdxRef.current - 1);
+          startWave(idx, stats.level);
+        }
+      }, 3500);
+      return () => clearTimeout(autoTimer);
+    }
+  }, [enemies.length, wavePhase, startWave, stats.level]);
 
   // ── Auto-detect wave cleared ─────────────────────────────────────────
   useEffect(() => {
     if (wavePhase === 'FIGHTING' && enemies.length === 0) {
       triggerHaptic('success');
       showToast('🎉 ¡Oleada eliminada!', 'Descansá, la próxima viene pronto...', 'success');
-      startCooldown(milestoneIdxRef.current - 1);
+      startCooldown(Math.max(0, milestoneIdxRef.current - 1));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enemies.length, wavePhase]);
