@@ -45,13 +45,24 @@ export const TapGame: React.FC = () => {
     skinLevel,
   );
 
-  // Progress towards next stage
+  // Progress towards next stage (starts at 0% when entering a new stage)
   let evolutionProgress = 100;
   if (nextStage) {
-    const xpRatio = Math.min(1, stats.xp / (nextStage.requiredXp || 1));
-    const tapsRatio = Math.min(1, stats.totalTaps / (nextStage.requiredTaps || 1));
-    const rawGarlicRatio = Math.min(1, inventory.rawGarlic / (nextStage.requiredRawGarlic || 1));
-    const questsRatio = Math.min(1, completedQuestsCount / (nextStage.requiredQuests || 1));
+    const curXp = currentStage.requiredXp || 0;
+    const curTaps = currentStage.requiredTaps || 0;
+    const curGarlic = currentStage.requiredRawGarlic || 0;
+    const curQuests = currentStage.requiredQuests || 0;
+
+    const targetXp = nextStage.requiredXp || 1;
+    const targetTaps = nextStage.requiredTaps || 1;
+    const targetGarlic = nextStage.requiredRawGarlic || 1;
+    const targetQuests = nextStage.requiredQuests || 1;
+
+    const xpRatio = Math.max(0, Math.min(1, (stats.xp - curXp) / (targetXp - curXp || 1)));
+    const tapsRatio = Math.max(0, Math.min(1, (stats.totalTaps - curTaps) / (targetTaps - curTaps || 1)));
+    const rawGarlicRatio = Math.max(0, Math.min(1, (inventory.rawGarlic - curGarlic) / (targetGarlic - curGarlic || 1)));
+    const questsRatio = Math.max(0, Math.min(1, (completedQuestsCount - curQuests) / (targetQuests - curQuests || 1)));
+
     evolutionProgress = Math.floor(((xpRatio + tapsRatio + rawGarlicRatio + questsRatio) / 4) * 100);
   }
 

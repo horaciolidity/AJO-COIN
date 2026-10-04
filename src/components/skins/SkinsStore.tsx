@@ -33,58 +33,56 @@ const SkinIllustration: React.FC<{ skinId: SkinId; size?: number }> = ({ skinId,
         </radialGradient>
       </defs>
 
-      {/* LEGS & BOOTS */}
-      <path d="M 38 88 L 32 108" stroke={skinId === 'NINJA' ? '#18181B' : skinId === 'ROBOT' ? '#334155' : '#78350F'} strokeWidth="8" strokeLinecap="round" />
-      <ellipse cx="30" cy="110" rx="6" ry="3" fill={skinId === 'NINJA' ? '#09090B' : skinId === 'KING' ? '#991B1B' : '#451A03'} />
-      <path d="M 62 88 L 68 108" stroke={skinId === 'NINJA' ? '#18181B' : skinId === 'ROBOT' ? '#334155' : '#78350F'} strokeWidth="8" strokeLinecap="round" />
-      <ellipse cx="70" cy="110" rx="6" ry="3" fill={skinId === 'NINJA' ? '#09090B' : skinId === 'KING' ? '#991B1B' : '#451A03'} />
+      <g key="legs">
+        <path d="M 38 88 L 32 108" stroke={skinId === 'NINJA' ? '#18181B' : skinId === 'ROBOT' ? '#334155' : '#78350F'} strokeWidth="8" strokeLinecap="round" />
+        <ellipse cx="30" cy="110" rx="6" ry="3" fill={skinId === 'NINJA' ? '#09090B' : skinId === 'KING' ? '#991B1B' : '#451A03'} />
+        <path d="M 62 88 L 68 108" stroke={skinId === 'NINJA' ? '#18181B' : skinId === 'ROBOT' ? '#334155' : '#78350F'} strokeWidth="8" strokeLinecap="round" />
+        <ellipse cx="70" cy="110" rx="6" ry="3" fill={skinId === 'NINJA' ? '#09090B' : skinId === 'KING' ? '#991B1B' : '#451A03'} />
+      </g>
 
-      {/* MUSCULAR TORSO */}
-      <path
-        d="M 26 52 C 24 64, 34 90, 50 90 C 66 90, 76 64, 74 52 C 64 48, 36 48, 26 52 Z"
-        fill={skinId === 'FIRE' ? '#C2410C' : skinId === 'ROBOT' ? '#1E293B' : `url(#skBodyGrad_${skinId})`}
-        stroke="#451A03" strokeWidth="1.5"
-      />
-      <path d="M 32 58 C 42 55, 49 62, 50 68 M 68 58 C 58 55, 51 62, 50 68" fill="none" stroke="#451A03" strokeWidth="1.2" />
-      <rect x="39" y="70" width="9" height="5" rx="1.5" fill="rgba(0,0,0,0.15)" stroke="#451A03" strokeWidth="0.8" />
-      <rect x="52" y="70" width="9" height="5" rx="1.5" fill="rgba(0,0,0,0.15)" stroke="#451A03" strokeWidth="0.8" />
+      <g key="torso">
+        <path
+          d="M 26 52 C 24 64, 34 90, 50 90 C 66 90, 76 64, 74 52 C 64 48, 36 48, 26 52 Z"
+          fill={skinId === 'FIRE' ? '#C2410C' : skinId === 'ROBOT' ? '#1E293B' : `url(#skBodyGrad_${skinId})`}
+          stroke="#451A03" strokeWidth="1.5"
+        />
+        <path d="M 32 58 C 42 55, 49 62, 50 68 M 68 58 C 58 55, 51 62, 50 68" fill="none" stroke="#451A03" strokeWidth="1.2" />
+        <rect x="39" y="70" width="9" height="5" rx="1.5" fill="rgba(0,0,0,0.15)" stroke="#451A03" strokeWidth="0.8" />
+        <rect x="52" y="70" width="9" height="5" rx="1.5" fill="rgba(0,0,0,0.15)" stroke="#451A03" strokeWidth="0.8" />
+        <rect x="34" y="84" width="32" height="6" rx="2" fill={skinId === 'NINJA' ? '#DC2626' : skinId === 'KING' ? '#D97706' : '#78350F'} />
+        <rect x="46" y="83" width="8" height="8" rx="1" fill="#F59E0B" />
+      </g>
 
-      {/* BELT */}
-      <rect x="34" y="84" width="32" height="6" rx="2" fill={skinId === 'NINJA' ? '#DC2626' : skinId === 'KING' ? '#D97706' : '#78350F'} />
-      <rect x="46" y="83" width="8" height="8" rx="1" fill="#F59E0B" />
+      <g key="arms">
+        <path d="M 28 54 C 18 60, 18 72, 24 80" fill="none" stroke={`url(#skBodyGrad_${skinId})`} strokeWidth="8" strokeLinecap="round" />
+        <circle cx="24" cy="80" r="4.5" fill={skinId === 'NINJA' ? '#18181B' : '#B45309'} />
+        <path d="M 72 54 C 82 60, 82 72, 76 80" fill="none" stroke={`url(#skBodyGrad_${skinId})`} strokeWidth="8" strokeLinecap="round" />
+        <circle cx="76" cy="80" r="4.5" fill={skinId === 'NINJA' ? '#18181B' : '#B45309'} />
+      </g>
 
-      {/* ARMS */}
-      <path d="M 28 54 C 18 60, 18 72, 24 80" fill="none" stroke={`url(#skBodyGrad_${skinId})`} strokeWidth="8" strokeLinecap="round" />
-      <circle cx="24" cy="80" r="4.5" fill={skinId === 'NINJA' ? '#18181B' : '#B45309'} />
-      <path d="M 72 54 C 82 60, 82 72, 76 80" fill="none" stroke={`url(#skBodyGrad_${skinId})`} strokeWidth="8" strokeLinecap="round" />
-      <circle cx="76" cy="80" r="4.5" fill={skinId === 'NINJA' ? '#18181B' : '#B45309'} />
+      <g key="head">
+        <path
+          d="M 50 8 C 30 8, 20 20, 20 34 C 20 45, 30 50, 50 50 C 70 50, 80 45, 80 34 C 80 20, 70 8, 50 8 Z"
+          fill={`url(#skHeadGrad_${skinId})`} stroke="#C4B18E" strokeWidth="1.8"
+        />
+        <path d="M 50 8 C 40 20, 35 32, 36 49" fill="none" stroke="#C4B18E" strokeWidth="1" opacity="0.6" />
+        <path d="M 50 8 C 60 20, 65 32, 64 49" fill="none" stroke="#C4B18E" strokeWidth="1" opacity="0.6" />
 
-      {/* GARLIC HEAD */}
-      <path
-        d="M 50 8 C 30 8, 20 20, 20 34 C 20 45, 30 50, 50 50 C 70 50, 80 45, 80 34 C 80 20, 70 8, 50 8 Z"
-        fill={`url(#skHeadGrad_${skinId})`} stroke="#C4B18E" strokeWidth="1.8"
-      />
-      <path d="M 50 8 C 40 20, 35 32, 36 49" fill="none" stroke="#C4B18E" strokeWidth="1" opacity="0.6" />
-      <path d="M 50 8 C 60 20, 65 32, 64 49" fill="none" stroke="#C4B18E" strokeWidth="1" opacity="0.6" />
+        <circle cx="38" cy="28" r="5" fill="white" />
+        <circle cx="38" cy="28" r="4" fill="url(#skEyeIris)" />
+        <circle cx="39" cy="26" r="1.5" fill="white" />
+        <circle cx="62" cy="28" r="5" fill="white" />
+        <circle cx="62" cy="28" r="4" fill="url(#skEyeIris)" />
+        <circle cx="63" cy="26" r="1.5" fill="white" />
 
-      {/* EYES */}
-      <circle cx="38" cy="28" r="5" fill="white" />
-      <circle cx="38" cy="28" r="4" fill="url(#skEyeIris)" />
-      <circle cx="39" cy="26" r="1.5" fill="white" />
-      <circle cx="62" cy="28" r="5" fill="white" />
-      <circle cx="62" cy="28" r="4" fill="url(#skEyeIris)" />
-      <circle cx="63" cy="26" r="1.5" fill="white" />
+        <path d="M 44 36 Q 50 42 56 36" fill="none" stroke="#1E0A3C" strokeWidth="1.5" strokeLinecap="round" />
 
-      {/* SMILE */}
-      <path d="M 44 36 Q 50 42 56 36" fill="none" stroke="#1E0A3C" strokeWidth="1.5" strokeLinecap="round" />
+        <path d="M 50 8 C 46 0, 38 -4, 34 0 C 42 6, 46 11, 48 14 Z" fill="url(#skSproutGrad)" stroke="#047857" strokeWidth="1" />
+        <path d="M 50 8 C 54 0, 62 -4, 66 0 C 58 6, 54 11, 52 14 Z" fill="url(#skSproutGrad)" stroke="#047857" strokeWidth="1" />
+      </g>
 
-      {/* SPROUT */}
-      <path d="M 50 8 C 46 0, 38 -4, 34 0 C 42 6, 46 11, 48 14 Z" fill="url(#skSproutGrad)" stroke="#047857" strokeWidth="1" />
-      <path d="M 50 8 C 54 0, 62 -4, 66 0 C 58 6, 54 11, 52 14 Z" fill="url(#skSproutGrad)" stroke="#047857" strokeWidth="1" />
-
-      {/* FITTED SKINS OVERLAYS */}
       {skinId === 'NINJA' && (
-        <g>
+        <g key="ninja">
           <rect x="22" y="16" width="56" height="7" rx="2" fill="#18181B" />
           <rect x="44" y="17" width="12" height="5" rx="1" fill="#E4E4E7" />
           <path d="M 28 35 C 38 42, 62 42, 72 35 L 70 50 C 60 54, 40 54, 30 50 Z" fill="#18181B" />
@@ -93,7 +91,7 @@ const SkinIllustration: React.FC<{ skinId: SkinId; size?: number }> = ({ skinId,
       )}
 
       {skinId === 'KING' && (
-        <g>
+        <g key="king">
           <polygon points="32,10 38,0 44,7 50,-3 56,7 62,0 68,10" fill="#F59E0B" stroke="#B45309" strokeWidth="1" />
           <rect x="32" y="8" width="36" height="4" rx="1" fill="#D97706" />
           <circle cx="50" cy="-3" r="2" fill="#EF4444" />
@@ -103,7 +101,7 @@ const SkinIllustration: React.FC<{ skinId: SkinId; size?: number }> = ({ skinId,
       )}
 
       {skinId === 'ROBOT' && (
-        <g>
+        <g key="robot">
           <rect x="30" y="24" width="40" height="10" rx="3" fill="#0F172A" stroke="#06B6D4" strokeWidth="1" />
           <line x1="34" y1="29" x2="66" y2="29" stroke="#22D3EE" strokeWidth="2" />
           <circle cx="50" cy="8" r="3" fill="#EF4444" />
@@ -111,14 +109,14 @@ const SkinIllustration: React.FC<{ skinId: SkinId; size?: number }> = ({ skinId,
       )}
 
       {skinId === 'FIRE' && (
-        <g opacity="0.85">
+        <g key="fire" opacity="0.85">
           <path d="M 24 16 C 14 4, 28 -4, 34 12 C 42 -2, 50 -6, 56 10 C 64 -2, 76 6, 68 16 Z" fill="#F97316" />
           <path d="M 28 16 C 22 8, 32 3, 36 14 C 42 4, 48 -1, 54 10 Z" fill="#FACC15" />
         </g>
       )}
 
       {skinId === 'ALIEN' && (
-        <g>
+        <g key="alien">
           <path d="M 34 10 Q 24 0 18 3" fill="none" stroke="#22C55E" strokeWidth="2" />
           <circle cx="17" cy="3" r="3" fill="#4ADE80" />
           <path d="M 66 10 Q 76 0 82 3" fill="none" stroke="#22C55E" strokeWidth="2" />
@@ -127,7 +125,7 @@ const SkinIllustration: React.FC<{ skinId: SkinId; size?: number }> = ({ skinId,
       )}
 
       {skinId === 'DEAD' && (
-        <g>
+        <g key="dead">
           <line x1="26" y1="22" x2="74" y2="40" stroke="#18181B" strokeWidth="2" />
           <ellipse cx="38" cy="28" rx="5" ry="5" fill="#18181B" />
           <ellipse cx="62" cy="28" rx="5" ry="5" fill="#18181B" />
@@ -135,7 +133,7 @@ const SkinIllustration: React.FC<{ skinId: SkinId; size?: number }> = ({ skinId,
       )}
 
       {skinId === 'RICH' && (
-        <g>
+        <g key="rich">
           <path d="M 32 23 L 48 23 L 45 31 L 34 31 Z" fill="#09090B" stroke="#F59E0B" strokeWidth="1" />
           <path d="M 52 23 L 68 23 L 65 31 L 54 31 Z" fill="#09090B" stroke="#F59E0B" strokeWidth="1" />
           <path d="M 38 48 Q 50 60 62 48" fill="none" stroke="#F59E0B" strokeWidth="2" strokeDasharray="2,1" />

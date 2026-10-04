@@ -279,16 +279,6 @@ export const PlayerProfile: React.FC = () => {
               ))}
             </div>
           </div>
-
-          {/* Dev/Testing Reset Option */}
-          <div className="pt-2 text-center">
-            <button
-              onClick={resetLocalProgress}
-              className="text-[10px] text-gray-400 hover:text-rose-400 flex items-center justify-center gap-1 mx-auto font-semibold uppercase tracking-wider transition-colors"
-            >
-              <RefreshCw className="w-3 h-3" /> Reiniciar Progreso Local (Modo Pruebas)
-            </button>
-          </div>
         </div>
       ) : tab === 'quests' ? (
         <QuestsList />
