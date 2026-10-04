@@ -228,7 +228,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user && user.id) {
       if (cloudSaveTimerRef.current) clearTimeout(cloudSaveTimerRef.current);
       cloudSaveTimerRef.current = setTimeout(() => {
-        saveGameStateToSupabase(user.id, fullState);
+        saveGameStateToSupabase(user.id, fullState, user.username, user.photoUrl);
       }, 3500); // 3.5s debounce to avoid exploding DB
     }
   }, [stats, inventory, boxes, upgrades, quests, achievements, user?.id]);

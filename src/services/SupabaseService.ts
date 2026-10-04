@@ -43,7 +43,12 @@ export const checkSupabaseConnection = async (): Promise<boolean> => {
 /**
  * Save user game state to Supabase table safely without spamming requests
  */
-export const saveGameStateToSupabase = async (userId: string, state: SavedGameState): Promise<boolean> => {
+export const saveGameStateToSupabase = async (
+  userId: string,
+  state: SavedGameState,
+  username?: string,
+  photoUrl?: string,
+): Promise<boolean> => {
   if (!userId) return false;
 
   const canUseTable = await checkTableAvailability();
@@ -59,6 +64,8 @@ export const saveGameStateToSupabase = async (userId: string, state: SavedGameSt
         {
           user_id: userId,
           state_data: state,
+          username: username || null,
+          photo_url: photoUrl || null,
           updated_at: new Date().toISOString(),
         },
         { onConflict: 'user_id' }
@@ -95,21 +102,23 @@ export const loadGameStateFromSupabase = async (userId: string): Promise<SavedGa
 };
 
 /**
- * Fetch top real player game states from Supabase for the real Leaderboard
+ * Fetch top real player game states from Supabase for the real Leaderboard.
+ * Returns all available users sorted by most recently active.
+ * Client-side sorting by XP/boxes is done in the component.
  */
-export const fetchRealLeaderboardFromSupabase = async (): Promise<{ user_id: string; state_data: SavedGameState; updated_at: string }[] | null> => {
+export const fetchRealLeaderboardFromSupabase = async (): Promise<{ user_id: string; username?: string; photo_url?: string; state_data: SavedGameState; updated_at: string }[] | null> => {
   const canUseTable = await checkTableAvailability();
   if (!canUseTable) return null;
 
   try {
     const { data, error } = await supabase
       .from('user_game_state')
-      .select('user_id, state_data, updated_at')
+      .select('user_id, username, photo_url, state_data, updated_at')
       .order('updated_at', { ascending: false })
-      .limit(50);
+      .limit(100);
 
     if (error || !data) return null;
-    return data as { user_id: string; state_data: SavedGameState; updated_at: string }[];
+    return data as { user_id: string; username?: string; photo_url?: string; state_data: SavedGameState; updated_at: string }[];
   } catch (e) {
     return null;
   }

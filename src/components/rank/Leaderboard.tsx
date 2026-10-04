@@ -10,6 +10,9 @@ interface EnrichedLeaderboardEntry extends LeaderboardEntry {
   stageName: string;
   xp: number;
   streak: number;
+  totalTaps?: number;
+  garlicTeeth?: number;
+  gcBalance?: number;
   isCurrentUser?: boolean;
 }
 
@@ -38,23 +41,51 @@ export const Leaderboard: React.FC = () => {
           const stage = getStageById(sData?.stats?.currentStageId || 'COMMON_SMALL');
           const isMe = item.user_id === user.id;
 
+          // Resolve best available username in priority order:
+          // 1. DB username column  2. state_data user profile  3. short user_id
+          const resolvedUsername =
+            item.username ||
+            (sData as any)?.user?.username ||
+            (sData as any)?.profile?.username ||
+            `AjoCultivador_${item.user_id.slice(-4)}`;
+
+          const resolvedPhoto =
+            item.photo_url ||
+            (sData as any)?.user?.photoUrl ||
+            (sData as any)?.profile?.photoUrl ||
+            '';
+
+          const resolvedFirstName =
+            (sData as any)?.user?.firstName ||
+            (sData as any)?.profile?.firstName ||
+            resolvedUsername;
+
           return {
             rank: idx + 1,
             userId: item.user_id,
-            username: isMe ? user.username : `Cultivador_${item.user_id.slice(0, 6)}`,
-            firstName: isMe ? user.firstName : 'Cultivador Ajo',
-            photoUrl: isMe ? user.photoUrl || '' : 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=100',
+            username: isMe ? (user.username || resolvedUsername) : resolvedUsername,
+            firstName: isMe ? (user.firstName || resolvedFirstName) : resolvedFirstName,
+            photoUrl: isMe ? (user.photoUrl || resolvedPhoto) : resolvedPhoto,
             totalGarlic: sData?.inventory?.rawGarlic || sData?.stats?.totalGarlicHarvested || 0,
             totalBoxes: sData?.stats?.totalBoxesCompleted || 0,
-            totalAjo: sData?.stats?.totalAjoEarned || 0,
+            totalAjo: sData?.stats?.totalAjoEarned || sData?.inventory?.ajoBalance || 0,
             stageIcon: stage.badgeIcon,
             stageName: stage.name,
             xp: sData?.stats?.xp || 0,
+            totalTaps: sData?.stats?.totalTaps || 0,
+            garlicTeeth: sData?.inventory?.garlicTeeth || 0,
+            gcBalance: sData?.inventory?.gcBalance || 0,
             streak: Math.max(1, Math.floor((sData?.stats?.totalTaps || 0) / 100)),
             isCurrentUser: isMe,
           };
         });
-        setCloudEntries(parsed);
+
+        // Sort by XP descending and re-rank
+        const sorted = parsed
+          .sort((a, b) => b.xp - a.xp)
+          .map((e, i) => ({ ...e, rank: i + 1 }));
+
+        setCloudEntries(sorted);
       } else {
         setCloudEntries([]);
       }
@@ -64,6 +95,7 @@ export const Leaderboard: React.FC = () => {
       setTimeout(() => setIsRefreshing(false), 500);
     }
   };
+
 
   useEffect(() => {
     loadRealLeaderboard();
@@ -82,6 +114,9 @@ export const Leaderboard: React.FC = () => {
     stageIcon: currentStage.badgeIcon,
     stageName: currentStage.name,
     xp: stats.xp || 0,
+    totalTaps: stats.totalTaps || 0,
+    garlicTeeth: inventory.garlicTeeth || 0,
+    gcBalance: inventory.gcBalance || 0,
     streak: Math.max(1, Math.floor(stats.totalTaps / 100)),
     isCurrentUser: true,
   }), [user, stats, inventory, currentStage]);
@@ -280,52 +315,85 @@ export const Leaderboard: React.FC = () => {
           <span>ESTADÍSTICAS</span>
         </div>
 
-        <div className="divide-y divide-white/5 max-h-80 overflow-y-auto">
+        <div className="divide-y divide-white/5 max-h-[500px] overflow-y-auto">
           {restList.length > 0 ? (
             restList.map((p) => (
               <div
                 key={p.userId}
-                className={`p-3 flex items-center justify-between gap-2 transition-colors ${
+                className={`p-3 flex flex-col gap-2 transition-colors ${
                   p.isCurrentUser
-                    ? 'bg-amber-500/20 border-l-4 border-amber-400 text-amber-200 font-bold'
+                    ? 'bg-amber-500/15 border-l-4 border-amber-400'
                     : 'hover:bg-white/5'
                 }`}
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="w-5 text-center font-black text-xs text-gray-400">{p.rank}</span>
-                  <div className="relative shrink-0">
-                    <img
-                      src={p.photoUrl || 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=100'}
-                      alt={p.username}
-                      className="w-8 h-8 rounded-full border border-white/20 object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1615485290382-441e4d049cb5?w=100'; }}
-                    />
-                    <span className="absolute -bottom-1 -right-1 text-[10px]">{p.stageIcon}</span>
-                  </div>
-                  <div className="min-w-0">
-                    <h5 className="font-extrabold text-xs text-white truncate flex items-center gap-1">
-                      <span>{p.username}</span>
-                      {p.isCurrentUser && (
-                        <span className="text-[8px] bg-amber-400 text-black px-1 rounded font-black">TÚ</span>
+                {/* Top row: rank + avatar + name + score */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className={`w-6 text-center font-black text-xs ${p.rank <= 10 ? 'text-amber-400' : 'text-gray-400'}`}>
+                      {p.rank}
+                    </span>
+                    <div className="relative shrink-0">
+                      {p.photoUrl ? (
+                        <img
+                          src={p.photoUrl}
+                          alt={p.username}
+                          className="w-9 h-9 rounded-full border border-white/20 object-cover"
+                          onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                        />
+                      ) : (
+                        <div className="w-9 h-9 rounded-full border border-white/20 bg-gradient-to-br from-emerald-800 to-purple-900 flex items-center justify-center text-lg">
+                          🧄
+                        </div>
                       )}
-                    </h5>
-                    <p className="text-[9px] text-gray-400 truncate">{p.stageName}</p>
+                      <span className="absolute -bottom-1 -right-1 text-[11px]">{p.stageIcon}</span>
+                    </div>
+                    <div className="min-w-0">
+                      <h5 className="font-extrabold text-xs text-white truncate flex items-center gap-1">
+                        <span>@{p.username}</span>
+                        {p.isCurrentUser && (
+                          <span className="text-[8px] bg-amber-400 text-black px-1 rounded font-black">TÚ</span>
+                        )}
+                      </h5>
+                      <p className="text-[9px] text-gray-400 truncate">{p.stageName}</p>
+                    </div>
+                  </div>
+
+                  <div className="text-right shrink-0">
+                    <span className="font-black text-xs text-amber-300 block">
+                      ⭐ {formatXP(p.xp)} XP
+                    </span>
+                    <span className="text-[9px] text-emerald-400">
+                      📦 {p.totalBoxes} cajas
+                    </span>
                   </div>
                 </div>
 
-                <div className="text-right shrink-0">
-                  <span className="font-black text-xs text-amber-300 block">
-                    {filter === 'xp' ? `${formatXP(p.xp)} XP` : `${p.totalBoxes} Cajas`}
-                  </span>
-                  <span className="text-[9px] text-gray-400">
-                    {p.totalGarlic.toLocaleString()} Ajos
-                  </span>
+                {/* Stats mini grid */}
+                <div className="grid grid-cols-4 gap-1 text-[9px] text-center">
+                  <div className="bg-black/30 rounded-lg py-1">
+                    <div className="font-black text-white">{(p.totalTaps || 0).toLocaleString()}</div>
+                    <div className="text-gray-500">Taps</div>
+                  </div>
+                  <div className="bg-black/30 rounded-lg py-1">
+                    <div className="font-black text-amber-300">{(p.garlicTeeth || 0).toLocaleString()}</div>
+                    <div className="text-gray-500">🦷</div>
+                  </div>
+                  <div className="bg-black/30 rounded-lg py-1">
+                    <div className="font-black text-emerald-300">{(p.totalAjo || 0).toFixed(1)}</div>
+                    <div className="text-gray-500">AJO</div>
+                  </div>
+                  <div className="bg-black/30 rounded-lg py-1">
+                    <div className="font-black text-purple-300">{formatXP(p.gcBalance || 0)}</div>
+                    <div className="text-gray-500">GC</div>
+                  </div>
                 </div>
               </div>
             ))
           ) : (
-            <div className="p-4 text-center text-xs text-gray-400 italic">
-              ¡Sé el primero en invitar a tus amigos y liderar la tabla de posiciones real! 👑
+            <div className="p-6 text-center space-y-2">
+              <div className="text-3xl">🧄</div>
+              <p className="text-xs text-gray-400 italic">¡Sé el primero en invitar a tus amigos y liderar la tabla real!</p>
+              <p className="text-[10px] text-gray-500">Los demás jugadores aparecerán aquí cuando jueguen</p>
             </div>
           )}
         </div>
