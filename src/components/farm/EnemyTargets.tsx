@@ -210,44 +210,44 @@ export const EnemyTargets: React.FC = () => {
     spawnStaggerTimerRef.current = setTimeout(spawnNextFromQueue, 600);
   }, [showToast, spawnNextFromQueue]);
 
-  // ── Detect XP milestones or auto-start wave ──────────────────────────
+  // ── Detect XP milestone crossover → trigger wave ──────────────────────
   useEffect(() => {
+    const prevXp = prevXpRef.current;
+    const currXp = stats.xp;
+    prevXpRef.current = currXp;
+
     const phase = wavePhaseRef.current;
-    if (phase === 'SPAWNING' || phase === 'FIGHTING') return;
+    if (phase === 'SPAWNING' || phase === 'FIGHTING' || phase === 'COOLDOWN') return;
 
-    // Find milestone index corresponding to current XP level
-    let targetIdx = XP_MILESTONES.findIndex(m => stats.xp < m);
-    if (targetIdx === -1) targetIdx = XP_MILESTONES.length - 1;
+    let nextIdx = milestoneIdxRef.current;
 
-    const currentIdx = milestoneIdxRef.current;
-
-    // Trigger wave if player reached milestone or if no enemies exist
-    if (currentIdx <= targetIdx || enemies.length === 0) {
+    // Initial mount check: if no wave has ever run, find current milestone
+    if (nextIdx === 0 && enemies.length === 0) {
+      let targetIdx = XP_MILESTONES.findIndex(m => currXp < m);
+      if (targetIdx === -1) targetIdx = XP_MILESTONES.length - 1;
       milestoneIdxRef.current = targetIdx + 1;
       setCurrentMilestoneIdx(targetIdx + 1);
       startWave(targetIdx, stats.level);
+      return;
+    }
+
+    if (nextIdx >= XP_MILESTONES.length) return;
+    const threshold = XP_MILESTONES[nextIdx];
+
+    // Trigger next wave only when player crosses the XP threshold by tapping
+    if (prevXp < threshold && currXp >= threshold) {
+      milestoneIdxRef.current = nextIdx + 1;
+      setCurrentMilestoneIdx(nextIdx + 1);
+      startWave(nextIdx, stats.level);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stats.xp, stats.level, startWave]);
-
-  // ── Continuous spawn fallback: ensure enemies exist across ALL ranks ─────
-  useEffect(() => {
-    if (wavePhase === 'IDLE' && enemies.length === 0) {
-      const autoTimer = setTimeout(() => {
-        if (wavePhaseRef.current === 'IDLE') {
-          const idx = Math.max(0, milestoneIdxRef.current - 1);
-          startWave(idx, stats.level);
-        }
-      }, 3500);
-      return () => clearTimeout(autoTimer);
-    }
-  }, [enemies.length, wavePhase, startWave, stats.level]);
 
   // ── Auto-detect wave cleared ─────────────────────────────────────────
   useEffect(() => {
     if (wavePhase === 'FIGHTING' && enemies.length === 0) {
       triggerHaptic('success');
-      showToast('🎉 ¡Oleada eliminada!', 'Descansá, la próxima viene pronto...', 'success');
+      showToast('🎉 ¡Oleada eliminada!', 'Zona tranquila activada. Sigue tapeando para alcanzar la próxima oleada.', 'success');
       startCooldown(Math.max(0, milestoneIdxRef.current - 1));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -590,13 +590,13 @@ export const EnemyTargets: React.FC = () => {
       {enemies.length === 0 && (
         <div className="absolute bottom-8 inset-x-0 flex flex-col items-center pointer-events-none gap-1">
           {wavePhase === 'COOLDOWN' && cooldownRemaining > 0 && (
-            <span className="text-[10px] text-orange-300/70 animate-pulse font-bold">
-              ⏳ Próxima oleada en {Math.ceil(cooldownRemaining / 1000)}s
+            <span className="text-[10px] text-orange-300/80 bg-black/60 px-3 py-1 rounded-full border border-orange-500/30 font-bold animate-pulse">
+              ⏳ Zona tranquila ({Math.ceil(cooldownRemaining / 1000)}s)
             </span>
           )}
           {wavePhase === 'IDLE' && (
-            <span className="text-[10px] text-white/30 animate-pulse">
-              Zona tranquila... tapea para subir XP
+            <span className="text-[10px] text-amber-300/90 bg-black/70 px-3 py-1 rounded-full border border-amber-500/40 font-extrabold animate-pulse">
+              😮‍💨 Zona tranquila • Tapea para alcanzar {XP_MILESTONES[currentMilestoneIdx] || 'máximo'} XP y activar la próxima oleada
             </span>
           )}
         </div>
