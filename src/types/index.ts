@@ -27,6 +27,8 @@ export interface EvolutionStage {
   requiredTaps: number;
   requiredRawGarlic: number;
   requiredQuests: number;
+  requiredSkinId?: SkinId;   // optional skin requirement for this stage
+  requiredSkinLevel?: number; // minimum skin level needed
   description: string;
   celebrationMessage: string;
   auraColor: string;
@@ -73,6 +75,8 @@ export interface Skin {
   icon: string;
   tag: string;
   headgearEmoji: string;
+  color?: string;    // accent color for card UI
+  gradient?: string; // CSS gradient for card background
 }
 
 export interface GarlicTeethTransaction {

@@ -72,6 +72,7 @@ interface GameContextType {
   equipTapStyle: (styleId: TapStyleId) => void;
   buyEnergyRefill: (refillType: 'REFILL_100' | 'BOOST_500' | 'SUPER_ELIXIR', paymentCurrency?: 'GARLIC' | 'GC') => void;
   resetLocalProgress: () => void;
+  addEnemyReward: (gc: number, teeth: number) => void;
   isWalletModalOpen: boolean;
   setIsWalletModalOpen: (open: boolean) => void;
   isClaimModalOpen: boolean;
@@ -895,6 +896,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Credit GC and Garlic Teeth from killing an enemy
+  const addEnemyReward = (gc: number, teeth: number) => {
+    if (gc <= 0 && teeth <= 0) return;
+    setInventory((prev) => ({
+      ...prev,
+      gcBalance: prev.gcBalance + gc,
+      garlicTeeth: prev.garlicTeeth + teeth,
+    }));
+    triggerHaptic('success');
+    playCoinSound();
+  };
+
   // Reset Progress for Dev/Testing
   const resetLocalProgress = () => {
     const reset = StorageAdapter.resetState();
@@ -950,6 +963,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         equipTapStyle,
         buyEnergyRefill,
         resetLocalProgress,
+        addEnemyReward,
         isWalletModalOpen,
         setIsWalletModalOpen,
         isClaimModalOpen,

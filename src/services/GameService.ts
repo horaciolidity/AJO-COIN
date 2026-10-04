@@ -4,6 +4,7 @@ import {
   EVOLUTION_STAGES,
   getStageById,
   checkEvolutionRequirements,
+  getSkinLevel,
   SKINS_CATALOG,
 } from '../config/gameBalance';
 
@@ -85,6 +86,7 @@ export class GameService {
   } {
     const currentStageId = state.stats.currentStageId || 'COMMON_SMALL';
     const completedQuestsCount = state.quests.filter((q) => q.isCompleted).length;
+    const skinLevel = getSkinLevel(state.stats.xp, state.stats.totalTaps);
 
     const evalResult = checkEvolutionRequirements(
       currentStageId,
@@ -93,7 +95,9 @@ export class GameService {
         totalTaps: state.stats.totalTaps,
         completedQuestsCount,
       },
-      state.inventory.rawGarlic
+      state.inventory.rawGarlic,
+      state.inventory.unlockedSkins,
+      skinLevel,
     );
 
     if (!evalResult.canEvolve || !evalResult.nextStage) {

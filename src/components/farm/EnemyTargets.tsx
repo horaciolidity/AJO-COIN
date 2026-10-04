@@ -121,7 +121,7 @@ function enemyShotXpDrain(type: Enemy['type']): number {
 
 // ── Component ──────────────────────────────────────────────────────────────
 export const EnemyTargets: React.FC = () => {
-  const { stats, showToast } = useGame();
+  const { stats, showToast, addEnemyReward } = useGame();
 
   // ── All state hooks at top level (fixes React error #185) ────────────
   const [enemies, setEnemies] = useState<Enemy[]>([]);
@@ -383,6 +383,9 @@ export const EnemyTargets: React.FC = () => {
       setEnemies([]);
       setProjectiles([]);
 
+      // ✅ Credit real rewards to player inventory
+      addEnemyReward(Math.round(totalGc), totalTeeth);
+
       triggerHaptic('success');
       playCoinSound();
       showToast('🔥 ¡DESTRUCCIÓN TOTAL!', `+${Math.round(totalGc)} GC  +${totalTeeth} 🦷`, 'success');
@@ -410,6 +413,10 @@ export const EnemyTargets: React.FC = () => {
       setEnemies(prev => prev.filter(en => en.id !== enemyId));
 
       triggerDeathEffect(targetEnemy);
+
+      // ✅ Credit real rewards to player inventory
+      addEnemyReward(targetEnemy.rewardGc, targetEnemy.rewardTeeth);
+
       triggerHaptic('success');
       playCoinSound();
       showToast(`💥 ¡${targetEnemy.name} Eliminado!`, `+${targetEnemy.rewardGc} GC  +${targetEnemy.rewardTeeth} 🦷`, 'success');

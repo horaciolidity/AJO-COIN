@@ -1,5 +1,21 @@
 import { EvolutionStage, EvolutionStageId, Skin, TapStyle } from '../types';
 
+// ── Skin Level System (1–50) ─────────────────────────────────────────────────
+// Skin level is based on XP gained and taps completed while that skin is equipped.
+// For simplicity we derive it from total XP + taps so every skin progresses together.
+export function getSkinLevel(totalXp: number, totalTaps: number): number {
+  const score = totalXp * 0.6 + totalTaps * 0.4;
+  // Thresholds: Lv1=0, Lv2=200, Lv5=1000, Lv10=3000, Lv20=8000, Lv30=18000, Lv40=35000, Lv50=60000
+  const thresholds = [0,200,400,650,1000,1400,1900,2500,3200,4000,5000,6200,7600,9200,11000,
+    13000,15300,17900,20800,24000,27500,31300,35400,39800,44500,49500,55000,60000];
+  let level = 1;
+  for (let i = 0; i < thresholds.length; i++) {
+    if (score >= thresholds[i]) level = i + 1;
+    else break;
+  }
+  return Math.min(50, Math.max(1, level));
+}
+
 export const EVOLUTION_STAGES: EvolutionStage[] = [
   {
     id: 'COMMON_SMALL',
@@ -49,6 +65,8 @@ export const EVOLUTION_STAGES: EvolutionStage[] = [
     requiredTaps: 500,
     requiredRawGarlic: 15,
     requiredQuests: 2,
+    requiredSkinId: 'NINJA',
+    requiredSkinLevel: 3,
     description: 'Sus capas exteriores han adquirido una pátina metálica de bronce brillante.',
     celebrationMessage: '¡TU AJO HA DESCUBIERTO EL PODER DEL BRONCE! Ahora brilla como una medalla de bronce.',
     auraColor: 'rgba(217, 119, 6, 0.35)',
@@ -240,6 +258,8 @@ export const SKINS_CATALOG: Skin[] = [
     icon: '🧄',
     tag: 'Básico',
     headgearEmoji: '',
+    color: '#10B981',
+    gradient: 'linear-gradient(135deg, #10B981, #059669)',
   },
   {
     id: 'NINJA',
@@ -249,6 +269,8 @@ export const SKINS_CATALOG: Skin[] = [
     icon: '🥷',
     tag: 'Sigilo',
     headgearEmoji: '🥷',
+    color: '#6366F1',
+    gradient: 'linear-gradient(135deg, #18181B, #3730A3)',
   },
   {
     id: 'KING',
@@ -258,6 +280,8 @@ export const SKINS_CATALOG: Skin[] = [
     icon: '👑',
     tag: 'Realeza',
     headgearEmoji: '👑',
+    color: '#F59E0B',
+    gradient: 'linear-gradient(135deg, #92400E, #F59E0B)',
   },
   {
     id: 'ROBOT',
@@ -267,6 +291,8 @@ export const SKINS_CATALOG: Skin[] = [
     icon: '🤖',
     tag: 'Futurista',
     headgearEmoji: '🤖',
+    color: '#06B6D4',
+    gradient: 'linear-gradient(135deg, #0F172A, #0891B2)',
   },
   {
     id: 'FIRE',
@@ -276,6 +302,8 @@ export const SKINS_CATALOG: Skin[] = [
     icon: '🔥',
     tag: 'Picante',
     headgearEmoji: '🔥',
+    color: '#F97316',
+    gradient: 'linear-gradient(135deg, #7F1D1D, #F97316)',
   },
   {
     id: 'ALIEN',
@@ -285,6 +313,8 @@ export const SKINS_CATALOG: Skin[] = [
     icon: '👽',
     tag: 'Cósmico',
     headgearEmoji: '👽',
+    color: '#22C55E',
+    gradient: 'linear-gradient(135deg, #052e16, #16a34a)',
   },
   {
     id: 'DEAD',
@@ -294,15 +324,19 @@ export const SKINS_CATALOG: Skin[] = [
     icon: '💀',
     tag: 'Zombi',
     headgearEmoji: '💀',
+    color: '#A1A1AA',
+    gradient: 'linear-gradient(135deg, #18181B, #52525B)',
   },
   {
     id: 'RICH',
-    name: 'Rich / Top Hatted Ajo',
-    description: 'Lleva sombrero de copa y monoculo. Cultivador millonario.',
+    name: 'Rich / Top Hat Ajo',
+    description: 'Lleva sombrero de copa y monóculo. Cultivador millonario.',
     priceGarlicTeeth: 250,
     icon: '🎩',
     tag: 'Lujo',
     headgearEmoji: '🎩',
+    color: '#A855F7',
+    gradient: 'linear-gradient(135deg, #3B0764, #A855F7)',
   },
 ];
 
@@ -446,7 +480,9 @@ export function getNextStage(currentStageId: EvolutionStageId): EvolutionStage |
 export function checkEvolutionRequirements(
   currentStageId: EvolutionStageId,
   userStats: { xp: number; totalTaps: number; completedQuestsCount: number },
-  userRawGarlic: number
+  userRawGarlic: number,
+  unlockedSkins?: string[],
+  skinLevel?: number,
 ): { canEvolve: boolean; nextStage: EvolutionStage | null; missing: string[] } {
   const nextStage = getNextStage(currentStageId);
   if (!nextStage) {
@@ -466,6 +502,15 @@ export function checkEvolutionRequirements(
   }
   if (userStats.completedQuestsCount < nextStage.requiredQuests) {
     missing.push(`Faltan ${nextStage.requiredQuests - userStats.completedQuestsCount} Misiones`);
+  }
+  // Skin level requirement
+  if (nextStage.requiredSkinId && nextStage.requiredSkinLevel) {
+    const hasSkin = (unlockedSkins || []).includes(nextStage.requiredSkinId);
+    if (!hasSkin) {
+      missing.push(`Requiere skin ${nextStage.requiredSkinId} (comprar primero)`);
+    } else if ((skinLevel || 1) < nextStage.requiredSkinLevel) {
+      missing.push(`Requiere Skin Nivel ${nextStage.requiredSkinLevel} (actual: ${skinLevel || 1})`);
+    }
   }
 
   return {
