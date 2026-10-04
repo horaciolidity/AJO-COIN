@@ -47,9 +47,12 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
     "¡Revisa las Tareas Diarias y Redes Sociales para reclamar tus premios diarios! 📲",
   ];
 
+  // Track whether we are currently in frenzy to use as stable effect trigger
+  const inFrenzy = comboCount >= 220;
+
   // Ephemeral, randomized speech balloon popups ONLY when comboCount >= 220
   useEffect(() => {
-    if (comboCount < 220) {
+    if (!inFrenzy) {
       setShowSpeechBalloon(false);
       return;
     }
@@ -62,28 +65,26 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
       setActiveSpeechText(AI_GARLIC_DIALOGUES[randomIndex]);
       setShowSpeechBalloon(true);
 
-      // Duration: 2.5s visible, then closes automatically
+      // Visible for 4 seconds, then fades out
       hideTimer = setTimeout(() => {
         setShowSpeechBalloon(false);
 
-        // Pause 1.2s before popping up next random dialogue if still >= 220 combo
+        // 2s pause before the next random dialogue fires
         nextTimer = setTimeout(() => {
-          if (comboCount >= 220) {
-            triggerNextDialogue();
-          }
-        }, 1200);
-      }, 2500);
+          // re-read inFrenzy via closure will be stale; use ref check instead
+          triggerNextDialogue();
+        }, 2000);
+      }, 4000);
     };
 
-    if (!showSpeechBalloon) {
-      triggerNextDialogue();
-    }
+    triggerNextDialogue();
 
     return () => {
       clearTimeout(hideTimer);
       clearTimeout(nextTimer);
     };
-  }, [comboCount >= 220]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inFrenzy]);
 
   // Find equipped skin & tap style
   const equippedSkin = SKINS_CATALOG.find((s) => s.id === inventory.equippedSkin) || SKINS_CATALOG[0];
@@ -218,7 +219,7 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
               <span>AJO IA (FRENZY 220+):</span>
             </div>
             <p className="text-[11px] font-bold text-white leading-tight mt-0.5 drop-shadow-md">
-              "{activeSpeechText}"
+              &ldquo;{activeSpeechText}&rdquo;
             </p>
             {/* Speech bubble tail pointer */}
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-amber-400" />

@@ -107,6 +107,20 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Garlic teeth celebration
   const [teethCelebration, setTeethCelebration] = useState<{ active: boolean; amount: number }>({ active: false, amount: 0 });
+  const teethCelebTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Auto-hide teethCelebration after 900ms (with proper cleanup to prevent sticky overlay)
+  useEffect(() => {
+    if (teethCelebration.active) {
+      if (teethCelebTimerRef.current) clearTimeout(teethCelebTimerRef.current);
+      teethCelebTimerRef.current = setTimeout(() => {
+        setTeethCelebration({ active: false, amount: 0 });
+      }, 900);
+    }
+    return () => {
+      if (teethCelebTimerRef.current) clearTimeout(teethCelebTimerRef.current);
+    };
+  }, [teethCelebration.active]);
 
   const { session } = useAuth();
 
@@ -370,18 +384,44 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const comboMult = comboCount >= 20 ? tapStyle.comboMultiplier : 1.0;
     tapPower = Math.floor(tapPower * comboMult);
 
+    // Frenzy Milestone rewards table
+    const FRENZY_MILESTONES: { combo: number; gc: number; teeth: number; label: string }[] = [
+      { combo: 1000,  gc: 500,    teeth: 5,   label: '🔥 FRENZY 1,000'  },
+      { combo: 2000,  gc: 1500,   teeth: 10,  label: '⚡ FRENZY 2,000'  },
+      { combo: 3000,  gc: 3000,   teeth: 20,  label: '💥 FRENZY 3,000'  },
+      { combo: 5000,  gc: 7500,   teeth: 35,  label: '🌟 FRENZY 5,000'  },
+      { combo: 7500,  gc: 15000,  teeth: 60,  label: '👑 FRENZY 7,500'  },
+      { combo: 10000, gc: 30000,  teeth: 100, label: '🏆 FRENZY 10,000' },
+    ];
+
     // Increment combo
     setComboCount((prev) => {
       const nextCombo = prev + 1;
 
-      // Frenzy reward: +1 Garlic Teeth 🦷 every 100 combo!
+      // Frenzy reward: +1 Garlic Teeth 🦷 every 100 combo
       if (nextCombo > 0 && nextCombo % 100 === 0) {
-        setInventory((inv) => ({
-          ...inv,
-          garlicTeeth: inv.garlicTeeth + 1,
-        }));
-        setTeethCelebration({ active: true, amount: 1 });
-        showToast('🔥 ¡GARLIC FRENZY 100!', '¡Ganaste +1 Diente de Ajo 🦷 por tu combo Frenzy!', 'success');
+        // Check if it's a big milestone
+        const milestone = FRENZY_MILESTONES.find(m => m.combo === nextCombo);
+        if (milestone) {
+          setInventory((inv) => ({
+            ...inv,
+            garlicTeeth: inv.garlicTeeth + 1 + milestone.teeth,
+            gcBalance: inv.gcBalance + milestone.gc,
+          }));
+          setTeethCelebration({ active: true, amount: 1 + milestone.teeth });
+          showToast(
+            `🏆 ${milestone.label} ¡HITO ÉPICO!`,
+            `¡+${1 + milestone.teeth} Dientes 🦷 y +${milestone.gc.toLocaleString()} GC por llegar al combo ${milestone.combo.toLocaleString()}!`,
+            'success'
+          );
+        } else {
+          setInventory((inv) => ({
+            ...inv,
+            garlicTeeth: inv.garlicTeeth + 1,
+          }));
+          setTeethCelebration({ active: true, amount: 1 });
+          showToast('🔥 ¡GARLIC FRENZY!', `¡Combo x${nextCombo.toLocaleString()}! +1 Diente de Ajo 🦷`, 'success');
+        }
       }
 
       setQuests((qList) =>
@@ -458,9 +498,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           garlicTeeth: inv.garlicTeeth + teethEarned,
         }));
 
-        // Trigger celebration for garlic teeth (fast 1.2s ephemeral duration)
+        // Trigger celebration for garlic teeth (auto-hides via useEffect)
         setTeethCelebration({ active: true, amount: teethEarned });
-        setTimeout(() => setTeethCelebration({ active: false, amount: 0 }), 1200);
 
         // Fill active box
         setBoxes((prevBoxes) => {
