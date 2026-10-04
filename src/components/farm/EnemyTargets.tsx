@@ -148,6 +148,11 @@ export const EnemyTargets: React.FC = () => {
   useEffect(() => { wavePhaseRef.current = wavePhase; }, [wavePhase]);
   useEffect(() => { milestoneIdxRef.current = currentMilestoneIdx; }, [currentMilestoneIdx]);
 
+  // Dispatch active enemy count event so GarlicCharacter can trigger cover/block stance
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('GARLIC_ENEMY_COUNT_CHANGED', { detail: { count: enemies.length } }));
+  }, [enemies.length]);
+
   // ── Death effect helper ──────────────────────────────────────────────
   const triggerDeathEffect = useCallback((enemy: Enemy) => {
     const effect: DeathEffect = {
