@@ -5,7 +5,7 @@ import { EnemyTargets } from './EnemyTargets';
 import { EnergyBar } from './EnergyBar';
 import { ComboMeter } from './ComboMeter';
 import { EvolutionCelebrationModal } from './EvolutionCelebrationModal';
-import { getNextStage, checkEvolutionRequirements, TAP_STYLES_CATALOG } from '../../config/gameBalance';
+import { getNextStage, checkEvolutionRequirements, getSkinLevel, TAP_STYLES_CATALOG } from '../../config/gameBalance';
 import { RhythmBar } from './RhythmBar';
 import { Sparkles, ArrowRight, Trophy, ChevronRight, Zap, Palette, Swords } from 'lucide-react';
 
@@ -31,6 +31,8 @@ export const TapGame: React.FC = () => {
   const completedQuestsCount = quests.filter((q) => q.isCompleted).length;
   const nextStage = getNextStage(currentStage.id);
 
+  const skinLevel = getSkinLevel(stats.xp, stats.totalTaps);
+
   const evalResult = checkEvolutionRequirements(
     currentStage.id,
     {
@@ -38,7 +40,9 @@ export const TapGame: React.FC = () => {
       totalTaps: stats.totalTaps,
       completedQuestsCount,
     },
-    inventory.rawGarlic
+    inventory.rawGarlic,
+    inventory.unlockedSkins,
+    skinLevel,
   );
 
   // Progress towards next stage
@@ -47,7 +51,8 @@ export const TapGame: React.FC = () => {
     const xpRatio = Math.min(1, stats.xp / (nextStage.requiredXp || 1));
     const tapsRatio = Math.min(1, stats.totalTaps / (nextStage.requiredTaps || 1));
     const rawGarlicRatio = Math.min(1, inventory.rawGarlic / (nextStage.requiredRawGarlic || 1));
-    evolutionProgress = Math.floor(((xpRatio + tapsRatio + rawGarlicRatio) / 3) * 100);
+    const questsRatio = Math.min(1, completedQuestsCount / (nextStage.requiredQuests || 1));
+    evolutionProgress = Math.floor(((xpRatio + tapsRatio + rawGarlicRatio + questsRatio) / 4) * 100);
   }
 
   // Active tap style info
@@ -105,7 +110,7 @@ export const TapGame: React.FC = () => {
           <div className="flex justify-between items-center text-xs font-bold">
             <span className="text-sprout-400 flex items-center gap-1">
               <Trophy className="w-3.5 h-3.5 text-amber-400" />
-              {nextStage ? `PROGRESO A: ${nextStage.name}` : '¡ETAPA MÁXIMA!'}
+              {nextStage ? `REQUISITOS DE EVOLUCIÓN: ${nextStage.name}` : '¡ETAPA MÁXIMA ALCANZADA!'}
             </span>
             <span className="text-amber-300 font-extrabold">{evolutionProgress}%</span>
           </div>
@@ -118,36 +123,77 @@ export const TapGame: React.FC = () => {
           </div>
 
           {nextStage && (
-            <div className="grid grid-cols-3 gap-1 text-[10px] text-gray-300 font-medium pt-1 border-t border-white/10">
-              <div className="text-center">
-                <span className="block text-gray-400">XP</span>
-                <span className={stats.xp >= nextStage.requiredXp ? 'text-emerald-400 font-bold' : 'text-amber-300'}>
-                  {stats.xp} / {nextStage.requiredXp}
-                </span>
+            <div className="space-y-1.5 pt-1 border-t border-white/10">
+              <div className="grid grid-cols-4 gap-1 text-[10px] text-gray-300 font-medium">
+                <div className="text-center bg-black/30 p-1 rounded-lg">
+                  <span className="block text-gray-400 text-[9px]">XP</span>
+                  <span className={stats.xp >= nextStage.requiredXp ? 'text-emerald-400 font-bold' : 'text-amber-300'}>
+                    {stats.xp}/{nextStage.requiredXp}
+                  </span>
+                </div>
+                <div className="text-center bg-black/30 p-1 rounded-lg">
+                  <span className="block text-gray-400 text-[9px]">TAPs</span>
+                  <span className={stats.totalTaps >= nextStage.requiredTaps ? 'text-emerald-400 font-bold' : 'text-amber-300'}>
+                    {stats.totalTaps}/{nextStage.requiredTaps}
+                  </span>
+                </div>
+                <div className="text-center bg-black/30 p-1 rounded-lg">
+                  <span className="block text-gray-400 text-[9px]">Ajos 🧄</span>
+                  <span className={inventory.rawGarlic >= nextStage.requiredRawGarlic ? 'text-emerald-400 font-bold' : 'text-amber-300'}>
+                    {inventory.rawGarlic}/{nextStage.requiredRawGarlic}
+                  </span>
+                </div>
+                <div className="text-center bg-black/30 p-1 rounded-lg">
+                  <span className="block text-gray-400 text-[9px]">Misiones 📜</span>
+                  <span className={completedQuestsCount >= nextStage.requiredQuests ? 'text-emerald-400 font-bold' : 'text-amber-300'}>
+                    {completedQuestsCount}/{nextStage.requiredQuests}
+                  </span>
+                </div>
               </div>
-              <div className="text-center">
-                <span className="block text-gray-400">TAPs</span>
-                <span className={stats.totalTaps >= nextStage.requiredTaps ? 'text-emerald-400 font-bold' : 'text-amber-300'}>
-                  {stats.totalTaps} / {nextStage.requiredTaps}
-                </span>
-              </div>
-              <div className="text-center">
-                <span className="block text-gray-400">Ajos 🧄</span>
-                <span className={inventory.rawGarlic >= nextStage.requiredRawGarlic ? 'text-emerald-400 font-bold' : 'text-amber-300'}>
-                  {inventory.rawGarlic} / {nextStage.requiredRawGarlic}
-                </span>
-              </div>
+
+              {/* Skin Requirement Banner if applicable */}
+              {nextStage.requiredSkinId && (
+                <div className="flex items-center justify-between text-[10px] bg-purple-950/60 border border-purple-500/30 px-2 py-1 rounded-lg">
+                  <span className="text-purple-300 font-bold flex items-center gap-1">
+                    <span>⚔️ Skin Requerido:</span>
+                    <span className="text-amber-300 uppercase">{nextStage.requiredSkinId} (Nivel {nextStage.requiredSkinLevel})</span>
+                  </span>
+                  <span className={inventory.unlockedSkins.includes(nextStage.requiredSkinId) && skinLevel >= (nextStage.requiredSkinLevel || 1) ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold'}>
+                    {inventory.unlockedSkins.includes(nextStage.requiredSkinId) && skinLevel >= (nextStage.requiredSkinLevel || 1) ? '✓ LISTO' : '❌ PENDIENTE'}
+                  </span>
+                </div>
+              )}
+
+              {/* Missing list summary */}
+              {!evalResult.canEvolve && evalResult.missing.length > 0 && (
+                <div className="bg-red-950/40 border border-red-500/20 rounded-lg p-1.5 text-[10px] text-red-300 space-y-0.5">
+                  <div className="font-extrabold text-[9px] uppercase tracking-wider text-red-400">Requisitos faltantes para evolucionar:</div>
+                  {evalResult.missing.map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-1 text-[9.5px]">
+                      <span>❌</span>
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {evalResult.canEvolve && (
+          {evalResult.canEvolve ? (
             <button
               onClick={attemptEvolution}
-              className="w-full py-2 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-black font-black text-xs rounded-xl shadow-[0_0_15px_rgba(245,158,11,0.6)] animate-pulse hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-1.5 uppercase tracking-wide"
+              className="w-full py-2.5 bg-gradient-to-r from-yellow-400 via-amber-400 to-yellow-500 text-black font-black text-xs rounded-xl shadow-[0_0_20px_rgba(245,158,11,0.8)] animate-bounce hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-1.5 uppercase tracking-wide cursor-pointer"
             >
               <Sparkles className="w-4 h-4" />
-              <span>¡EVOLUCIONAR AHORA!</span>
+              <span>¡EVOLUCIONAR AHORA A {nextStage?.name}!</span>
               <ChevronRight className="w-4 h-4" />
+            </button>
+          ) : (
+            <button
+              onClick={attemptEvolution}
+              className="w-full py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 font-bold text-[10px] rounded-xl transition-all flex items-center justify-center gap-1 uppercase tracking-wide opacity-80"
+            >
+              <span>Verificar Requisitos de Evolución</span>
             </button>
           )}
         </div>

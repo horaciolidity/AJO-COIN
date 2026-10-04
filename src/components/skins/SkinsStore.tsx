@@ -10,196 +10,138 @@ type StoreTab = 'skins' | 'attacks';
 // Each one depicts the garlic character wearing the skin costume.
 const SkinIllustration: React.FC<{ skinId: SkinId; size?: number }> = ({ skinId, size = 56 }) => {
   const s = size;
-  // Common garlic body base
-  const body = (
-    <>
+  return (
+    <svg viewBox="0 0 100 115" width={s} height={s * 1.15} style={{ display: 'block' }}>
       <defs>
-        <radialGradient id={`bg_${skinId}`} cx="38%" cy="28%" r="68%">
-          <stop offset="0%" stopColor="#FFFDE7" />
+        <radialGradient id={`skHeadGrad_${skinId}`} cx="40%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#FFFFFF" />
           <stop offset="60%" stopColor="#F5F0E0" />
           <stop offset="100%" stopColor="#D6C5A8" />
         </radialGradient>
-        <radialGradient id={`shine_${skinId}`} cx="30%" cy="22%" r="55%">
-          <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
-          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+        <linearGradient id={`skBodyGrad_${skinId}`} x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor="#F5D0A9" />
+          <stop offset="50%" stopColor="#E2A676" />
+          <stop offset="100%" stopColor="#B86F43" />
+        </linearGradient>
+        <linearGradient id="skSproutGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+          <stop offset="0%" stopColor="#047857" />
+          <stop offset="100%" stopColor="#34D399" />
+        </linearGradient>
+        <radialGradient id="skEyeIris" cx="40%" cy="35%" r="60%">
+          <stop offset="0%" stopColor="#A855F7" />
+          <stop offset="100%" stopColor="#1E0A3C" />
         </radialGradient>
       </defs>
-      {/* Legs */}
-      <path d="M38 82 C35 88, 32 91, 30 94" fill="none" stroke="#D6C5A8" strokeWidth="5" strokeLinecap="round"/>
-      <ellipse cx="29" cy="95" rx="7" ry="3" fill="#D6C5A8"/>
-      <path d="M62 82 C65 88, 68 91, 70 94" fill="none" stroke="#D6C5A8" strokeWidth="5" strokeLinecap="round"/>
-      <ellipse cx="71" cy="95" rx="7" ry="3" fill="#D6C5A8"/>
-      {/* Body */}
-      <path d="M50 17 C26 17, 14 36, 14 57 C14 76, 30 88, 50 88 C70 88, 86 76, 86 57 C86 36, 74 17, 50 17 Z"
-        fill={`url(#bg_${skinId})`} stroke="#C4B18E" strokeWidth="1.5"/>
-      {/* Clove lines */}
-      <path d="M50 17 C38 34, 32 54, 33 86" fill="none" stroke="#C4B18E" strokeWidth="1" strokeLinecap="round" opacity="0.6"/>
-      <path d="M50 17 C62 34, 68 54, 67 86" fill="none" stroke="#C4B18E" strokeWidth="1" strokeLinecap="round" opacity="0.6"/>
-      {/* Shine */}
-      <ellipse cx="38" cy="38" rx="16" ry="11" fill={`url(#shine_${skinId})`} opacity="0.7"/>
-      {/* Cheeks */}
-      <ellipse cx="28" cy="60" rx="6" ry="4" fill="#F472B6" opacity="0.5"/>
-      <ellipse cx="72" cy="60" rx="6" ry="4" fill="#F472B6" opacity="0.5"/>
-      {/* Eyes */}
-      <circle cx="37" cy="52" r="6" fill="white"/>
-      <circle cx="37" cy="52" r="5" fill="#4C1D95"/>
-      <circle cx="37" cy="52" r="3" fill="#130636"/>
-      <circle cx="39" cy="50" r="2" fill="white"/>
-      <circle cx="63" cy="52" r="6" fill="white"/>
-      <circle cx="63" cy="52" r="5" fill="#4C1D95"/>
-      <circle cx="63" cy="52" r="3" fill="#130636"/>
-      <circle cx="65" cy="50" r="2" fill="white"/>
-      {/* Mouth smile */}
-      <path d="M42 65 Q50 72 58 65" fill="#1E0A3C" stroke="#1E0A3C" strokeWidth="1.5"/>
-      {/* Sprout */}
-      <path d="M50 15 C46 5, 39 1, 35 4 C42 11, 47 17, 48 22 Z" fill="#10B981" stroke="#047857" strokeWidth="1"/>
-      <path d="M50 15 C54 3, 63 1, 67 6 C60 12, 53 18, 52 22 Z" fill="#10B981" stroke="#047857" strokeWidth="1"/>
-      {/* Arms */}
-      <path d="M24 58 C16 50, 12 44, 16 38" fill="none" stroke="#D6C5A8" strokeWidth="6" strokeLinecap="round"/>
-      <circle cx="16" cy="37" r="4" fill="#E2D7C2" stroke="#C4B18E" strokeWidth="1"/>
-      <path d="M76 58 C84 50, 88 44, 84 38" fill="none" stroke="#D6C5A8" strokeWidth="6" strokeLinecap="round"/>
-      <circle cx="84" cy="37" r="4" fill="#E2D7C2" stroke="#C4B18E" strokeWidth="1"/>
-    </>
-  );
 
-  const overlays: Record<SkinId, React.ReactNode> = {
-    DEFAULT: null,
-    NINJA: (
-      <>
-        {/* Black headband */}
-        <rect x="22" y="14" width="56" height="10" rx="4" fill="#18181B"/>
-        {/* Metal plate on headband */}
-        <rect x="43" y="15" width="14" height="8" rx="2" fill="#6366F1"/>
-        <line x1="50" y1="16" x2="50" y2="22" stroke="#818CF8" strokeWidth="1.5"/>
-        <line x1="46" y1="19" x2="54" y2="19" stroke="#818CF8" strokeWidth="1.5"/>
-        {/* Scarf/mask covering lower face */}
-        <path d="M22 62 C30 74, 70 74, 78 62 L76 80 C60 90, 40 90, 24 80 Z" fill="#1E1B4B" stroke="#3730A3" strokeWidth="1"/>
-        {/* Left rope */}
-        <path d="M22 14 C10 22, 8 38, 10 50" fill="none" stroke="#18181B" strokeWidth="4" strokeLinecap="round"/>
-        {/* Katana on back */}
-        <rect x="80" y="20" width="3" height="52" rx="1.5" fill="#94A3B8" stroke="#64748B" strokeWidth="0.5"/>
-        <rect x="78" y="20" width="7" height="7" rx="1" fill="#F59E0B"/>
-        <rect x="80" y="70" width="3" height="4" rx="1" fill="#D97706"/>
-      </>
-    ),
-    KING: (
-      <>
-        {/* Crown */}
-        <polygon points="26,14 33,2 42,12 50,0 58,12 67,2 74,14" fill="#F59E0B" stroke="#D97706" strokeWidth="1.5"/>
-        <rect x="26" y="12" width="48" height="7" rx="3" fill="#D97706"/>
-        {/* Crown gems */}
-        <circle cx="50" cy="2" r="3" fill="#EF4444"/>
-        <circle cx="33" cy="4" r="2.5" fill="#3B82F6"/>
-        <circle cx="67" cy="4" r="2.5" fill="#10B981"/>
-        <circle cx="35" cy="14" r="2" fill="#EF4444"/>
-        <circle cx="50" cy="14" r="2.5" fill="#3B82F6"/>
-        <circle cx="65" cy="14" r="2" fill="#10B981"/>
-        {/* Royal cape at bottom */}
-        <path d="M20 78 C34 92, 66 92, 80 78 L78 86 C62 98, 38 98, 22 86 Z" fill="#DC2626" stroke="#991B1B" strokeWidth="1"/>
-        {/* Ermine dots */}
-        <circle cx="35" cy="84" r="2" fill="white" opacity="0.6"/>
-        <circle cx="50" cy="88" r="2" fill="white" opacity="0.6"/>
-        <circle cx="65" cy="84" r="2" fill="white" opacity="0.6"/>
-      </>
-    ),
-    ROBOT: (
-      <>
-        {/* Cyber visor */}
-        <rect x="22" y="44" width="56" height="18" rx="6" fill="#0F172A" stroke="#06B6D4" strokeWidth="2"/>
-        <line x1="28" y1="53" x2="72" y2="53" stroke="#22D3EE" strokeWidth="4" strokeLinecap="round"/>
-        <circle cx="50" cy="53" r="4" fill="#67E8F9"/>
-        {/* Antenna */}
-        <line x1="50" y1="16" x2="50" y2="4" stroke="#64748B" strokeWidth="2.5"/>
-        <circle cx="50" cy="3" r="3.5" fill="#EF4444"/>
-        <circle cx="50" cy="3" r="3.5" fill="#EF4444" opacity="0.5" className="animate-ping"/>
-        {/* Side bolts */}
-        <rect x="10" y="50" width="6" height="12" rx="2" fill="#64748B" stroke="#334155" strokeWidth="1"/>
-        <rect x="84" y="50" width="6" height="12" rx="2" fill="#64748B" stroke="#334155" strokeWidth="1"/>
-        {/* Circuit lines on body */}
-        <path d="M24 65 L34 65 L40 72 L46 72" fill="none" stroke="#06B6D4" strokeWidth="1.5" opacity="0.7"/>
-        <path d="M76 65 L66 65 L60 72 L54 72" fill="none" stroke="#06B6D4" strokeWidth="1.5" opacity="0.7"/>
-        <circle cx="46" cy="72" r="2" fill="#22D3EE"/>
-        <circle cx="54" cy="72" r="2" fill="#22D3EE"/>
-      </>
-    ),
-    FIRE: (
-      <>
-        {/* Flame aura behind */}
-        <path d="M30 18 C20 5, 34 -5, 40 16 C48 -2, 52 -8, 58 14 C66 -2, 80 8, 70 18 Z" fill="#F97316" opacity="0.85"/>
-        <path d="M34 18 C28 8, 38 2, 42 16 C48 4, 52 -2, 58 14 C62 4, 70 10, 66 18 Z" fill="#FDE047" opacity="0.9"/>
-        {/* Fire crown/hair on top */}
-        <path d="M36 20 C30 10, 36 4, 42 18 Z" fill="#EF4444"/>
-        <path d="M50 15 C47 3, 53 3, 50 15 Z" fill="#F97316"/>
-        <path d="M64 20 C70 10, 64 4, 58 18 Z" fill="#EF4444"/>
-        {/* Ember particles */}
-        <circle cx="20" cy="30" r="2" fill="#FDE047" opacity="0.7"/>
-        <circle cx="80" cy="25" r="1.5" fill="#F97316" opacity="0.8"/>
-        <circle cx="15" cy="55" r="1.5" fill="#EF4444" opacity="0.6"/>
-        <circle cx="85" cy="50" r="2" fill="#FDE047" opacity="0.6"/>
-      </>
-    ),
-    ALIEN: (
-      <>
-        {/* Alien antennae */}
-        <path d="M36 17 C30 6, 22 2, 18 6" fill="none" stroke="#22C55E" strokeWidth="3" strokeLinecap="round"/>
-        <circle cx="17" cy="5" r="4.5" fill="#4ADE80" stroke="#15803D" strokeWidth="1.5"/>
-        <path d="M64 17 C70 6, 78 2, 82 6" fill="none" stroke="#22C55E" strokeWidth="3" strokeLinecap="round"/>
-        <circle cx="83" cy="5" r="4.5" fill="#4ADE80" stroke="#15803D" strokeWidth="1.5"/>
-        {/* Alien force field ring */}
-        <ellipse cx="50" cy="57" rx="44" ry="38" fill="none" stroke="rgba(34,197,94,0.35)" strokeWidth="3"/>
-        {/* Green eyes override */}
-        <circle cx="37" cy="52" r="6" fill="#052E16"/>
-        <ellipse cx="37" cy="52" rx="4" ry="6" fill="#22C55E"/>
-        <circle cx="37" cy="50" r="2" fill="#86EFAC"/>
-        <circle cx="63" cy="52" r="6" fill="#052E16"/>
-        <ellipse cx="63" cy="52" rx="4" ry="6" fill="#22C55E"/>
-        <circle cx="63" cy="50" r="2" fill="#86EFAC"/>
-      </>
-    ),
-    DEAD: (
-      <>
-        {/* X eyes */}
-        <line x1="33" y1="48" x2="41" y2="56" stroke="#18181B" strokeWidth="3" strokeLinecap="round"/>
-        <line x1="41" y1="48" x2="33" y2="56" stroke="#18181B" strokeWidth="3" strokeLinecap="round"/>
-        <line x1="59" y1="48" x2="67" y2="56" stroke="#18181B" strokeWidth="3" strokeLinecap="round"/>
-        <line x1="67" y1="48" x2="59" y2="56" stroke="#18181B" strokeWidth="3" strokeLinecap="round"/>
-        {/* Cracked skull halo */}
-        <ellipse cx="50" cy="12" rx="20" ry="7" fill="none" stroke="#71717A" strokeWidth="2" strokeDasharray="4 3"/>
-        {/* Stitched mouth */}
-        <path d="M38 66 L44 62 L50 66 L56 62 L62 66" fill="none" stroke="#18181B" strokeWidth="2.5" strokeLinecap="round"/>
-        {/* Skull cross marks on body */}
-        <path d="M23 73 L30 80 M30 73 L23 80" stroke="#27272A" strokeWidth="2" strokeLinecap="round"/>
-        <path d="M70 73 L77 80 M77 73 L70 80" stroke="#27272A" strokeWidth="2" strokeLinecap="round"/>
-        {/* Green decay tint */}
-        <ellipse cx="50" cy="57" rx="35" ry="30" fill="rgba(74,222,128,0.06)"/>
-      </>
-    ),
-    RICH: (
-      <>
-        {/* Top hat */}
-        <ellipse cx="50" cy="20" rx="26" ry="6" fill="#18181B" stroke="#09090B" strokeWidth="1.5"/>
-        <rect x="36" y="2" width="28" height="19" rx="3" fill="#18181B" stroke="#09090B" strokeWidth="1.5"/>
-        {/* Hat band */}
-        <rect x="36" y="17" width="28" height="5" fill="#9333EA"/>
-        <rect x="47" y="16" width="6" height="7" rx="1.5" fill="#F59E0B"/>
-        {/* Monocle */}
-        <circle cx="63" cy="52" r="8" fill="none" stroke="#F59E0B" strokeWidth="2.5"/>
-        <path d="M71" cy="52" to="M75 55 C78 60, 76 68, 72 72" fill="none" stroke="#F59E0B" strokeWidth="1.5"/>
-        <line x1="70" y1="55" x2="74" y2="70" stroke="#F59E0B" strokeWidth="1.5"/>
-        {/* Bow tie */}
-        <polygon points="44,74 50,70 56,74 50,78" fill="#EF4444" stroke="#991B1B" strokeWidth="1"/>
-        <circle cx="50" cy="74" r="2.5" fill="#B91C1C"/>
-        {/* Money bag in hand */}
-        <circle cx="84" cy="38" r="6" fill="#F59E0B" stroke="#D97706" strokeWidth="1.5"/>
-        <text x="81" y="41" fontSize="7" fill="#92400E" fontWeight="bold">$</text>
-      </>
-    ),
-  };
+      {/* LEGS & BOOTS */}
+      <path d="M 38 88 L 32 108" stroke={skinId === 'NINJA' ? '#18181B' : skinId === 'ROBOT' ? '#334155' : '#78350F'} strokeWidth="8" strokeLinecap="round" />
+      <ellipse cx="30" cy="110" rx="6" ry="3" fill={skinId === 'NINJA' ? '#09090B' : skinId === 'KING' ? '#991B1B' : '#451A03'} />
+      <path d="M 62 88 L 68 108" stroke={skinId === 'NINJA' ? '#18181B' : skinId === 'ROBOT' ? '#334155' : '#78350F'} strokeWidth="8" strokeLinecap="round" />
+      <ellipse cx="70" cy="110" rx="6" ry="3" fill={skinId === 'NINJA' ? '#09090B' : skinId === 'KING' ? '#991B1B' : '#451A03'} />
 
-  return (
-    <svg viewBox="0 0 100 100" width={s} height={s} style={{ display: 'block' }}>
-      {body}
-      {overlays[skinId]}
+      {/* MUSCULAR TORSO */}
+      <path
+        d="M 26 52 C 24 64, 34 90, 50 90 C 66 90, 76 64, 74 52 C 64 48, 36 48, 26 52 Z"
+        fill={skinId === 'FIRE' ? '#C2410C' : skinId === 'ROBOT' ? '#1E293B' : `url(#skBodyGrad_${skinId})`}
+        stroke="#451A03" strokeWidth="1.5"
+      />
+      <path d="M 32 58 C 42 55, 49 62, 50 68 M 68 58 C 58 55, 51 62, 50 68" fill="none" stroke="#451A03" strokeWidth="1.2" />
+      <rect x="39" y="70" width="9" height="5" rx="1.5" fill="rgba(0,0,0,0.15)" stroke="#451A03" strokeWidth="0.8" />
+      <rect x="52" y="70" width="9" height="5" rx="1.5" fill="rgba(0,0,0,0.15)" stroke="#451A03" strokeWidth="0.8" />
+
+      {/* BELT */}
+      <rect x="34" y="84" width="32" height="6" rx="2" fill={skinId === 'NINJA' ? '#DC2626' : skinId === 'KING' ? '#D97706' : '#78350F'} />
+      <rect x="46" y="83" width="8" height="8" rx="1" fill="#F59E0B" />
+
+      {/* ARMS */}
+      <path d="M 28 54 C 18 60, 18 72, 24 80" fill="none" stroke={`url(#skBodyGrad_${skinId})`} strokeWidth="8" strokeLinecap="round" />
+      <circle cx="24" cy="80" r="4.5" fill={skinId === 'NINJA' ? '#18181B' : '#B45309'} />
+      <path d="M 72 54 C 82 60, 82 72, 76 80" fill="none" stroke={`url(#skBodyGrad_${skinId})`} strokeWidth="8" strokeLinecap="round" />
+      <circle cx="76" cy="80" r="4.5" fill={skinId === 'NINJA' ? '#18181B' : '#B45309'} />
+
+      {/* GARLIC HEAD */}
+      <path
+        d="M 50 8 C 30 8, 20 20, 20 34 C 20 45, 30 50, 50 50 C 70 50, 80 45, 80 34 C 80 20, 70 8, 50 8 Z"
+        fill={`url(#skHeadGrad_${skinId})`} stroke="#C4B18E" strokeWidth="1.8"
+      />
+      <path d="M 50 8 C 40 20, 35 32, 36 49" fill="none" stroke="#C4B18E" strokeWidth="1" opacity="0.6" />
+      <path d="M 50 8 C 60 20, 65 32, 64 49" fill="none" stroke="#C4B18E" strokeWidth="1" opacity="0.6" />
+
+      {/* EYES */}
+      <circle cx="38" cy="28" r="5" fill="white" />
+      <circle cx="38" cy="28" r="4" fill="url(#skEyeIris)" />
+      <circle cx="39" cy="26" r="1.5" fill="white" />
+      <circle cx="62" cy="28" r="5" fill="white" />
+      <circle cx="62" cy="28" r="4" fill="url(#skEyeIris)" />
+      <circle cx="63" cy="26" r="1.5" fill="white" />
+
+      {/* SMILE */}
+      <path d="M 44 36 Q 50 42 56 36" fill="none" stroke="#1E0A3C" strokeWidth="1.5" strokeLinecap="round" />
+
+      {/* SPROUT */}
+      <path d="M 50 8 C 46 0, 38 -4, 34 0 C 42 6, 46 11, 48 14 Z" fill="url(#skSproutGrad)" stroke="#047857" strokeWidth="1" />
+      <path d="M 50 8 C 54 0, 62 -4, 66 0 C 58 6, 54 11, 52 14 Z" fill="url(#skSproutGrad)" stroke="#047857" strokeWidth="1" />
+
+      {/* FITTED SKINS OVERLAYS */}
+      {skinId === 'NINJA' && (
+        <g>
+          <rect x="22" y="16" width="56" height="7" rx="2" fill="#18181B" />
+          <rect x="44" y="17" width="12" height="5" rx="1" fill="#E4E4E7" />
+          <path d="M 28 35 C 38 42, 62 42, 72 35 L 70 50 C 60 54, 40 54, 30 50 Z" fill="#18181B" />
+          <line x1="72" y1="12" x2="84" y2="70" stroke="#94A3B8" strokeWidth="2.5" />
+        </g>
+      )}
+
+      {skinId === 'KING' && (
+        <g>
+          <polygon points="32,10 38,0 44,7 50,-3 56,7 62,0 68,10" fill="#F59E0B" stroke="#B45309" strokeWidth="1" />
+          <rect x="32" y="8" width="36" height="4" rx="1" fill="#D97706" />
+          <circle cx="50" cy="-3" r="2" fill="#EF4444" />
+          <path d="M 22 50 C 10 65, 8 95, 14 112 L 25 110 C 20 95, 20 65, 28 52 Z" fill="#DC2626" />
+          <path d="M 78 50 C 90 65, 92 95, 86 112 L 75 110 C 80 95, 80 65, 72 52 Z" fill="#DC2626" />
+        </g>
+      )}
+
+      {skinId === 'ROBOT' && (
+        <g>
+          <rect x="30" y="24" width="40" height="10" rx="3" fill="#0F172A" stroke="#06B6D4" strokeWidth="1" />
+          <line x1="34" y1="29" x2="66" y2="29" stroke="#22D3EE" strokeWidth="2" />
+          <circle cx="50" cy="8" r="3" fill="#EF4444" />
+        </g>
+      )}
+
+      {skinId === 'FIRE' && (
+        <g opacity="0.85">
+          <path d="M 24 16 C 14 4, 28 -4, 34 12 C 42 -2, 50 -6, 56 10 C 64 -2, 76 6, 68 16 Z" fill="#F97316" />
+          <path d="M 28 16 C 22 8, 32 3, 36 14 C 42 4, 48 -1, 54 10 Z" fill="#FACC15" />
+        </g>
+      )}
+
+      {skinId === 'ALIEN' && (
+        <g>
+          <path d="M 34 10 Q 24 0 18 3" fill="none" stroke="#22C55E" strokeWidth="2" />
+          <circle cx="17" cy="3" r="3" fill="#4ADE80" />
+          <path d="M 66 10 Q 76 0 82 3" fill="none" stroke="#22C55E" strokeWidth="2" />
+          <circle cx="83" cy="3" r="3" fill="#4ADE80" />
+        </g>
+      )}
+
+      {skinId === 'DEAD' && (
+        <g>
+          <line x1="26" y1="22" x2="74" y2="40" stroke="#18181B" strokeWidth="2" />
+          <ellipse cx="38" cy="28" rx="5" ry="5" fill="#18181B" />
+          <ellipse cx="62" cy="28" rx="5" ry="5" fill="#18181B" />
+        </g>
+      )}
+
+      {skinId === 'RICH' && (
+        <g>
+          <path d="M 32 23 L 48 23 L 45 31 L 34 31 Z" fill="#09090B" stroke="#F59E0B" strokeWidth="1" />
+          <path d="M 52 23 L 68 23 L 65 31 L 54 31 Z" fill="#09090B" stroke="#F59E0B" strokeWidth="1" />
+          <path d="M 38 48 Q 50 60 62 48" fill="none" stroke="#F59E0B" strokeWidth="2" strokeDasharray="2,1" />
+          <circle cx="50" cy="57" r="4.5" fill="#F59E0B" />
+        </g>
+      )}
     </svg>
   );
 };

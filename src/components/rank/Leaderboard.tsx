@@ -121,16 +121,32 @@ export const Leaderboard: React.FC = () => {
     isCurrentUser: true,
   }), [user, stats, inventory, currentStage]);
 
-  // Combine real player with cloud entries (strictly unique real users)
+  // Combine real player with cloud entries and community seeds if needed
   const sortedList = useMemo(() => {
     const listMap = new Map<string, EnrichedLeaderboardEntry>();
     
-    // Put cloud entries first
+    // 1. Add cloud entries first
     cloudEntries.forEach((entry) => {
       listMap.set(entry.userId, entry);
     });
 
-    // Ensure current active local player is present with latest real-time stats
+    // 2. Add community seeds if fewer than 5 players exist in DB
+    if (cloudEntries.length < 5) {
+      const COMMUNITY_SEEDS: EnrichedLeaderboardEntry[] = [
+        { rank: 1, userId: 'seed_1', username: 'CryptoAjoKing', firstName: 'AjoKing', photoUrl: '', totalGarlic: 450, totalBoxes: 18, totalAjo: 120.5, stageIcon: '🥇👑', stageName: 'Ajo de Oro Grande', xp: 22500, totalTaps: 24000, garlicTeeth: 850, gcBalance: 45000, streak: 15 },
+        { rank: 2, userId: 'seed_2', username: 'GarlicWhale_TON', firstName: 'Whale', photoUrl: '', totalGarlic: 320, totalBoxes: 14, totalAjo: 85.0, stageIcon: '🥇', stageName: 'Ajo de Oro Pequeño', xp: 14200, totalTaps: 16500, garlicTeeth: 620, gcBalance: 32000, streak: 12 },
+        { rank: 3, userId: 'seed_3', username: 'CultivadorMaster', firstName: 'Master', photoUrl: '', totalGarlic: 210, totalBoxes: 9, totalAjo: 52.0, stageIcon: '🥈✨', stageName: 'Ajo de Plata Grande', xp: 6800, totalTaps: 8200, garlicTeeth: 410, gcBalance: 19500, streak: 8 },
+        { rank: 4, userId: 'seed_4', username: 'NinjaGarlic_PRO', firstName: 'Ninja', photoUrl: '', totalGarlic: 140, totalBoxes: 6, totalAjo: 34.0, stageIcon: '🥈', stageName: 'Ajo de Plata Pequeño', xp: 3400, totalTaps: 4100, garlicTeeth: 280, gcBalance: 12000, streak: 5 },
+        { rank: 5, userId: 'seed_5', username: 'AjoRunner_Tx', firstName: 'Runner', photoUrl: '', totalGarlic: 95, totalBoxes: 4, totalAjo: 22.0, stageIcon: '🥉✨', stageName: 'Ajo de Bronce Grande', xp: 1800, totalTaps: 2300, garlicTeeth: 170, gcBalance: 8500, streak: 3 },
+      ];
+      COMMUNITY_SEEDS.forEach((seed) => {
+        if (!listMap.has(seed.userId)) {
+          listMap.set(seed.userId, seed);
+        }
+      });
+    }
+
+    // 3. Ensure current active local player is present with latest real-time stats
     listMap.set(myEntry.userId, myEntry);
 
     const combined = Array.from(listMap.values());
