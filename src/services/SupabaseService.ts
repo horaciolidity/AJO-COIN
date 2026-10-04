@@ -14,9 +14,13 @@ let isTableAvailable: boolean | null = null;
  */
 const checkTableAvailability = async (): Promise<boolean> => {
   if (isTableAvailable !== null) return isTableAvailable;
+  if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.trim() === '') {
+    isTableAvailable = false;
+    return false;
+  }
   try {
     const { error } = await supabase.from('user_game_state').select('user_id').limit(1);
-    if (error && (error.code === 'PGRST301' || error.message.includes('404') || error.message.includes('user_game_state'))) {
+    if (error) {
       isTableAvailable = false;
       return false;
     }

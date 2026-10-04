@@ -18,6 +18,10 @@ export const triggerHaptic = (type: 'light' | 'medium' | 'heavy' | 'success' | '
 
   // Fallback to HTML5 Vibrate API
   if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+    // Prevent browser intervention warning if user has not interacted with document yet
+    if ('userActivation' in navigator && (navigator as any).userActivation && !(navigator as any).userActivation.hasBeenActive) {
+      return;
+    }
     try {
       if (type === 'light') navigator.vibrate(10);
       else if (type === 'medium') navigator.vibrate(25);
