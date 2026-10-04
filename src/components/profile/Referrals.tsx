@@ -93,30 +93,39 @@ export const Referrals: React.FC = () => {
         </ul>
       </div>
 
-      {/* Hitos de Referencia */}
+      {/* Hitos de Referencia para Jugadores y Streamers (hasta 20,000+ Referidos) */}
       <div className="glass-panel p-4 rounded-3xl border border-purple-500/30 space-y-3">
-        <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
-          <Award className="w-4 h-4 text-amber-400" /> HITOS DE RECOMPENSAS
-        </h4>
+        <div className="flex items-center justify-between">
+          <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
+            <Award className="w-4 h-4 text-amber-400" /> HITOS DE RECOMPENSAS STREAMER & CREATIVOS
+          </h4>
+          <span className="text-[9px] bg-amber-400/20 text-amber-300 px-2 py-0.5 rounded-full font-bold border border-amber-400/40">
+            HASTA +20,000 REFERIDOS 🚀
+          </span>
+        </div>
 
         <div className="space-y-2 text-xs">
           {[
             { level: 'NIVEL 1', target: '5 Referidos', reward: '+2,500 GC Bonus + 50 🦷', icon: '🥉', count: 1 },
             { level: 'NIVEL 2', target: '25 Referidos', reward: '+15,000 GC + 2 AJO', icon: '🥈', count: 0 },
             { level: 'NIVEL 3', target: '100 Referidos', reward: '+100,000 GC + 10 AJO', icon: '🥇', count: 0 },
+            { level: 'STREAMER BRONCE 🎥', target: '500 Referidos', reward: '+500,000 GC + 50 AJO + Skin Creador 🎬', icon: '📹', count: 0 },
+            { level: 'STREAMER PLATA 🌟', target: '2,500 Referidos', reward: '+2,500,000 GC + 300 AJO + Insignia Influencer', icon: '🌟', count: 0 },
+            { level: 'STREAMER ORO 👑', target: '10,000 Referidos', reward: '+10,000,000 GC + 1,500 AJO + Rol VIP en Telegram', icon: '👑', count: 0 },
+            { level: 'STREAMER LEYENDA 🏆', target: '20,000+ Referidos', reward: '+25,000,000 GC + 5,000 AJO + Pool Airdrop Exclusivo 💎', icon: '🏆', count: 0 },
           ].map((tier) => (
             <div
               key={tier.level}
-              className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between"
+              className="p-3 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-between gap-2"
             >
-              <div className="flex items-center gap-2.5">
-                <span className="text-2xl">{tier.icon}</span>
-                <div>
-                  <h5 className="font-extrabold text-white text-xs">{tier.level} ({tier.target})</h5>
-                  <p className="text-[10px] text-amber-300 font-semibold">{tier.reward}</p>
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="text-2xl shrink-0">{tier.icon}</span>
+                <div className="min-w-0">
+                  <h5 className="font-extrabold text-white text-xs truncate">{tier.level} ({tier.target})</h5>
+                  <p className="text-[10px] text-amber-300 font-semibold truncate">{tier.reward}</p>
                 </div>
               </div>
-              <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2.5 py-1 rounded-full font-bold border border-purple-500/30">
+              <span className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-1 rounded-full font-bold border border-purple-500/30 shrink-0">
                 {tier.count} Invitados
               </span>
             </div>

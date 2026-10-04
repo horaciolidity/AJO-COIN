@@ -458,9 +458,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           garlicTeeth: inv.garlicTeeth + teethEarned,
         }));
 
-        // Trigger celebration for garlic teeth
+        // Trigger celebration for garlic teeth (fast 1.2s ephemeral duration)
         setTeethCelebration({ active: true, amount: teethEarned });
-        setTimeout(() => setTeethCelebration({ active: false, amount: 0 }), 2500);
+        setTimeout(() => setTeethCelebration({ active: false, amount: 0 }), 1200);
 
         // Fill active box
         setBoxes((prevBoxes) => {

@@ -6,11 +6,13 @@ import { Referrals } from './Referrals';
 import { formatAddress } from '../../utils/format';
 import { Wallet, Flame, Package, Award, ShieldCheck, RefreshCw, Star, Send, Mail, LogOut, CheckCircle, Lock, Sparkles } from 'lucide-react';
 
+import { QuestsList } from '../quests/QuestsList';
+
 export const PlayerProfile: React.FC = () => {
   const { user, stats, inventory, currentStage, setIsWalletModalOpen, resetLocalProgress } = useGame();
   const { wallet } = useWeb3();
   const { setIsAuthModalOpen } = useAuth();
-  const [tab, setTab] = useState<'profile' | 'referrals'>('profile');
+  const [tab, setTab] = useState<'profile' | 'quests' | 'referrals'>('profile');
 
   const activeWalletAddress = wallet.isConnected ? wallet.address : user.walletAddress;
 
@@ -175,17 +177,27 @@ export const PlayerProfile: React.FC = () => {
       <div className="flex bg-black/40 p-1 rounded-2xl border border-white/10 text-xs font-bold">
         <button
           onClick={() => setTab('profile')}
-          className={`flex-1 py-2 rounded-xl uppercase transition-all ${
+          className={`flex-1 py-2 rounded-xl text-[10px] font-extrabold uppercase transition-all ${
             tab === 'profile'
               ? 'bg-gradient-to-r from-sprout-500 to-emerald-600 text-white shadow-md'
               : 'text-gray-400 hover:text-white'
           }`}
         >
-          Estadísticas & Logros
+          Estadísticas
+        </button>
+        <button
+          onClick={() => setTab('quests')}
+          className={`flex-1 py-2 rounded-xl text-[10px] font-extrabold uppercase transition-all ${
+            tab === 'quests'
+              ? 'bg-gradient-to-r from-sprout-500 to-emerald-600 text-white shadow-md'
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          Tareas & Redes
         </button>
         <button
           onClick={() => setTab('referrals')}
-          className={`flex-1 py-2 rounded-xl uppercase transition-all ${
+          className={`flex-1 py-2 rounded-xl text-[10px] font-extrabold uppercase transition-all ${
             tab === 'referrals'
               ? 'bg-gradient-to-r from-sprout-500 to-emerald-600 text-white shadow-md'
               : 'text-gray-400 hover:text-white'
@@ -278,6 +290,8 @@ export const PlayerProfile: React.FC = () => {
             </button>
           </div>
         </div>
+      ) : tab === 'quests' ? (
+        <QuestsList />
       ) : (
         <Referrals />
       )}

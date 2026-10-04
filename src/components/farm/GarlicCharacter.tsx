@@ -29,7 +29,8 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
   const [wobbleAngle, setWobbleAngle] = useState(0);
   const [isBlinking, setIsBlinking] = useState(false);
   const [showCritFlash, setShowCritFlash] = useState(false);
-  const [dialogueIndex, setDialogueIndex] = useState(0);
+  const [showSpeechBalloon, setShowSpeechBalloon] = useState(false);
+  const [activeSpeechText, setActiveSpeechText] = useState('');
 
   const AI_GARLIC_DIALOGUES = [
     "¿Te imaginas AJO COIN a 0.0001 USDC en el Airdrop? 🚀",
@@ -42,17 +43,47 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
     "¡Sube en el Ranking Real y sé el Rey Ajo del ecosistema! 👑",
     "¡Recarga energía en la Estación de Recarga cuando estés agotado! ⚡",
     "¡Acumula Frenzy Combo para ganar 1 Diente de Ajo cada 100 frenzies! 🔥🦷",
+    "¡Los streamers ganan hasta 25,000,000 GC y 5,000 AJO por invitar seguidores! 🎥🔥",
+    "¡Revisa las Tareas Diarias y Redes Sociales para reclamar tus premios diarios! 📲",
   ];
 
-  // Cycle dialogues during Frenzy / Charging mode
+  // Ephemeral, randomized speech balloon popups ONLY when comboCount >= 220
   useEffect(() => {
-    if (comboCount >= 8 || isCharging) {
-      const interval = setInterval(() => {
-        setDialogueIndex((prev) => (prev + 1) % AI_GARLIC_DIALOGUES.length);
-      }, 3000);
-      return () => clearInterval(interval);
+    if (comboCount < 220) {
+      setShowSpeechBalloon(false);
+      return;
     }
-  }, [comboCount, isCharging]);
+
+    let hideTimer: NodeJS.Timeout;
+    let nextTimer: NodeJS.Timeout;
+
+    const triggerNextDialogue = () => {
+      const randomIndex = Math.floor(Math.random() * AI_GARLIC_DIALOGUES.length);
+      setActiveSpeechText(AI_GARLIC_DIALOGUES[randomIndex]);
+      setShowSpeechBalloon(true);
+
+      // Duration: 2.5s visible, then closes automatically
+      hideTimer = setTimeout(() => {
+        setShowSpeechBalloon(false);
+
+        // Pause 1.2s before popping up next random dialogue if still >= 220 combo
+        nextTimer = setTimeout(() => {
+          if (comboCount >= 220) {
+            triggerNextDialogue();
+          }
+        }, 1200);
+      }, 2500);
+    };
+
+    if (!showSpeechBalloon) {
+      triggerNextDialogue();
+    }
+
+    return () => {
+      clearTimeout(hideTimer);
+      clearTimeout(nextTimer);
+    };
+  }, [comboCount >= 220]);
 
   // Find equipped skin & tap style
   const equippedSkin = SKINS_CATALOG.find((s) => s.id === inventory.equippedSkin) || SKINS_CATALOG[0];
@@ -178,16 +209,16 @@ export const GarlicCharacter: React.FC<GarlicCharacterProps> = ({ comboCount }) 
         />
       )}
 
-      {/* AI GARLIC EPHEMERAL SPEECH BALLOON IN FRENZY MODE */}
-      {(comboCount >= 8 || isCharging) && (
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 z-40 max-w-[250px] w-max pointer-events-none">
-          <div className="relative bg-gradient-to-r from-amber-950/95 via-purple-950/95 to-emerald-950/95 border-2 border-amber-400/80 rounded-2xl px-3.5 py-2 shadow-[0_0_25px_rgba(245,158,11,0.6)] text-center animate-bounce">
+      {/* AI GARLIC EPHEMERAL SPEECH BALLOON ONLY WHEN FRENZY COMBO >= 220 */}
+      {showSpeechBalloon && comboCount >= 220 && (
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 z-40 max-w-[260px] w-max pointer-events-none animate-fadeIn">
+          <div className="relative bg-gradient-to-r from-amber-950/95 via-purple-950/95 to-emerald-950/95 border-2 border-amber-400/80 rounded-2xl px-3.5 py-2 shadow-[0_0_25px_rgba(245,158,11,0.7)] text-center animate-bounce">
             <div className="text-[10px] font-black text-amber-300 flex items-center justify-center gap-1 uppercase tracking-wider">
               <span>🤖🧄</span>
-              <span>AJO IA:</span>
+              <span>AJO IA (FRENZY 220+):</span>
             </div>
             <p className="text-[11px] font-bold text-white leading-tight mt-0.5 drop-shadow-md">
-              "{AI_GARLIC_DIALOGUES[dialogueIndex]}"
+              "{activeSpeechText}"
             </p>
             {/* Speech bubble tail pointer */}
             <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[8px] border-l-transparent border-r-[8px] border-r-transparent border-t-[8px] border-t-amber-400" />

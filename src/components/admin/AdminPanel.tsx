@@ -200,6 +200,169 @@ export const AdminPanel: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* ── Social Media Tasks & Links Admin Configurator ─────────────────── */}
+      <AdminSocialTasksConfigurator showToast={showToast} />
+    </div>
+  );
+};
+
+const AdminSocialTasksConfigurator: React.FC<{ showToast: (t: string, m: string, type?: any) => void }> = ({ showToast }) => {
+  const [tasks, setTasks] = useState<any[]>(() => {
+    const saved = localStorage.getItem('ajo_custom_social_tasks');
+    if (saved) {
+      try { return JSON.parse(saved); } catch (e) {}
+    }
+    return [
+      { id: 'st_yt_1', platform: 'YOUTUBE', title: 'SUSCRÍBETE EN YOUTUBE', description: 'Sigue el canal oficial de YouTube de AJO COIN', url: 'https://youtube.com/@AjoCoinOfficial', rewardGc: 500, rewardTeeth: 50, rewardAjo: 1.0 },
+      { id: 'st_tg_1', platform: 'TELEGRAM', title: 'ÚNETE AL CANAL DE TELEGRAM', description: 'Entra al grupo oficial de anuncios en TG', url: 'https://t.me/AjoCoinCommunity', rewardGc: 500, rewardTeeth: 50, rewardAjo: 1.0 },
+      { id: 'st_x_1', platform: 'X', title: 'SIGUE A AJO COIN EN X (TWITTER)', description: 'Sé el primero en ver las noticias en X', url: 'https://x.com/AjoCoinCrypto', rewardGc: 500, rewardTeeth: 50, rewardAjo: 1.0 },
+      { id: 'st_ig_1', platform: 'INSTAGRAM', title: 'SIGUE A AJO COIN EN INSTAGRAM', description: 'Entérate de sorteos en Instagram', url: 'https://instagram.com/AjoCoinApp', rewardGc: 500, rewardTeeth: 50, rewardAjo: 1.0 },
+    ];
+  });
+
+  const [newTitle, setNewTitle] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+  const [newUrl, setNewUrl] = useState('');
+  const [newPlatform, setNewPlatform] = useState<'YOUTUBE' | 'TELEGRAM' | 'X' | 'INSTAGRAM' | 'WEB'>('YOUTUBE');
+  const [newGc, setNewGc] = useState(500);
+  const [newTeeth, setNewTeeth] = useState(50);
+
+  const handleAddTask = () => {
+    if (!newTitle || !newUrl) {
+      showToast('Campos Incompletos', 'Ingresa título y URL para crear la tarea.', 'warning');
+      return;
+    }
+
+    const newTask = {
+      id: `task_${Date.now()}`,
+      platform: newPlatform,
+      title: newTitle,
+      description: newDesc || 'Completa esta tarea oficial para recibir recompensa',
+      url: newUrl,
+      rewardGc: newGc,
+      rewardTeeth: newTeeth,
+      rewardAjo: 1.0,
+    };
+
+    const updated = [newTask, ...tasks];
+    setTasks(updated);
+    localStorage.setItem('ajo_custom_social_tasks', JSON.stringify(updated));
+    window.dispatchEvent(new Event('storage'));
+
+    showToast('¡Tarea Agregada!', `Nueva tarea "${newTitle}" publicada para todos los usuarios.`, 'success');
+
+    setNewTitle('');
+    setNewDesc('');
+    setNewUrl('');
+  };
+
+  const handleDeleteTask = (id: string) => {
+    const updated = tasks.filter((t) => t.id !== id);
+    setTasks(updated);
+    localStorage.setItem('ajo_custom_social_tasks', JSON.stringify(updated));
+    window.dispatchEvent(new Event('storage'));
+    showToast('Tarea Eliminada', 'Se removió la tarea de la lista.', 'info');
+  };
+
+  return (
+    <div className="glass-panel p-4 rounded-3xl border border-emerald-500/30 space-y-3 bg-gradient-to-br from-emerald-950/20 via-black/40 to-purple-950/20">
+      <h3 className="font-extrabold text-sm text-emerald-400 flex items-center gap-2">
+        <span>📲</span> CONFIGURACIÓN DE TAREAS & REDES SOCIALES
+      </h3>
+      <p className="text-[11px] text-gray-300 leading-tight">
+        Agrega o edita misiones de enlaces (YouTube, Telegram, X, Instagram). Los usuarios recibirán recompensas en GC y Dientes al completar las tareas.
+      </p>
+
+      {/* Form para agregar tarea */}
+      <div className="space-y-2 text-xs pt-1 border-t border-white/10">
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-[10px] text-gray-300 font-semibold block mb-1">Plataforma</label>
+            <select
+              value={newPlatform}
+              onChange={(e) => setNewPlatform(e.target.value as any)}
+              className="w-full bg-black/60 border border-emerald-500/30 rounded-xl p-2 text-white font-mono text-xs outline-none"
+            >
+              <option value="YOUTUBE">YouTube 📺</option>
+              <option value="TELEGRAM">Telegram ✈️</option>
+              <option value="X">X (Twitter) 🐦</option>
+              <option value="INSTAGRAM">Instagram 📸</option>
+              <option value="WEB">Sitio Web 🌐</option>
+            </select>
+          </div>
+          <div>
+            <label className="text-[10px] text-gray-300 font-semibold block mb-1">Recompensa GC</label>
+            <input
+              type="number"
+              value={newGc}
+              onChange={(e) => setNewGc(Number(e.target.value))}
+              className="w-full bg-black/60 border border-emerald-500/30 rounded-xl p-2 text-white font-mono text-xs outline-none"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-[10px] text-gray-300 font-semibold block mb-1">Título de la Tarea</label>
+          <input
+            type="text"
+            placeholder="Ej: SUSCRÍBETE A NUESTRO CANAL"
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            className="w-full bg-black/60 border border-emerald-500/30 rounded-xl p-2 text-white text-xs outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="text-[10px] text-gray-300 font-semibold block mb-1">Enlace / URL de la Misión</label>
+          <input
+            type="text"
+            placeholder="https://youtube.com/..."
+            value={newUrl}
+            onChange={(e) => setNewUrl(e.target.value)}
+            className="w-full bg-black/60 border border-emerald-500/30 rounded-xl p-2 text-white font-mono text-xs outline-none"
+          />
+        </div>
+
+        <div>
+          <label className="text-[10px] text-gray-300 font-semibold block mb-1">Descripción Breve</label>
+          <input
+            type="text"
+            placeholder="Ej: Ver video completo y dar me gusta"
+            value={newDesc}
+            onChange={(e) => setNewDesc(e.target.value)}
+            className="w-full bg-black/60 border border-emerald-500/30 rounded-xl p-2 text-white text-xs outline-none"
+          />
+        </div>
+
+        <button
+          onClick={handleAddTask}
+          className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-sprout-500 hover:from-emerald-500 hover:to-sprout-400 text-white font-black text-xs shadow-md transition-all flex items-center justify-center gap-1.5 mt-2"
+        >
+          <span>➕</span> PUBLICAR TAREA EN EL JUEGO
+        </button>
+      </div>
+
+      {/* Lista de tareas configuradas */}
+      <div className="pt-2 border-t border-white/10 space-y-1.5">
+        <span className="text-[10px] font-bold text-gray-400 block uppercase">Tareas Activas ({tasks.length})</span>
+        <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+          {tasks.map((t) => (
+            <div key={t.id} className="p-2 rounded-xl bg-black/40 border border-white/10 flex items-center justify-between text-xs">
+              <div className="min-w-0 flex-1 pr-2">
+                <span className="font-extrabold text-white block truncate">{t.title}</span>
+                <span className="text-[9px] text-emerald-300 font-mono block truncate">{t.url}</span>
+              </div>
+              <button
+                onClick={() => handleDeleteTask(t.id)}
+                className="px-2 py-1 bg-red-600/30 border border-red-500/40 text-red-300 text-[10px] font-bold rounded-lg hover:bg-red-600/50 transition-all shrink-0"
+              >
+                Eliminar
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };
