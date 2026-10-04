@@ -9,7 +9,7 @@ export const EVOLUTION_STAGES: EvolutionStage[] = [
     order: 1,
     requiredXp: 0,
     requiredTaps: 0,
-    requiredGarlicTeeth: 0,
+    requiredRawGarlic: 0,
     requiredQuests: 0,
     description: 'Un pequeño diente de ajo humilde que recién empieza su viaje.',
     celebrationMessage: '¡Bienvenido al mundo de AJO! Tu pequeño diente de ajo está listo para cosechar.',
@@ -28,7 +28,7 @@ export const EVOLUTION_STAGES: EvolutionStage[] = [
     order: 2,
     requiredXp: 200,
     requiredTaps: 150,
-    requiredGarlicTeeth: 10,
+    requiredRawGarlic: 5,
     requiredQuests: 1,
     description: 'Ha comido buena tierra y ahora es un ajo robusto y saludable.',
     celebrationMessage: '¡EL AJO HA CRECIDO! Ha doblado su volumen y fortaleza.',
@@ -47,7 +47,7 @@ export const EVOLUTION_STAGES: EvolutionStage[] = [
     order: 3,
     requiredXp: 600,
     requiredTaps: 500,
-    requiredGarlicTeeth: 30,
+    requiredRawGarlic: 15,
     requiredQuests: 2,
     description: 'Sus capas exteriores han adquirido una pátina metálica de bronce brillante.',
     celebrationMessage: '¡TU AJO HA DESCUBIERTO EL PODER DEL BRONCE! Ahora brilla como una medalla de bronce.',
@@ -66,7 +66,7 @@ export const EVOLUTION_STAGES: EvolutionStage[] = [
     order: 4,
     requiredXp: 1200,
     requiredTaps: 1200,
-    requiredGarlicTeeth: 60,
+    requiredRawGarlic: 30,
     requiredQuests: 3,
     description: 'Un imponente bloque de bronce resistente a cualquier cocinero.',
     celebrationMessage: '¡ESTO YA NO ES UN AJO COMÚN! El Ajo de Bronce Grande domina el cultivo.',
@@ -85,7 +85,7 @@ export const EVOLUTION_STAGES: EvolutionStage[] = [
     order: 5,
     requiredXp: 2500,
     requiredTaps: 2500,
-    requiredGarlicTeeth: 120,
+    requiredRawGarlic: 50,
     requiredQuests: 4,
     description: 'Refleja la luz de la luna con su deslumbrante armadura de plata pura.',
     celebrationMessage: '¡EL AJO HA ALCANZADO LA ETAPA DE PLATA! Su aroma es legendario.',
@@ -104,7 +104,7 @@ export const EVOLUTION_STAGES: EvolutionStage[] = [
     order: 6,
     requiredXp: 5000,
     requiredTaps: 5000,
-    requiredGarlicTeeth: 200,
+    requiredRawGarlic: 75,
     requiredQuests: 5,
     description: 'Una masa plateada formidable capaz de repeler a los vampiros más antiguos.',
     celebrationMessage: '¡PLATA PURA EN SU MÁXIMO ESPLENDOR! Tu ajo inspira respeto absoluto.',
@@ -123,7 +123,7 @@ export const EVOLUTION_STAGES: EvolutionStage[] = [
     order: 7,
     requiredXp: 10000,
     requiredTaps: 10000,
-    requiredGarlicTeeth: 350,
+    requiredRawGarlic: 120,
     requiredQuests: 6,
     description: 'Fundido en oro macizo de 24 quilates, resplandece en cualquier cocina.',
     celebrationMessage: '¡ÉPICO! ¡TU AJO AHORA ES DE ORO! Los reyes sueñan con esta cosecha.',
@@ -142,7 +142,7 @@ export const EVOLUTION_STAGES: EvolutionStage[] = [
     order: 8,
     requiredXp: 20000,
     requiredTaps: 20000,
-    requiredGarlicTeeth: 500,
+    requiredRawGarlic: 180,
     requiredQuests: 7,
     description: 'Un monumento de oro colosal que eclipsa al sol con su brillo deslumbrante.',
     celebrationMessage: '¡ORO COLOSAL! El Ajo de Oro Grande es una leyenda de la agricultura.',
@@ -161,7 +161,7 @@ export const EVOLUTION_STAGES: EvolutionStage[] = [
     order: 9,
     requiredXp: 40000,
     requiredTaps: 40000,
-    requiredGarlicTeeth: 800,
+    requiredRawGarlic: 250,
     requiredQuests: 8,
     description: 'Compuesto por elementos rarísimos de las profundidades estelares.',
     celebrationMessage: '¡PLATINO DESBLOQUEADO! Has trascendido el metal común.',
@@ -180,7 +180,7 @@ export const EVOLUTION_STAGES: EvolutionStage[] = [
     order: 10,
     requiredXp: 75000,
     requiredTaps: 75000,
-    requiredGarlicTeeth: 1200,
+    requiredRawGarlic: 350,
     requiredQuests: 9,
     description: 'Un titan de platino cósmico que altera la gravedad a su alrededor.',
     celebrationMessage: '¡TITÁN DE PLATINO! Tu Ajo genera su propio campo gravitatorio.',
@@ -199,7 +199,7 @@ export const EVOLUTION_STAGES: EvolutionStage[] = [
     order: 11,
     requiredXp: 150000,
     requiredTaps: 150000,
-    requiredGarlicTeeth: 2000,
+    requiredRawGarlic: 500,
     requiredQuests: 10,
     description: 'Cristalizado bajo presión extrema en el núcleo de la galaxia del Ajo.',
     celebrationMessage: '¡DIAMANTE PURO! Tu Ajo refracta destellos celestiales.',
@@ -218,7 +218,7 @@ export const EVOLUTION_STAGES: EvolutionStage[] = [
     order: 12,
     requiredXp: 300000,
     requiredTaps: 300000,
-    requiredGarlicTeeth: 3500,
+    requiredRawGarlic: 750,
     requiredQuests: 12,
     description: 'La forma máxima del universo AJO. Indestructible, divino e inmortal.',
     celebrationMessage: '¡DIAMANTE SUPREMO ALCANZADO! Has conquistado el universo AJO COIN.',
@@ -446,7 +446,7 @@ export function getNextStage(currentStageId: EvolutionStageId): EvolutionStage |
 export function checkEvolutionRequirements(
   currentStageId: EvolutionStageId,
   userStats: { xp: number; totalTaps: number; completedQuestsCount: number },
-  userGarlicTeeth: number
+  userRawGarlic: number
 ): { canEvolve: boolean; nextStage: EvolutionStage | null; missing: string[] } {
   const nextStage = getNextStage(currentStageId);
   if (!nextStage) {
@@ -461,8 +461,8 @@ export function checkEvolutionRequirements(
   if (userStats.totalTaps < nextStage.requiredTaps) {
     missing.push(`Faltan ${nextStage.requiredTaps - userStats.totalTaps} TAPs`);
   }
-  if (userGarlicTeeth < nextStage.requiredGarlicTeeth) {
-    missing.push(`Faltan ${nextStage.requiredGarlicTeeth - userGarlicTeeth} Garlic Teeth`);
+  if (userRawGarlic < nextStage.requiredRawGarlic) {
+    missing.push(`Faltan ${nextStage.requiredRawGarlic - userRawGarlic} Ajos Crudos`);
   }
   if (userStats.completedQuestsCount < nextStage.requiredQuests) {
     missing.push(`Faltan ${nextStage.requiredQuests - userStats.completedQuestsCount} Misiones`);

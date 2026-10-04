@@ -93,7 +93,7 @@ export class GameService {
         totalTaps: state.stats.totalTaps,
         completedQuestsCount,
       },
-      state.inventory.garlicTeeth
+      state.inventory.rawGarlic
     );
 
     if (!evalResult.canEvolve || !evalResult.nextStage) {
@@ -105,20 +105,7 @@ export class GameService {
     }
 
     const nextStage = evalResult.nextStage;
-
-    // Deduct required Garlic Teeth for evolution (if any required)
     let updatedState = state;
-    if (nextStage.requiredGarlicTeeth > 0) {
-      const spendRes = this.spendGarlicTeeth(
-        state,
-        nextStage.requiredGarlicTeeth,
-        `EVOLUTION_${nextStage.id}`
-      );
-      if (!spendRes.success) {
-        return { success: false, state, missing: [spendRes.error || 'Dientes insuficientes'] };
-      }
-      updatedState = spendRes.state;
-    }
 
     // Apply new stage
     const finalState: SavedGameState = {

@@ -25,7 +25,7 @@ export interface EvolutionStage {
   order: number;
   requiredXp: number;
   requiredTaps: number;
-  requiredGarlicTeeth: number;
+  requiredRawGarlic: number;
   requiredQuests: number;
   description: string;
   celebrationMessage: string;

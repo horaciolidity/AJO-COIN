@@ -38,7 +38,7 @@ export const TapGame: React.FC = () => {
       totalTaps: stats.totalTaps,
       completedQuestsCount,
     },
-    inventory.garlicTeeth
+    inventory.rawGarlic
   );
 
   // Progress towards next stage
@@ -46,8 +46,8 @@ export const TapGame: React.FC = () => {
   if (nextStage) {
     const xpRatio = Math.min(1, stats.xp / (nextStage.requiredXp || 1));
     const tapsRatio = Math.min(1, stats.totalTaps / (nextStage.requiredTaps || 1));
-    const teethRatio = Math.min(1, inventory.garlicTeeth / (nextStage.requiredGarlicTeeth || 1));
-    evolutionProgress = Math.floor(((xpRatio + tapsRatio + teethRatio) / 3) * 100);
+    const rawGarlicRatio = Math.min(1, inventory.rawGarlic / (nextStage.requiredRawGarlic || 1));
+    evolutionProgress = Math.floor(((xpRatio + tapsRatio + rawGarlicRatio) / 3) * 100);
   }
 
   // Active tap style info
@@ -132,9 +132,9 @@ export const TapGame: React.FC = () => {
                 </span>
               </div>
               <div className="text-center">
-                <span className="block text-gray-400">Dientes 🦷</span>
-                <span className={inventory.garlicTeeth >= nextStage.requiredGarlicTeeth ? 'text-emerald-400 font-bold' : 'text-amber-300'}>
-                  {inventory.garlicTeeth} / {nextStage.requiredGarlicTeeth}
+                <span className="block text-gray-400">Ajos 🧄</span>
+                <span className={inventory.rawGarlic >= nextStage.requiredRawGarlic ? 'text-emerald-400 font-bold' : 'text-amber-300'}>
+                  {inventory.rawGarlic} / {nextStage.requiredRawGarlic}
                 </span>
               </div>
             </div>
