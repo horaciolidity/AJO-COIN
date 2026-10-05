@@ -8,7 +8,7 @@ export const Referrals: React.FC = () => {
   const [copied, setCopied] = useState(false);
 
   const referralCode = user.referralCode || 'AJO-X7K29';
-  const referralLink = `https://t.me/AjoCoinBot?start=ref_${referralCode}`;
+  const referralLink = `https://t.me/ajocoin_bot?start=ref_${referralCode}`;
 
   const handleCopyLink = () => {
     triggerHaptic('light');

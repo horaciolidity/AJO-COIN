@@ -31,6 +31,13 @@ interface ToastMessage {
   message: string;
 }
 
+export interface DailyProgressData {
+  date: string; // 'YYYY-MM-DD'
+  taps: number;
+  harvest: number;
+  combo: number; // max combo reached today
+}
+
 interface GameContextType {
   activeTab: NavigationTab;
   setActiveTab: (tab: NavigationTab) => void;
@@ -54,7 +61,7 @@ interface GameContextType {
   handleTap: (clientX?: number, clientY?: number) => void;
   handleTapStart: (clientX?: number, clientY?: number) => void;
   handleTapEnd: (clientX?: number, clientY?: number) => void;
-  chargeLevel: number; // 0-1 charge progress
+  chargeLevel: number;
   isCharging: boolean;
   isChargeUnlocked: boolean;
   maxChargeMultiplier: number;
@@ -81,6 +88,7 @@ interface GameContextType {
   setSelectedBoxForClaim: (box: GarlicBoxItem | null) => void;
   floatingParticles: { id: number; x: number; y: number; text: string }[];
   teethCelebration: { active: boolean; amount: number };
+  dailyData: DailyProgressData;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -163,6 +171,24 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isPresaleActive: true,
   });
 
+  // Daily progress tracking (resets each day)
+  const [dailyData, setDailyData] = useState<DailyProgressData>(() => {
+    const today = new Date().toISOString().split('T')[0];
+    try {
+      const saved = localStorage.getItem('ajo_daily_progress_v2');
+      if (saved) {
+        const parsed: DailyProgressData = JSON.parse(saved);
+        if (parsed.date === today) return parsed;
+      }
+    } catch (_) {}
+    return { date: today, taps: 0, harvest: 0, combo: 0 };
+  });
+
+  // Persist daily data to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('ajo_daily_progress_v2', JSON.stringify(dailyData));
+  }, [dailyData]);
+
   // Combo, Rhythm & Particle Effects
   const [comboCount, setComboCount] = useState<number>(0);
   const [rhythmStreak, setRhythmStreak] = useState<number>(0);
@@ -210,6 +236,25 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => window.removeEventListener('ENEMY_HIT_GARLIC', onEnemyHit);
   }, []);
 
+  // Daily mission reward grant (dispatched from DailyMissions.tsx on claim)
+  useEffect(() => {
+    const onDailyReward = (ev: Event) => {
+      const { gc = 0, teeth = 0, xp = 0 } = (ev as CustomEvent<{ gc: number; teeth: number; xp: number }>).detail ?? {};
+      if (gc > 0 || teeth > 0) {
+        setInventory((prev) => ({
+          ...prev,
+          gcBalance: prev.gcBalance + gc,
+          garlicTeeth: prev.garlicTeeth + teeth,
+        }));
+      }
+      if (xp > 0) {
+        setStats((prev) => ({ ...prev, xp: prev.xp + xp }));
+      }
+    };
+    window.addEventListener('AJO_DAILY_REWARD', onDailyReward);
+    return () => window.removeEventListener('AJO_DAILY_REWARD', onDailyReward);
+  }, []);
+
   // Auto-Save game state to localStorage & Supabase (debounced 3.5s to protect the DB)
   const cloudSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -229,9 +274,57 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (cloudSaveTimerRef.current) clearTimeout(cloudSaveTimerRef.current);
       cloudSaveTimerRef.current = setTimeout(() => {
         saveGameStateToSupabase(user.id, fullState, user.username, user.photoUrl);
-      }, 3500); // 3.5s debounce to avoid exploding DB
+      }, 3500);
     }
   }, [stats, inventory, boxes, upgrades, quests, achievements, user?.id]);
+
+  // ── Quest Progress Sync: HARVEST quests ───────────────────────────────────
+  // Runs whenever totalGarlicHarvested changes, keeping HARVEST quest progress
+  // in sync without needing to call setQuests inside a setState callback.
+  useEffect(() => {
+    if (stats.totalGarlicHarvested === 0) return;
+    setQuests((qList) =>
+      qList.map((q) => {
+        if (q.questType === 'HARVEST' && !q.isClaimed) {
+          const nextProg = Math.min(q.targetValue, stats.totalGarlicHarvested);
+          return { ...q, progress: nextProg, isCompleted: nextProg >= q.targetValue };
+        }
+        return q;
+      })
+    );
+  }, [stats.totalGarlicHarvested]);
+
+  // ── Quest Progress Sync: BOX quests ──────────────────────────────────────
+  useEffect(() => {
+    if (stats.totalBoxesCompleted === 0) return;
+    setQuests((qList) =>
+      qList.map((q) => {
+        if (q.questType === 'BOX' && !q.isClaimed) {
+          const nextProg = Math.min(q.targetValue, stats.totalBoxesCompleted);
+          return { ...q, progress: nextProg, isCompleted: nextProg >= q.targetValue };
+        }
+        return q;
+      })
+    );
+  }, [stats.totalBoxesCompleted]);
+
+  // ── Daily data: reset if it's a new day ──────────────────────────────────
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    if (dailyData.date !== today) {
+      setDailyData({ date: today, taps: 0, harvest: 0, combo: 0 });
+    }
+  }, [dailyData.date]);
+
+  // ── Daily combo tracking ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (comboCount > 0) {
+      setDailyData((prev) => ({
+        ...prev,
+        combo: Math.max(prev.combo, comboCount),
+      }));
+    }
+  }, [comboCount]);
 
   // Energy Auto Regeneration Timer (1 energy every X seconds)
   useEffect(() => {
@@ -529,8 +622,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Check quests for TAP progress
       setQuests((qList) =>
         qList.map((q) => {
-          if (q.questType === 'TAPS' && q.mechanicType !== 'RHYTHM' && !q.isCompleted) {
-            const nextProg = q.progress + tapPower;
+          if (q.questType === 'TAPS' && q.mechanicType !== 'RHYTHM' && !q.isClaimed) {
+            const nextProg = Math.min(q.targetValue, q.progress + tapPower);
             return {
               ...q,
               progress: nextProg,
@@ -540,6 +633,17 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return q;
         })
       );
+
+      // Update daily progress counters
+      setDailyData((dp) => {
+        const today = new Date().toISOString().split('T')[0];
+        const base = dp.date === today ? dp : { date: today, taps: 0, harvest: 0, combo: 0 };
+        return {
+          ...base,
+          taps: base.taps + tapPower,
+          harvest: base.harvest + (harvestOccurred ? garlicHarvested : 0),
+        };
+      });
 
       return {
         ...prev,
@@ -972,6 +1076,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSelectedBoxForClaim,
         floatingParticles,
         teethCelebration,
+        dailyData,
       }}
     >
       {children}

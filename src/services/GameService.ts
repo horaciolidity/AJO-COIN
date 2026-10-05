@@ -85,7 +85,7 @@ export class GameService {
     missing?: string[];
   } {
     const currentStageId = state.stats.currentStageId || 'COMMON_SMALL';
-    const completedQuestsCount = state.quests.filter((q) => q.isCompleted).length;
+    const completedQuestsCount = state.quests.filter((q) => q.isCompleted || q.isClaimed).length;
     const skinLevel = getSkinLevel(state.stats.xp, state.stats.totalTaps);
 
     const evalResult = checkEvolutionRequirements(
