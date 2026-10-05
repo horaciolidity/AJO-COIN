@@ -17,6 +17,8 @@ export const ClaimAjoModal: React.FC<ClaimAjoModalProps> = ({ box, onClose }) =>
 
   if (!box) return null;
 
+  const ajoReward = Math.max(1, box.capacity / 100);
+
   const handleClaim = async () => {
     setIsProcessing(true);
     triggerHaptic('medium');
@@ -39,23 +41,23 @@ export const ClaimAjoModal: React.FC<ClaimAjoModalProps> = ({ box, onClose }) =>
           <X className="w-5 h-5" />
         </button>
 
-        <div className="text-6xl animate-bounce">📦🧄</div>
+        <div className="text-6xl animate-bounce">📦✨</div>
 
         <div className="space-y-1">
           <span className="text-xs font-bold text-sprout-400 uppercase tracking-widest bg-sprout-500/20 px-3 py-1 rounded-full border border-sprout-500/30 inline-block">
-            BOX COMPLETE!
+            ¡CAJA LLENA!
           </span>
-          <h3 className="text-xl font-extrabold text-white">GARLIC BOX FULL</h3>
+          <h3 className="text-xl font-extrabold text-white">CAJA DE AJO COMPLETADA</h3>
           <p className="text-xs text-gray-300">
-            You successfully filled a <span className="text-amber-300 font-bold">{box.boxType}</span> Garlic Box with {box.capacity} Garlics!
+            Completaste la caja <span className="text-amber-300 font-bold">{box.boxType}</span> con {box.capacity} Ajos.
           </p>
         </div>
 
         {/* Reward Card */}
         <div className="glass-card-green p-4 rounded-2xl border border-emerald-500/30 flex items-center justify-between">
           <div className="text-left">
-            <span className="text-[10px] text-emerald-300/80 uppercase font-semibold block">Earned Reward</span>
-            <span className="text-lg font-black text-emerald-300">+1.0 AJO TOKEN</span>
+            <span className="text-[10px] text-emerald-300/80 uppercase font-semibold block">Recompensa Ganada</span>
+            <span className="text-lg font-black text-emerald-300">+{ajoReward} AJO TOKEN</span>
           </div>
           <Sparkles className="w-8 h-8 text-emerald-400 animate-pulse" />
         </div>
@@ -63,14 +65,14 @@ export const ClaimAjoModal: React.FC<ClaimAjoModalProps> = ({ box, onClose }) =>
         {/* Web3 status info */}
         <div className="glass-card p-3 rounded-xl text-left space-y-1 text-xs border border-white/10">
           <div className="flex justify-between items-center text-gray-300">
-            <span>Destination Wallet:</span>
+            <span>Billetera de Destino:</span>
             <span className="font-mono text-purple-300 font-semibold">
-              {wallet.isConnected ? `${wallet.address?.substring(0, 6)}...` : 'Off-Chain Balance'}
+              {wallet.isConnected ? `${wallet.address?.substring(0, 6)}...` : 'Balance Virtual (In-Game)'}
             </span>
           </div>
           <div className="flex justify-between items-center text-gray-400 text-[11px]">
-            <span>Network:</span>
-            <span>{wallet.isConnected ? wallet.chainName : 'Virtual In-Game'}</span>
+            <span>Red:</span>
+            <span>{wallet.isConnected ? wallet.chainName : 'AjoCoin Off-Chain'}</span>
           </div>
         </div>
 
@@ -82,18 +84,18 @@ export const ClaimAjoModal: React.FC<ClaimAjoModalProps> = ({ box, onClose }) =>
           {isProcessing ? (
             <>
               <RefreshCw className="w-5 h-5 animate-spin" />
-              <span>CONFIRMING CLAIM...</span>
+              <span>CONFIRMANDO CANJE...</span>
             </>
           ) : (
             <>
-              <span>CLAIM 1 AJO</span>
+              <span>RECLAMAR {ajoReward} AJO</span>
               <ArrowRight className="w-5 h-5" />
             </>
           )}
         </button>
 
         <p className="text-[10px] text-gray-400">
-          Rule: 1 Full Garlic Box = 1 AJO. Confirm to record progress off-chain/on-chain.
+          Regla: 100 Ajos Llenos = 1 AJO Token. Al confirmar se sumará inmediatamente a tu balance superior.
         </p>
       </div>
     </div>

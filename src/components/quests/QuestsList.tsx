@@ -41,11 +41,13 @@ export const QuestsList: React.FC = () => {
           const teethReward = q.rewardGarlicTeeth || 15;
           const xpReward = q.rewardXp || 100;
 
+          const isReadyToClaim = (q.isCompleted || q.progress >= q.targetValue) && !q.isClaimed;
+
           return (
             <div
               key={q.id}
               className={`glass-panel p-4 rounded-2xl border transition-all space-y-2.5 ${
-                q.isCompleted && !q.isClaimed
+                isReadyToClaim
                   ? 'border-emerald-500/50 bg-emerald-950/20 shadow-lg shadow-emerald-500/10 scale-[1.01]'
                   : 'border-purple-500/30'
               }`}
@@ -71,7 +73,7 @@ export const QuestsList: React.FC = () => {
                   <span className="text-[11px] text-gray-400 flex items-center gap-1 bg-white/5 px-2.5 py-1 rounded-lg shrink-0">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> Reclamado
                   </span>
-                ) : q.isCompleted ? (
+                ) : isReadyToClaim ? (
                   <button
                     onClick={() => claimQuestReward(q.id)}
                     className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-sprout-500 to-emerald-600 text-white font-extrabold text-xs shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1 animate-pulse shrink-0"

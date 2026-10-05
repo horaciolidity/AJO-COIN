@@ -477,6 +477,32 @@ export function getNextStage(currentStageId: EvolutionStageId): EvolutionStage |
   return EVOLUTION_STAGES[currentIndex + 1];
 }
 
+export function calculateTotalCompletedQuests(quests: { isCompleted?: boolean; isClaimed?: boolean; progress?: number; targetValue?: number }[]): number {
+  const permCompleted = (quests || []).filter(
+    (q) => q.isCompleted || q.isClaimed || ((q.targetValue || 0) > 0 && (q.progress || 0) >= (q.targetValue || 0))
+  ).length;
+
+  let dailyCompleted = 0;
+  try {
+    const rawDaily = typeof localStorage !== 'undefined' ? localStorage.getItem('ajo_daily_missions_claimed_v2') : null;
+    if (rawDaily) {
+      const parsed = JSON.parse(rawDaily);
+      dailyCompleted = Object.values(parsed).filter(Boolean).length;
+    }
+  } catch (_) {}
+
+  let socialCompleted = 0;
+  try {
+    const rawSocial = typeof localStorage !== 'undefined' ? localStorage.getItem('ajo_social_tasks_claimed_v1') : null;
+    if (rawSocial) {
+      const parsed = JSON.parse(rawSocial);
+      socialCompleted = Object.values(parsed).filter(Boolean).length;
+    }
+  } catch (_) {}
+
+  return permCompleted + dailyCompleted + socialCompleted;
+}
+
 export function checkEvolutionRequirements(
   currentStageId: EvolutionStageId,
   userStats: { xp: number; totalTaps: number; completedQuestsCount: number },

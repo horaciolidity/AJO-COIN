@@ -5,7 +5,7 @@ import { EnemyTargets } from './EnemyTargets';
 import { EnergyBar } from './EnergyBar';
 import { ComboMeter } from './ComboMeter';
 import { EvolutionCelebrationModal } from './EvolutionCelebrationModal';
-import { getNextStage, checkEvolutionRequirements, getSkinLevel, TAP_STYLES_CATALOG } from '../../config/gameBalance';
+import { getNextStage, checkEvolutionRequirements, getSkinLevel, calculateTotalCompletedQuests, TAP_STYLES_CATALOG } from '../../config/gameBalance';
 import { RhythmBar } from './RhythmBar';
 import { SkinBackground } from './SkinBackground';
 import { Sparkles, ArrowRight, Trophy, ChevronRight, Zap, Palette, Swords, Scroll } from 'lucide-react';
@@ -29,8 +29,8 @@ export const TapGame: React.FC = () => {
   const rhythmQuest = quests.find((q) => q.mechanicType === 'RHYTHM' && !q.isCompleted && !q.isClaimed);
   const rhythmActive = Boolean(rhythmQuest) && comboCount >= 3;
 
-  const completedQuestsCount = quests.filter((q) => q.isCompleted || q.isClaimed).length;
-  const nextIncompleteQuest = quests.find((q) => !q.isCompleted && !q.isClaimed);
+  const completedQuestsCount = calculateTotalCompletedQuests(quests);
+  const nextIncompleteQuest = quests.find((q) => !q.isClaimed && !q.isCompleted && (q.progress || 0) < q.targetValue);
   const nextStage = getNextStage(currentStage.id);
 
   const skinLevel = getSkinLevel(stats.xp, stats.totalTaps);

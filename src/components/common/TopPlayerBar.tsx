@@ -39,10 +39,12 @@ export const TopPlayerBar: React.FC = () => {
 
         {/* Banner 1: Ajo Coin Balance & Pre-configured Airdrop Countdown */}
         <div className="flex items-center justify-between bg-black/60 border border-purple-500/30 rounded-xl px-2.5 py-1 text-[11px]">
-          {/* Ajo Coin counter (0 AJO pre-airdrop) */}
-          <div className="flex items-center gap-1.5">
+          {/* Ajo Coin counter */}
+          <div className="flex items-center gap-1.5" title="AJO Tokens reclamados (Balance de Inventario)">
             <Coins className="w-3.5 h-3.5 text-purple-400" />
-            <span className="font-extrabold text-white">0.00</span>
+            <span className="font-extrabold text-white">
+              {(inventory.ajoBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
+            </span>
             <span className="text-[9px] font-black bg-purple-500/30 text-purple-300 px-1.5 py-0.2 rounded border border-purple-500/40">
               $AJO
             </span>

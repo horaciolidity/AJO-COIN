@@ -308,6 +308,20 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
   }, [stats.totalBoxesCompleted]);
 
+  // ── Quest Progress Sync: TAPS quests ──────────────────────────────────────
+  useEffect(() => {
+    if (stats.totalTaps === 0) return;
+    setQuests((qList) =>
+      qList.map((q) => {
+        if (q.questType === 'TAPS' && q.mechanicType !== 'RHYTHM' && !q.isClaimed) {
+          const nextProg = Math.min(q.targetValue, Math.max(q.progress, stats.totalTaps));
+          return { ...q, progress: nextProg, isCompleted: nextProg >= q.targetValue };
+        }
+        return q;
+      })
+    );
+  }, [stats.totalTaps]);
+
   // ── Daily data: reset if it's a new day ──────────────────────────────────
   useEffect(() => {
     const today = new Date().toISOString().split('T')[0];
@@ -706,22 +720,25 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Claim AJO from completed box
   const claimAjoFromBox = (boxId: string) => {
+    const targetBox = boxes.find((b) => b.id === boxId);
+    const ajoAmount = targetBox ? Math.max(1, targetBox.capacity / 100) : 1.0;
+
     setBoxes((prev) =>
       prev.map((b) => (b.id === boxId ? { ...b, claimedAjo: true } : b))
     );
     setInventory((prev) => ({
       ...prev,
-      ajoBalance: prev.ajoBalance + 1.0,
+      ajoBalance: prev.ajoBalance + ajoAmount,
       garlicTeeth: prev.garlicTeeth + 25, // Bonus Garlic Teeth for completing a box
     }));
     setStats((prev) => ({
       ...prev,
       totalBoxesCompleted: prev.totalBoxesCompleted + 1,
-      totalAjoEarned: prev.totalAjoEarned + 1.0,
+      totalAjoEarned: prev.totalAjoEarned + ajoAmount,
     }));
 
     triggerHaptic('success');
-    showToast('🎉 ¡Caja Canjeada!', '¡Ganaste +1.0 AJO y +25 Garlic Teeth 🧄!', 'success');
+    showToast('🎉 ¡Caja Canjeada!', `¡Ganaste +${ajoAmount} AJO y +25 Garlic Teeth 🧄!`, 'success');
   };
 
   // Buy Upgrade in Garlic Lab
@@ -796,7 +813,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Claim Quest Reward
   const claimQuestReward = (questId: string) => {
     const quest = quests.find((q) => q.id === questId);
-    if (!quest || quest.isClaimed || !quest.isCompleted) return;
+    if (!quest || quest.isClaimed) return;
+    if (!quest.isCompleted && quest.progress < quest.targetValue) return;
 
     triggerHaptic('success');
     playCoinSound();
@@ -805,7 +823,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const xpReward = quest.rewardXp || 100;
 
     setQuests((prev) =>
-      prev.map((q) => (q.id === questId ? { ...q, isClaimed: true } : q))
+      prev.map((q) => (q.id === questId ? { ...q, isCompleted: true, isClaimed: true } : q))
     );
 
     setInventory((prev) => ({

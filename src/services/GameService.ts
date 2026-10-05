@@ -5,6 +5,7 @@ import {
   getStageById,
   checkEvolutionRequirements,
   getSkinLevel,
+  calculateTotalCompletedQuests,
   SKINS_CATALOG,
 } from '../config/gameBalance';
 
@@ -85,7 +86,7 @@ export class GameService {
     missing?: string[];
   } {
     const currentStageId = state.stats.currentStageId || 'COMMON_SMALL';
-    const completedQuestsCount = state.quests.filter((q) => q.isCompleted || q.isClaimed).length;
+    const completedQuestsCount = calculateTotalCompletedQuests(state.quests);
     const skinLevel = getSkinLevel(state.stats.xp, state.stats.totalTaps);
 
     const evalResult = checkEvolutionRequirements(
