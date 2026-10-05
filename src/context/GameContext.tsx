@@ -737,9 +737,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const targetBox = boxes.find((b) => b.id === boxId);
     const ajoAmount = targetBox ? Math.max(1, targetBox.capacity / 100) : 1.0;
 
-    setBoxes((prev) =>
-      prev.map((b) => (b.id === boxId ? { ...b, claimedAjo: true } : b))
-    );
+    // Purge claimed box from active list to eliminate redundancy
+    setBoxes((prev) => prev.filter((b) => b.id !== boxId));
     setInventory((prev) => ({
       ...prev,
       ajoBalance: prev.ajoBalance + ajoAmount,

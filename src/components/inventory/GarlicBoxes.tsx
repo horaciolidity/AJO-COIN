@@ -27,84 +27,97 @@ export const GarlicBoxes: React.FC<GarlicBoxesProps> = ({ onSelectClaimBox }) =>
     <div className="space-y-4">
       {/* ── Active Boxes List ────────────────────────────────────────── */}
       <div>
-        <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-2 flex items-center justify-between">
-          <span className="flex items-center gap-1.5 text-white">
-            <Package className="w-4 h-4 text-amber-400" /> MIS CAJAS DE AJO ({boxes.length})
-          </span>
-          <span className="text-xs text-amber-400 font-normal">1 Caja Llena = 1 AJO</span>
-        </h3>
+        {(() => {
+          const activeBoxes = boxes.filter((b) => !b.claimedAjo);
+          return (
+            <>
+              <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-2 flex items-center justify-between">
+                <span className="flex items-center gap-1.5 text-white">
+                  <Package className="w-4 h-4 text-amber-400" /> MIS CAJAS ACTIVAS ({activeBoxes.length})
+                </span>
+                <span className="text-xs text-amber-400 font-normal">100 Ajos Llenos = 1 $AJO</span>
+              </h3>
 
-        <div className="space-y-3">
-          {boxes.map((box, index) => {
-            const fillPct = Math.min(100, Math.floor((box.currentCount / box.capacity) * 100));
-
-            return (
-              <div
-                key={box.id}
-                className={`glass-panel p-4 rounded-2xl border transition-all ${
-                  box.isFull && !box.claimedAjo
-                    ? 'border-emerald-500/50 bg-emerald-950/20 shadow-lg shadow-emerald-500/10'
-                    : 'border-amber-700/30'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-3xl">
-                      {box.isFull ? '📦✨' : '🪵'}
-                    </span>
-                    <div>
-                      <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
-                        <span>{box.boxType} BOX #{index + 1}</span>
-                        {box.isFull && (
-                          <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/40 font-bold uppercase">
-                            BOX FULL
-                          </span>
-                        )}
-                      </h4>
-                      <p className="text-[11px] text-gray-400">Capacidad: {box.capacity} Ajos</p>
-                    </div>
-                  </div>
-
-                  {/* Claim Button if Full */}
-                  {box.isFull && !box.claimedAjo ? (
-                    <button
-                      onClick={() => onSelectClaimBox(box)}
-                      className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-sprout-500 to-emerald-600 text-white font-black text-xs shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1 animate-pulse"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                      RECLAMAR AJO
-                    </button>
-                  ) : box.claimedAjo ? (
-                    <span className="text-xs text-gray-400 flex items-center gap-1 bg-white/5 px-2.5 py-1 rounded-lg">
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-400" /> Reclamado
-                    </span>
-                  ) : (
-                    <span className="text-xs font-bold text-amber-300">
-                      {box.currentCount} / {box.capacity}
-                    </span>
-                  )}
+              {activeBoxes.length === 0 ? (
+                <div className="glass-panel p-4 rounded-2xl border border-amber-500/20 text-center space-y-1.5 bg-black/30">
+                  <span className="text-3xl block">📦</span>
+                  <h4 className="text-xs font-extrabold text-white">NO TIENES CAJAS ACTIVAS</h4>
+                  <p className="text-[11px] text-gray-400">
+                    Compra nuevas cajas más abajo para empezar a recolectar tu cosecha y ganar $AJO Tokens.
+                  </p>
                 </div>
+              ) : (
+                <div className="space-y-3">
+                  {activeBoxes.map((box, index) => {
+                    const fillPct = Math.min(100, Math.floor((box.currentCount / box.capacity) * 100));
 
-                {/* Progress Bar */}
-                <div className="w-full h-3 bg-black/50 rounded-full overflow-hidden p-0.5 border border-white/10">
-                  <div
-                    className={`h-full rounded-full transition-all duration-300 ${
-                      box.isFull
-                        ? 'bg-gradient-to-r from-emerald-500 to-sprout-400 shadow-[0_0_10px_rgba(16,185,129,0.6)]'
-                        : 'bg-gradient-to-r from-amber-700 via-amber-500 to-yellow-400'
-                    }`}
-                    style={{ width: `${fillPct}%` }}
-                  />
-                </div>
+                    return (
+                      <div
+                        key={box.id}
+                        className={`glass-panel p-4 rounded-2xl border transition-all ${
+                          box.isFull
+                            ? 'border-emerald-500/50 bg-emerald-950/20 shadow-lg shadow-emerald-500/10'
+                            : 'border-amber-700/30'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <span className="text-3xl">
+                              {box.isFull ? '📦✨' : '🪵'}
+                            </span>
+                            <div>
+                              <h4 className="font-extrabold text-sm text-white flex items-center gap-1.5">
+                                <span>{box.boxType} BOX #{index + 1}</span>
+                                {box.isFull && (
+                                  <span className="text-[9px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/40 font-bold uppercase">
+                                    CAJA LLENA
+                                  </span>
+                                )}
+                              </h4>
+                              <p className="text-[11px] text-gray-400">Capacidad: {box.capacity} Ajos</p>
+                            </div>
+                          </div>
 
-                <div className="flex justify-between items-center text-[10px] text-gray-400 mt-1.5 font-medium">
-                  <span>Estado de llenado</span>
-                  <span>{fillPct}% Completado</span>
+                          {/* Claim Button if Full */}
+                          {box.isFull ? (
+                            <button
+                              onClick={() => onSelectClaimBox(box)}
+                              className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-sprout-500 to-emerald-600 text-white font-black text-xs shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1 animate-pulse"
+                            >
+                              <Sparkles className="w-3.5 h-3.5" />
+                              RECLAMAR AJO
+                            </button>
+                          ) : (
+                            <span className="text-xs font-bold text-amber-300">
+                              {box.currentCount} / {box.capacity}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Progress Bar */}
+                        <div className="w-full h-3 bg-black/50 rounded-full overflow-hidden p-0.5 border border-white/10">
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              box.isFull
+                                ? 'bg-gradient-to-r from-emerald-500 to-sprout-400 shadow-[0_0_10px_rgba(16,185,129,0.6)]'
+                                : 'bg-gradient-to-r from-amber-700 via-amber-500 to-yellow-400'
+                            }`}
+                            style={{ width: `${fillPct}%` }}
+                          />
+                        </div>
+
+                        <div className="flex justify-between items-center text-[10px] text-gray-400 mt-1.5 font-medium">
+                          <span>Estado de llenado</span>
+                          <span>{fillPct}% Completado</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              )}
+            </>
+          );
+        })()}
       </div>
 
       {/* ── Section 2: Hit Power Upgrades (Aumento de Poder de Golpe) ─────── */}

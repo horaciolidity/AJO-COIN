@@ -32,9 +32,9 @@ export const GarlicInventory: React.FC = () => {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
-            <span>📦</span> MY GARLIC INVENTORY
+            <span>🏪</span> MARKET DE AJOS & CAJAS
           </h2>
-          <p className="text-xs text-gray-400">Manage raw garlic, sell for GC coins & fill boxes</p>
+          <p className="text-xs text-gray-400">Vende tu cosecha de ajo crudo por GC, administra cajas y compra mejoras.</p>
         </div>
       </div>
 

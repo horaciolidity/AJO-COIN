@@ -291,7 +291,9 @@ export class StorageAdapter {
             ? parsed.inventory.unlockedTapStyles
             : INITIAL_DEFAULT_STATE.inventory.unlockedTapStyles,
         },
-        boxes: Array.isArray(parsed.boxes) && parsed.boxes.length > 0 ? parsed.boxes : INITIAL_DEFAULT_STATE.boxes,
+        boxes: Array.isArray(parsed.boxes)
+          ? parsed.boxes.filter((b: any) => !b.claimedAjo)
+          : INITIAL_DEFAULT_STATE.boxes,
         upgrades: Array.isArray(parsed.upgrades) && parsed.upgrades.length > 0 ? parsed.upgrades : INITIAL_DEFAULT_STATE.upgrades,
         // Merge quests: preserve progress on existing quests, append any new ones
         quests: (() => {
