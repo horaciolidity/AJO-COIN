@@ -112,13 +112,15 @@ export class GameService {
     const nextStage = evalResult.nextStage;
     let updatedState = state;
 
-    // Apply new stage
+    // Apply new stage: cap XP & Taps to target threshold so new stage starts at 0% progress
     const finalState: SavedGameState = {
       ...updatedState,
       stats: {
         ...updatedState.stats,
         currentStageId: nextStage.id,
         level: nextStage.order,
+        xp: Math.min(updatedState.stats.xp, nextStage.requiredXp),
+        totalTaps: Math.min(updatedState.stats.totalTaps, nextStage.requiredTaps),
         // Bonus competition & season points upon evolution
         competitionPoints: updatedState.stats.competitionPoints + nextStage.order * 100,
         seasonPoints: updatedState.stats.seasonPoints + nextStage.order * 50,

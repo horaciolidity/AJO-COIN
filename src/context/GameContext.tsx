@@ -16,7 +16,7 @@ import {
   EvolutionStageId,
 } from '../types';
 import { DEFAULT_GAME_CONFIG } from '../config/gameConfig';
-import { EVOLUTION_STAGES, getStageById, TAP_STYLES_CATALOG, HIT_POWER_TIERS } from '../config/gameBalance';
+import { EVOLUTION_STAGES, getStageById, getNextStage, TAP_STYLES_CATALOG, HIT_POWER_TIERS } from '../config/gameBalance';
 import { StorageAdapter, SavedGameState } from '../services/StorageAdapter';
 import { GameService } from '../services/GameService';
 import { saveGameStateToSupabase, loadGameStateFromSupabase } from '../services/SupabaseService';
@@ -573,11 +573,25 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Update energy, TAPs, XP, and Garlic Teeth
     setStats((prev) => {
+      const currentStg = getStageById(prev.currentStageId || 'COMMON_SMALL');
+      const nextStg = getNextStage(currentStg.id);
+
       const energyCost = Math.ceil(DEFAULT_GAME_CONFIG.tapEnergyCost * (chargeRatio > 0 ? 1 + chargeRatio : 1));
       const nextEnergy = Math.max(0, prev.energy - energyCost);
       const nextTaps = prev.currentGarlicTaps + tapPower;
-      const nextTotalTaps = prev.totalTaps + tapPower;
-      const nextXp = prev.xp + tapPower;
+
+      let nextTotalTaps = prev.totalTaps + tapPower;
+      let nextXp = prev.xp + tapPower;
+
+      // Cap XP and Taps if player reaches next stage requirement but hasn't evolved yet
+      if (nextStg) {
+        if (nextStg.requiredXp > 0) {
+          nextXp = Math.min(nextStg.requiredXp, nextXp);
+        }
+        if (nextStg.requiredTaps > 0) {
+          nextTotalTaps = Math.min(nextStg.requiredTaps, nextTotalTaps);
+        }
+      }
 
       // Difficulty scales tapsPerGarlic
       const scaledTapsPerGarlic = Math.floor(prev.tapsPerGarlic * diffMult);
