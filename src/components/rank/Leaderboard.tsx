@@ -16,7 +16,7 @@ interface EnrichedLeaderboardEntry extends LeaderboardEntry {
   isCurrentUser?: boolean;
 }
 
-type LeaderboardFilter = 'global' | 'weekly' | 'xp';
+type LeaderboardFilter = 'global' | 'weekly' | 'xp' | 'combat';
 
 function formatXP(xp: number): string {
   if (xp >= 1000000) return `${(xp / 1000000).toFixed(1)}M`;
@@ -25,7 +25,7 @@ function formatXP(xp: number): string {
 }
 
 export const Leaderboard: React.FC = () => {
-  const { user, stats, inventory, currentStage } = useGame();
+  const { user, stats, inventory, currentStage, combatWinStreak } = useGame();
   const [filter, setFilter] = useState<LeaderboardFilter>('global');
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [cloudEntries, setCloudEntries] = useState<EnrichedLeaderboardEntry[]>([]);
@@ -75,7 +75,7 @@ export const Leaderboard: React.FC = () => {
             totalTaps: sData?.stats?.totalTaps || 0,
             garlicTeeth: sData?.inventory?.garlicTeeth || 0,
             gcBalance: sData?.inventory?.gcBalance || 0,
-            streak: Math.max(1, Math.floor((sData?.stats?.totalTaps || 0) / 100)),
+            streak: typeof sData?.combatWinStreak === 'number' ? sData.combatWinStreak : Math.max(0, Math.floor((sData?.stats?.totalTaps || 0) / 100)),
             isCurrentUser: isMe,
           };
         });
@@ -117,9 +117,9 @@ export const Leaderboard: React.FC = () => {
     totalTaps: stats.totalTaps || 0,
     garlicTeeth: inventory.garlicTeeth || 0,
     gcBalance: inventory.gcBalance || 0,
-    streak: Math.max(1, Math.floor(stats.totalTaps / 100)),
+    streak: combatWinStreak || 0,
     isCurrentUser: true,
-  }), [user, stats, inventory, currentStage]);
+  }), [user, stats, inventory, currentStage, combatWinStreak]);
 
   // Combine real player with cloud entries and community seeds if needed
   const sortedList = useMemo(() => {
@@ -153,6 +153,7 @@ export const Leaderboard: React.FC = () => {
 
     return combined
       .sort((a, b) => {
+        if (filter === 'combat') return (b.streak || 0) - (a.streak || 0);
         if (filter === 'xp') return b.xp - a.xp;
         if (filter === 'weekly') return b.totalBoxes - a.totalBoxes;
         return b.xp - a.xp;
@@ -257,7 +258,7 @@ export const Leaderboard: React.FC = () => {
 
       {/* Filter Tabs */}
       <div className="flex bg-black/40 p-1 rounded-2xl border border-white/10 text-xs font-bold shadow-inner">
-        {([['global', '🌍 Clasificación Global'], ['weekly', '📅 Cajas Completadas'], ['xp', '⭐ Por Experiencia (XP)']] as const).map(([tab, label]) => (
+        {([['global', '🌍 Global'], ['weekly', '📅 Cajas'], ['xp', '⭐ XP'], ['combat', '🥊 Racha']] as const).map(([tab, label]) => (
           <button
             key={tab}
             onClick={() => setFilter(tab as LeaderboardFilter)}

@@ -191,7 +191,7 @@ export interface QuestItem {
   targetValue: number;
   isCompleted: boolean;
   isClaimed: boolean;
-  questType: 'TAPS' | 'HARVEST' | 'BOX' | 'REFERRAL' | 'WALLET';
+  questType: 'TAPS' | 'HARVEST' | 'BOX' | 'REFERRAL' | 'WALLET' | 'COMBAT';
 }
 
 export interface AchievementItem {
@@ -295,4 +295,65 @@ export interface UserSeasonData {
   finalRank?: number;
   finalAllocation?: number;
 }
+
+// ── AJO FIGHTER COMBAT TYPES ────────────────────────────────────────────────
+export type CombatAttackType = 'PUNCH' | 'KICK' | 'SPECIAL';
+
+export type EnemyAttackState = 'IDLE' | 'WINDUP' | 'STRIKING' | 'COOLDOWN';
+
+export interface CombatEnemy {
+  id: string;
+  name: string;
+  type: 'BUG' | 'WORM' | 'MOLD' | 'TANK' | 'BOSS';
+  emoji: string;
+  maxHp: number;
+  currentHp: number;
+  rewardGarlic: number;
+  rewardGc: number;
+  rewardTeeth: number;
+  color: string;
+  isHit?: boolean;
+  /** Base damage this enemy deals per attack */
+  attackDamage: number;
+  /** ms between attacks (lower = faster enemy) */
+  attackInterval: number;
+  /** ms the dodge window is open (WINDUP phase) */
+  dodgeWindowMs: number;
+  /** Optional flag indicating if enemy is a Boss */
+  isBoss?: boolean;
+}
+
+export interface ComboDefinition {
+  id: string;
+  name: string;
+  sequence: CombatAttackType[];
+  damageMultiplier: number;
+  specialMeterBonus: number;
+  rewardMultiplier: number;
+  vfxEmoji: string;
+  announceText: string;
+}
+
+export interface CombatHitEffect {
+  id: string;
+  x: number;
+  y: number;
+  damage: number;
+  attackType: CombatAttackType;
+  isCombo?: boolean;
+  comboName?: string;
+  isPlayerDamage?: boolean;
+}
+
+export interface CombatRoundStats {
+  combosExecuted: number;
+  perfectDodges: number;
+  damageDealt: number;
+  damageTaken: number;
+  maxComboChain: number;
+  specialsUsed: number;
+}
+
+// Gesture swipe direction for special detection
+export type SwipeDirection = 'UP' | 'DOWN' | 'LEFT' | 'RIGHT' | 'CIRCLE';
 

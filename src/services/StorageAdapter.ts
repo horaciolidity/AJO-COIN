@@ -17,6 +17,8 @@ export interface SavedGameState {
   quests: QuestItem[];
   achievements: AchievementItem[];
   version: number;
+  /** Combat win streak — persisted so it survives page reloads */
+  combatWinStreak?: number;
 }
 
 const STORAGE_KEY = 'AJO_GAME_SAVE_V3';
@@ -253,6 +255,42 @@ const INITIAL_DEFAULT_STATE: SavedGameState = {
       difficulty: 'HELL', mechanicType: 'TAP_SIMPLE',
       progress: 0, targetValue: 2000, isCompleted: false, isClaimed: false, questType: 'TAPS',
     },
+    // ── COMBAT FIGHTER QUESTS ────────────────────────────────────────────────
+    {
+      id: 'q_c1', code: 'FIRST_BLOOD', title: 'PRIMER COMBATE',
+      description: 'Derrota a tu primer enemigo en AJO FIGHTER',
+      rewardGc: 500, rewardAjo: 0, rewardGarlicTeeth: 25, rewardXp: 150,
+      difficulty: 'EASY', mechanicType: 'TAP_SIMPLE',
+      progress: 0, targetValue: 1, isCompleted: false, isClaimed: false, questType: 'COMBAT',
+    },
+    {
+      id: 'q_c2', code: 'COMBAT_VICTORIES_5', title: 'GUERRERO AJO',
+      description: 'Derrota 5 enemigos en el ring de combate',
+      rewardGc: 1500, rewardAjo: 0, rewardGarlicTeeth: 60, rewardXp: 400,
+      difficulty: 'NORMAL', mechanicType: 'TAP_SIMPLE',
+      progress: 0, targetValue: 5, isCompleted: false, isClaimed: false, questType: 'COMBAT',
+    },
+    {
+      id: 'q_c3', code: 'BOSS_SLAYER', title: 'CAZADOR DE JEFES',
+      description: 'Vence a 1 Boss en la arena de combate',
+      rewardGc: 3000, rewardAjo: 0, rewardGarlicTeeth: 120, rewardXp: 800,
+      difficulty: 'HARD', mechanicType: 'TAP_SIMPLE',
+      progress: 0, targetValue: 1, isCompleted: false, isClaimed: false, questType: 'COMBAT',
+    },
+    {
+      id: 'q_c4', code: 'STREAK_3', title: 'RACHA DE FUEGO x3',
+      description: 'Consigue una racha de 3 victorias consecutivas',
+      rewardGc: 2500, rewardAjo: 0, rewardGarlicTeeth: 100, rewardXp: 600,
+      difficulty: 'HARD', mechanicType: 'TAP_SIMPLE',
+      progress: 0, targetValue: 3, isCompleted: false, isClaimed: false, questType: 'COMBAT',
+    },
+    {
+      id: 'q_c5', code: 'STREAK_5', title: 'INVICTO x5',
+      description: '¡Logra una racha épica de 5 victorias sin caer!',
+      rewardGc: 5000, rewardAjo: 0, rewardGarlicTeeth: 200, rewardXp: 1200,
+      difficulty: 'HELL', mechanicType: 'TAP_SIMPLE',
+      progress: 0, targetValue: 5, isCompleted: false, isClaimed: false, questType: 'COMBAT',
+    },
   ],
 
   achievements: [
@@ -295,7 +333,7 @@ export class StorageAdapter {
           ? parsed.boxes.filter((b: any) => !b.claimedAjo)
           : INITIAL_DEFAULT_STATE.boxes,
         upgrades: Array.isArray(parsed.upgrades) && parsed.upgrades.length > 0 ? parsed.upgrades : INITIAL_DEFAULT_STATE.upgrades,
-        // Merge quests: preserve progress on existing quests, append any new ones
+        // Merge quests: preserve progress on existing quests, append any new ones (including new combat quests)
         quests: (() => {
           const savedQuests = Array.isArray(parsed.quests) ? parsed.quests : [];
           const savedMap = new Map<string, any>(savedQuests.map((q: any) => [q.id, q]));
@@ -306,6 +344,7 @@ export class StorageAdapter {
           );
         })(),
         achievements: Array.isArray(parsed.achievements) && parsed.achievements.length > 0 ? parsed.achievements : INITIAL_DEFAULT_STATE.achievements,
+        combatWinStreak: typeof parsed.combatWinStreak === 'number' ? parsed.combatWinStreak : 0,
       };
 
       return mergedState;

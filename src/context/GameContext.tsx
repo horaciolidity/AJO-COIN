@@ -58,7 +58,7 @@ interface GameContextType {
   setIsEvolutionModalOpen: (open: boolean) => void;
   justEvolvedStage: EvolutionStage | null;
   showToast: (title: string, message: string, type?: 'success' | 'info' | 'warning' | 'error') => void;
-  handleTap: (clientX?: number, clientY?: number) => void;
+  handleTap: (clientX?: number, clientY?: number, chargeRatio?: number, isCombatTap?: boolean) => void;
   handleTapStart: (clientX?: number, clientY?: number) => void;
   handleTapEnd: (clientX?: number, clientY?: number) => void;
   chargeLevel: number;
@@ -80,6 +80,19 @@ interface GameContextType {
   buyEnergyRefill: (refillType: 'REFILL_100' | 'BOOST_500' | 'SUPER_ELIXIR', paymentCurrency?: 'GARLIC' | 'GC') => void;
   resetLocalProgress: () => void;
   addEnemyReward: (gc: number, teeth: number) => void;
+  /** Combat win streak (resets on player KO) */
+  combatWinStreak: number;
+  /** Record a combat victory: awards XP, GC, garlic + updates quest/streak */
+  recordCombatVictory: (params: {
+    rewardGarlic: number;
+    rewardGc: number;
+    rewardTeeth: number;
+    combosExecuted: number;
+    perfectDodges: number;
+    wasPerfectRun: boolean;
+  }) => void;
+  /** Reset win streak after player KO */
+  resetCombatStreak: () => void;
   isWalletModalOpen: boolean;
   setIsWalletModalOpen: (open: boolean) => void;
   isClaimModalOpen: boolean;
@@ -117,6 +130,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Garlic teeth celebration
   const [teethCelebration, setTeethCelebration] = useState<{ active: boolean; amount: number }>({ active: false, amount: 0 });
   const teethCelebTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Combat Win Streak (persisted across reloads, reset on player KO)
+  const [combatWinStreak, setCombatWinStreak] = useState<number>(() => initialSave.combatWinStreak || 0);
 
   // Auto-hide teethCelebration after 900ms (with proper cleanup to prevent sticky overlay)
   useEffect(() => {
@@ -267,6 +283,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       upgrades,
       quests,
       achievements,
+      combatWinStreak,
     };
     StorageAdapter.saveState(fullState);
 
@@ -276,7 +293,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         saveGameStateToSupabase(user.id, fullState, user.username, user.photoUrl);
       }, 3500);
     }
-  }, [stats, inventory, boxes, upgrades, quests, achievements, user?.id]);
+  }, [stats, inventory, boxes, upgrades, quests, achievements, combatWinStreak, user?.id]);
 
   // ── Quest Progress Sync: HARVEST quests ───────────────────────────────────
   // Runs whenever totalGarlicHarvested changes, keeping HARVEST quest progress
@@ -444,8 +461,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   // Handle Tap Action
-  const handleTap = (clientX?: number, clientY?: number, chargeRatio: number = 0) => {
+  const handleTap = (clientX?: number, clientY?: number, chargeRatio: number = 0, isCombatTap: boolean = false) => {
     if (stats.energy < DEFAULT_GAME_CONFIG.tapEnergyCost) {
+      if (isCombatTap) {
+        // Combat attacks remain fluid even when tap energy is depleted (no garlic generated)
+        return;
+      }
       triggerHaptic('warning');
       if (!toast) {
         showToast('¡Energía Agotada!', 'Espera unos segundos para que tu energía se recargue.', 'warning');
@@ -1043,6 +1064,98 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     playCoinSound();
   };
 
+  // ── Combat Victory Recorder (Phase 3) ──────────────────────────────────────
+  /**
+   * Called when the player defeats an enemy in AJO FIGHTER.
+   * Applies a streak multiplier to rewards, updates quests, and manages the streak.
+   * Win streak bonuses: x1 base → x1.25 (3w) → x1.5 (5w) → x2 (10w)
+   */
+  const recordCombatVictory = (params: {
+    rewardGarlic: number;
+    rewardGc: number;
+    rewardTeeth: number;
+    combosExecuted: number;
+    perfectDodges: number;
+    wasPerfectRun: boolean;
+  }) => {
+    const newStreak = combatWinStreak + 1;
+    setCombatWinStreak(newStreak);
+
+    // Streak multiplier on GC and garlic
+    const streakMult =
+      newStreak >= 10 ? 2.0
+      : newStreak >= 5  ? 1.5
+      : newStreak >= 3  ? 1.25
+      : 1.0;
+
+    const finalGarlic = Math.round(params.rewardGarlic * streakMult);
+    const finalGc     = Math.round(params.rewardGc     * streakMult);
+    const finalTeeth  = params.rewardTeeth + (params.wasPerfectRun ? 2 : 0) + (params.perfectDodges >= 3 ? 1 : 0);
+
+    // XP: 10 base + 5 per combo + 15 if perfect run
+    const xpGain = 10 + params.combosExecuted * 5 + (params.wasPerfectRun ? 15 : 0);
+
+    // Apply inventory rewards
+    setInventory((prev) => ({
+      ...prev,
+      rawGarlic: prev.rawGarlic + finalGarlic,
+      gcBalance: prev.gcBalance + finalGc,
+      garlicTeeth: prev.garlicTeeth + finalTeeth,
+    }));
+
+    // Apply XP and track harvest
+    setStats((prev) => ({
+      ...prev,
+      xp: prev.xp + xpGain,
+      totalGarlicHarvested: prev.totalGarlicHarvested + finalGarlic,
+    }));
+
+    // Update combat-related quest progress
+    setQuests((prev) =>
+      prev.map((q) => {
+        if (q.isCompleted || q.isClaimed) return q;
+
+        // TAPS quests — each enemy kill = 10 equivalent taps
+        if (q.questType === 'TAPS') {
+          const newProg = Math.min(q.targetValue, (q.progress || 0) + 10);
+          return { ...q, progress: newProg, isCompleted: newProg >= q.targetValue };
+        }
+        // HARVEST quests — track garlic harvested
+        if (q.questType === 'HARVEST') {
+          const newProg = Math.min(q.targetValue, (q.progress || 0) + finalGarlic);
+          return { ...q, progress: newProg, isCompleted: newProg >= q.targetValue };
+        }
+        // COMBAT quests
+        if (q.questType === 'COMBAT') {
+          let nextProg = q.progress || 0;
+          if (q.code === 'FIRST_BLOOD' || q.code === 'COMBAT_VICTORIES_5') {
+            nextProg = Math.min(q.targetValue, nextProg + 1);
+          } else if (q.code === 'BOSS_SLAYER' && (params as any).isBoss) {
+            nextProg = Math.min(q.targetValue, nextProg + 1);
+          } else if (q.code === 'STREAK_3' || q.code === 'STREAK_5') {
+            nextProg = Math.min(q.targetValue, Math.max(nextProg, newStreak));
+          }
+          return { ...q, progress: nextProg, isCompleted: nextProg >= q.targetValue };
+        }
+        return q;
+      })
+    );
+
+    triggerHaptic('success');
+    playCoinSound();
+
+    if (streakMult > 1) {
+      showToast(
+        `🔥 RACHA x${newStreak}! (+${Math.round((streakMult - 1) * 100)}% bonus)`,
+        `+${finalGarlic} Ajos 🧄  •  +${finalGc} GC  •  +${finalTeeth} Dientes 🦷`,
+        'success'
+      );
+    }
+  };
+
+  /** Reset win streak after player KO */
+  const resetCombatStreak = () => setCombatWinStreak(0);
+
   // Reset Progress for Dev/Testing
   const resetLocalProgress = () => {
     const reset = StorageAdapter.resetState();
@@ -1099,6 +1212,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         buyEnergyRefill,
         resetLocalProgress,
         addEnemyReward,
+        combatWinStreak,
+        recordCombatVictory,
+        resetCombatStreak,
         isWalletModalOpen,
         setIsWalletModalOpen,
         isClaimModalOpen,

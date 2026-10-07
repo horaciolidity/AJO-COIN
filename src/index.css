@@ -49,7 +49,19 @@ body {
   box-shadow: 0 8px 32px 0 rgba(16, 185, 129, 0.15);
 }
 
-/* Glowing text */
+/* Screen Shake for Heavy Combat Hits & Boss Entrance */
+@keyframes screenShake {
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  20% { transform: translate(-6px, 4px) rotate(-1deg); }
+  40% { transform: translate(6px, -4px) rotate(1deg); }
+  60% { transform: translate(-4px, -2px) rotate(-0.5deg); }
+  80% { transform: translate(4px, 2px) rotate(0.5deg); }
+}
+
+.animate-shake {
+  animation: screenShake 0.35s ease-in-out;
+}
+
 .text-glow-green {
   text-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
 }
@@ -267,4 +279,32 @@ body {
   animation: floatUpFade 0.85s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
 }
 
+/* ── AJO FIGHTER Phase 2 Animations ── */
+
+/* Floating damage numbers (used as animate-floatUp Tailwind class) */
+@keyframes floatUp {
+  0%   { transform: translateY(0) scale(0.75); opacity: 0; }
+  15%  { transform: translateY(-10px) scale(1.2); opacity: 1; }
+  70%  { transform: translateY(-35px) scale(1); opacity: 0.9; }
+  100% { transform: translateY(-60px) scale(0.85); opacity: 0; }
+}
+
+.animate-floatUp {
+  animation: floatUp 0.9s ease-out forwards;
+}
+
+/* Screen shake (combo/hit feedback) */
+@keyframes shake {
+  0%,100% { transform: translateX(0) translateY(0); }
+  15%      { transform: translateX(-6px) translateY(2px); }
+  30%      { transform: translateX(6px) translateY(-2px); }
+  45%      { transform: translateX(-5px) translateY(1px); }
+  60%      { transform: translateX(5px) translateY(-1px); }
+  75%      { transform: translateX(-3px) translateY(0); }
+  90%      { transform: translateX(3px) translateY(0); }
+}
+
+.animate-\[shake_0\.35s_ease-in-out\] {
+  animation: shake 0.35s ease-in-out;
+}
 

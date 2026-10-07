@@ -1,13 +1,14 @@
 import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { GarlicCharacter } from './GarlicCharacter';
-import { EnemyTargets } from './EnemyTargets';
+import { CombatArena } from './CombatArena';
 import { EnergyBar } from './EnergyBar';
 import { ComboMeter } from './ComboMeter';
 import { EvolutionCelebrationModal } from './EvolutionCelebrationModal';
 import { getNextStage, checkEvolutionRequirements, getSkinLevel, calculateTotalCompletedQuests, TAP_STYLES_CATALOG } from '../../config/gameBalance';
 import { RhythmBar } from './RhythmBar';
 import { SkinBackground } from './SkinBackground';
+import { CombatProgressPanel } from './CombatProgressPanel';
 import { Sparkles, ArrowRight, Trophy, ChevronRight, Zap, Palette, Swords, Scroll } from 'lucide-react';
 
 export const TapGame: React.FC = () => {
@@ -226,28 +227,30 @@ export const TapGame: React.FC = () => {
           )}
         </div>
 
-        {/* Tap Hints bar: hold to charge */}
-        <div className="flex items-center justify-center gap-3 text-[10px] text-gray-400 font-medium">
+        {/* Combat Hints bar: AJO FIGHTER controls */}
+        <div className="flex items-center justify-center gap-2.5 text-[10px] text-gray-300 font-bold bg-black/40 py-1 px-3 rounded-full border border-white/10 shadow-sm">
           <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Toca para tapear</span>
+            <span>👊 Puño</span>
           </div>
+          <span className="text-gray-600">•</span>
           <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-            <span>Mantén para cargar</span>
+            <span>🦶 Patada</span>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: activeTapStyle.color }} />
-            <span>Crit {Math.round(activeTapStyle.criticalChance * 100)}%</span>
+          <span className="text-gray-600">•</span>
+          <div className="flex items-center gap-1 text-blue-400">
+            <span>🛡️ Esquivar</span>
+          </div>
+          <span className="text-gray-600">•</span>
+          <div className="flex items-center gap-1 text-amber-400">
+            <span>✨ Especial</span>
           </div>
         </div>
       </div>
 
-      {/* Main Character Stage with Dynamic Skin Background & Interactive Enemy Targets */}
-      <div className="relative w-full flex-1 flex items-center justify-center py-2 overflow-hidden rounded-3xl shadow-2xl border border-white/10" style={{ minHeight: '190px', maxHeight: '280px' }}>
-        <SkinBackground skinId={inventory.equippedSkin || 'DEFAULT'} />
-        <EnemyTargets />
-        <GarlicCharacter comboCount={comboCount} />
+      {/* AJO FIGHTER 2D ARENA */}
+      <div className="w-full flex-1 flex flex-col items-center justify-center gap-2">
+        <CombatProgressPanel />
+        <CombatArena />
       </div>
 
       {/* Rhythm Bar */}
