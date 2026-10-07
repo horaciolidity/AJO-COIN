@@ -695,6 +695,13 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
             />
           </div>
 
+          {/* Impact Hit Spark Effect (Center) */}
+          {(playerAction === 'PUNCH' || playerAction === 'KICK' || playerAction === 'SPECIAL') && (
+            <div className="absolute z-30 pointer-events-none animate-ping text-5xl drop-shadow-[0_0_20px_rgba(245,158,11,1)]">
+              {playerAction === 'SPECIAL' ? '✨' : playerAction === 'KICK' ? '⚡' : '💥'}
+            </div>
+          )}
+
           {/* Enemy Fighter (Right) */}
           <div className="relative z-10 flex items-center justify-center">
             <AnimatedFighterSprite

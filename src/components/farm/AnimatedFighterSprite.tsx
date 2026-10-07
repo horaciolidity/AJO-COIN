@@ -66,17 +66,17 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = ({
 
   const animationClass =
     pose === 'IDLE'
-      ? 'animate-[floatUp_2.5s_ease-in-out_infinite]'
+      ? 'animate-stance'
       : pose === 'PUNCH'
-      ? 'scale-110 translate-x-2 transition-transform duration-75'
+      ? 'animate-punch z-20'
       : pose === 'KICK'
-      ? 'scale-110 translate-x-4 -rotate-6 transition-transform duration-75'
+      ? 'animate-kick z-20'
       : pose === 'SPECIAL'
-      ? 'scale-125 transition-transform duration-100'
+      ? 'scale-125 animate-pulse z-30 drop-shadow-[0_0_25px_rgba(245,158,11,0.9)]'
       : pose === 'HIT'
-      ? '-translate-x-4 scale-95 brightness-200 contrast-200 transition-transform duration-75'
+      ? 'animate-hit'
       : pose === 'VICTORY'
-      ? 'scale-115 -translate-y-2 transition-transform duration-200'
+      ? 'scale-110 -translate-y-3 transition-transform duration-200'
       : '';
 
   return (

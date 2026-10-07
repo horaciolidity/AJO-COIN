@@ -49,6 +49,46 @@ body {
   box-shadow: 0 8px 32px 0 rgba(16, 185, 129, 0.15);
 }
 
+/* Arcade Fighter Stance & Attack Keyframes */
+@keyframes stanceBob {
+  0%, 100% { transform: translateY(0) scaleY(1); }
+  50% { transform: translateY(-4px) scaleY(1.02); }
+}
+
+@keyframes punchLunge {
+  0% { transform: translateX(0) scale(1); }
+  30% { transform: translateX(20px) scale(1.15) rotate(2deg); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+@keyframes kickLunge {
+  0% { transform: translateX(0) scale(1); }
+  35% { transform: translateX(26px) scale(1.2) rotate(-6deg); }
+  100% { transform: translateX(0) scale(1); }
+}
+
+@keyframes hitReel {
+  0% { transform: translateX(0) rotate(0deg); }
+  25% { transform: translateX(-18px) rotate(-8deg); filter: brightness(2) contrast(1.5); }
+  100% { transform: translateX(0) rotate(0deg); }
+}
+
+.animate-stance {
+  animation: stanceBob 1.6s ease-in-out infinite;
+}
+
+.animate-punch {
+  animation: punchLunge 0.22s ease-out;
+}
+
+.animate-kick {
+  animation: kickLunge 0.28s ease-out;
+}
+
+.animate-hit {
+  animation: hitReel 0.25s ease-out;
+}
+
 /* Screen Shake for Heavy Combat Hits & Boss Entrance */
 @keyframes screenShake {
   0%, 100% { transform: translate(0, 0) rotate(0deg); }
