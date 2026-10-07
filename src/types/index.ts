@@ -270,3 +270,29 @@ export interface WalletState {
   chainName: string | null;
   ajoBalanceOnChain: string;
 }
+
+export type SeasonStatus = 'UPCOMING' | 'ACTIVE' | 'ENDING' | 'SNAPSHOT' | 'PROCESSING' | 'CLAIM_OPEN' | 'ENDED';
+
+export interface SeasonInfo {
+  id: string;
+  number: number;
+  name: string;
+  description?: string;
+  startDate: string;
+  endDate: string;
+  claimDate?: string;
+  status: SeasonStatus;
+  seasonPool: number;
+}
+
+export interface UserSeasonData {
+  ajoPoints: number;
+  seasonScore: number;
+  boxesCompleted: number;
+  questsCompleted: number;
+  qualifiedReferrals: number;
+  streakDays: number;
+  finalRank?: number;
+  finalAllocation?: number;
+}
+

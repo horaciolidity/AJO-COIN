@@ -224,7 +224,7 @@ export const DailyMissions: React.FC = () => {
     const next = { ...claimedSocial, [task.id]: true };
     setClaimedSocial(next);
     localStorage.setItem('ajo_claimed_social_tasks', JSON.stringify(next));
-    showToast('🎉 ¡Misión Social Reclamada!', `+${task.rewardGc} GC  •  +${task.rewardTeeth} 🦷  •  +${task.rewardAjo} AJO`, 'success');
+    showToast('🎉 ¡Misión Social Reclamada!', `+${task.rewardGc} GC  •  +${task.rewardTeeth} 🦷  •  +${task.rewardAjo} AJO Point`, 'success');
   };
 
   const renderPlatformIcon = (platform: SocialTask['platform']) => {
@@ -273,7 +273,7 @@ export const DailyMissions: React.FC = () => {
                     <div className="flex items-center gap-2 text-[9px] font-bold text-amber-300 mt-0.5">
                       <span>+{t.rewardGc} GC</span>
                       <span>+{t.rewardTeeth} 🦷</span>
-                      <span>+{t.rewardAjo} AJO</span>
+                      <span>+{t.rewardAjo} Point</span>
                     </div>
                   </div>
                 </div>

@@ -39,6 +39,10 @@ model User {
   tokenClaims       TokenClaim[]
   transactions      Transaction[]
   antiCheatEvents   AntiCheatEvent[]
+  userSeasonStates  UserSeasonState[]
+  riskProfile       UserRiskProfile?
+  skinProgress      UserSkinProgress[]
+  prestige          UserPrestige?
 }
 
 model TelegramProfile {
@@ -248,3 +252,98 @@ model AntiCheatEvent {
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
+
+// ── SISTEMA DE TEMPORADAS Y PUNTOS ──────────────────────────────────────
+model Season {
+  id               String            @id @default(uuid())
+  number           Int               @unique
+  name             String
+  description      String?
+  startDate        DateTime
+  endDate          DateTime
+  claimDate        DateTime?
+  status           String            @default("UPCOMING") // UPCOMING, ACTIVE, ENDING, SNAPSHOT, PROCESSING, CLAIM_OPEN, ENDED
+  seasonPool       Float             @default(0.0)
+  rulesConfigJson  String?           
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  userSeasonStates UserSeasonState[]
+  snapshots        SeasonSnapshot[]
+}
+
+model UserSeasonState {
+  id                   String   @id @default(uuid())
+  userId               String
+  seasonId             String
+  ajoPoints            Float    @default(0.0)
+  seasonScore          Float    @default(0.0)
+  boxesCompleted       Int      @default(0)
+  questsCompleted      Int      @default(0)
+  qualifiedReferrals   Int      @default(0)
+  streakDays           Int      @default(0)
+  finalRank            Int?
+  finalAllocation      Float?
+  isAudited            Boolean  @default(false)
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  season               Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, seasonId])
+}
+
+model ReferralQualification {
+  id               String   @id @default(uuid())
+  referralId       String   @unique
+  status           String   @default("PENDING") // PENDING, QUALIFIED, REJECTED
+  boxesCompleted   Int      @default(0)
+  daysActive       Int      @default(0)
+  questsCompleted  Int      @default(0)
+  qualifiedAt      DateTime?
+  rejectionReason  String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model UserRiskProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  riskScore         Int      @default(0) // 0 - 100
+  status            String   @default("NORMAL") // NORMAL, WATCH, REVIEW, RESTRICTED
+  suspiciousTaps    Int      @default(0)
+  suspiciousIpCount Int      @default(0)
+  notes             String?
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserSkinProgress {
+  id         String   @id @default(uuid())
+  userId     String
+  skinId     String   // DEFAULT, NINJA, KING, ROBOT, etc.
+  level      Int      @default(1) // Level 1 - 5
+  experience Int      @default(0)
+  unlockedAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, skinId])
+}
+
+model UserPrestige {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  prestigeLevel Int      @default(0)
+  title         String?
+  badgeIcon     String?
+  unlockedAt    DateTime @default(now())
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model SeasonSnapshot {
+  id             String   @id @default(uuid())
+  seasonId       String
+  merkleRoot     String
+  totalAllocated Float
+  snapshotJson   String   
+  createdAt      DateTime @default(now())
+  season         Season   @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+}
+

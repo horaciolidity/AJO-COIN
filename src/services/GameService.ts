@@ -112,9 +112,17 @@ export class GameService {
     const nextStage = evalResult.nextStage;
     let updatedState = state;
 
+    // Resource Sink: Consume required raw garlic upon evolution
+    const consumedGarlic = nextStage.requiredRawGarlic || 0;
+    const remainingGarlic = Math.max(0, updatedState.inventory.rawGarlic - consumedGarlic);
+
     // Apply new stage: cap XP & Taps to target threshold so new stage starts at 0% progress
     const finalState: SavedGameState = {
       ...updatedState,
+      inventory: {
+        ...updatedState.inventory,
+        rawGarlic: remainingGarlic,
+      },
       stats: {
         ...updatedState.stats,
         currentStageId: nextStage.id,
@@ -123,7 +131,7 @@ export class GameService {
         totalTaps: Math.min(updatedState.stats.totalTaps, nextStage.requiredTaps),
         // Bonus competition & season points upon evolution
         competitionPoints: updatedState.stats.competitionPoints + nextStage.order * 100,
-        seasonPoints: updatedState.stats.seasonPoints + nextStage.order * 50,
+        seasonPoints: (updatedState.stats.seasonPoints || 0) + nextStage.order * 50,
       },
     };
 

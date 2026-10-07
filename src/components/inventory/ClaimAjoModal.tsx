@@ -54,48 +54,48 @@ export const ClaimAjoModal: React.FC<ClaimAjoModalProps> = ({ box, onClose }) =>
         </div>
 
         {/* Reward Card */}
-        <div className="glass-card-green p-4 rounded-2xl border border-emerald-500/30 flex items-center justify-between">
+        <div className="glass-card-green p-4 rounded-2xl border border-amber-500/30 flex items-center justify-between">
           <div className="text-left">
-            <span className="text-[10px] text-emerald-300/80 uppercase font-semibold block">Recompensa Ganada</span>
-            <span className="text-lg font-black text-emerald-300">+{ajoReward} AJO TOKEN</span>
+            <span className="text-[10px] text-amber-300/80 uppercase font-semibold block">Recompensa de Temporada</span>
+            <span className="text-lg font-black text-amber-300">+{ajoReward} AJO POINT</span>
           </div>
-          <Sparkles className="w-8 h-8 text-emerald-400 animate-pulse" />
+          <Sparkles className="w-8 h-8 text-amber-400 animate-pulse" />
         </div>
 
         {/* Web3 status info */}
         <div className="glass-card p-3 rounded-xl text-left space-y-1 text-xs border border-white/10">
           <div className="flex justify-between items-center text-gray-300">
-            <span>Billetera de Destino:</span>
-            <span className="font-mono text-purple-300 font-semibold">
-              {wallet.isConnected ? `${wallet.address?.substring(0, 6)}...` : 'Balance Virtual (In-Game)'}
+            <span>Puntos de Temporada:</span>
+            <span className="font-mono text-amber-300 font-semibold">
+              Season 1 Active
             </span>
           </div>
           <div className="flex justify-between items-center text-gray-400 text-[11px]">
-            <span>Red:</span>
-            <span>{wallet.isConnected ? wallet.chainName : 'AjoCoin Off-Chain'}</span>
+            <span>Estado:</span>
+            <span className="text-emerald-400 font-bold">Sumando a Puntuación</span>
           </div>
         </div>
 
         <button
           disabled={isProcessing}
           onClick={handleClaim}
-          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-sprout-500 to-emerald-600 hover:from-sprout-400 hover:to-emerald-500 text-white font-extrabold text-sm shadow-lg shadow-sprout-500/30 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
+          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-emerald-600 hover:from-amber-400 hover:to-emerald-500 text-white font-extrabold text-sm shadow-lg shadow-amber-500/30 transition-all flex items-center justify-center gap-2 active:scale-95 disabled:opacity-50"
         >
           {isProcessing ? (
             <>
               <RefreshCw className="w-5 h-5 animate-spin" />
-              <span>CONFIRMANDO CANJE...</span>
+              <span>CONFIRMANDO PUNTOS...</span>
             </>
           ) : (
             <>
-              <span>RECLAMAR {ajoReward} AJO</span>
+              <span>RECLAMAR +{ajoReward} AJO POINT</span>
               <ArrowRight className="w-5 h-5" />
             </>
           )}
         </button>
 
         <p className="text-[10px] text-gray-400">
-          Regla: 100 Ajos Llenos = 1 AJO Token. Al confirmar se sumará inmediatamente a tu balance superior.
+          Regla: 100 Ajos Llenos = 1 AJO Point. Los puntos acumulan para la distribución al final de la Temporada 1.
         </p>
       </div>
     </div>

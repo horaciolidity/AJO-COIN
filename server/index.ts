@@ -12,6 +12,7 @@ import { leaderboardRouter } from './routes/leaderboard';
 import { presaleRouter } from './routes/presale';
 import { web3Router } from './routes/web3';
 import { adminRouter } from './routes/admin';
+import { seasonsRouter } from './routes/seasons';
 
 const app = express();
 
@@ -26,6 +27,7 @@ app.use('/api/upgrades', upgradesRouter);
 app.use('/api/quests', questsRouter);
 app.use('/api/referrals', referralsRouter);
 app.use('/api/leaderboard', leaderboardRouter);
+app.use('/api/seasons', seasonsRouter);
 app.use('/api/presale', presaleRouter);
 app.use('/api/web3', web3Router);
 app.use('/api/admin', adminRouter);

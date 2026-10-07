@@ -35,7 +35,7 @@ export const GarlicBoxes: React.FC<GarlicBoxesProps> = ({ onSelectClaimBox }) =>
                 <span className="flex items-center gap-1.5 text-white">
                   <Package className="w-4 h-4 text-amber-400" /> MIS CAJAS ACTIVAS ({activeBoxes.length})
                 </span>
-                <span className="text-xs text-amber-400 font-normal">100 Ajos Llenos = 1 $AJO</span>
+                <span className="text-xs text-amber-400 font-normal">100 Ajos Llenos = +1 AJO Point</span>
               </h3>
 
               {activeBoxes.length === 0 ? (
@@ -43,7 +43,7 @@ export const GarlicBoxes: React.FC<GarlicBoxesProps> = ({ onSelectClaimBox }) =>
                   <span className="text-3xl block">📦</span>
                   <h4 className="text-xs font-extrabold text-white">NO TIENES CAJAS ACTIVAS</h4>
                   <p className="text-[11px] text-gray-400">
-                    Compra nuevas cajas más abajo para empezar a recolectar tu cosecha y ganar $AJO Tokens.
+                    Compra nuevas cajas más abajo para empezar a recolectar tu cosecha y ganar AJO Points de Temporada.
                   </p>
                 </div>
               ) : (
@@ -85,7 +85,7 @@ export const GarlicBoxes: React.FC<GarlicBoxesProps> = ({ onSelectClaimBox }) =>
                               className="px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-sprout-500 to-emerald-600 text-white font-black text-xs shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-1 animate-pulse"
                             >
                               <Sparkles className="w-3.5 h-3.5" />
-                              RECLAMAR AJO
+                              RECLAMAR +1 POINT
                             </button>
                           ) : (
                             <span className="text-xs font-bold text-amber-300">

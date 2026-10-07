@@ -8,15 +8,16 @@ export const TopPlayerBar: React.FC = () => {
   const { user, stats, inventory, currentStage, setIsWalletModalOpen, setActiveTab } = useGame();
   const { wallet } = useWeb3();
 
-  // ── Airdrop Countdown State ──────────────────────────────────────────────
-  const [airdropTimeLeft, setAirdropTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  // ── Season 1 Countdown State ──────────────────────────────────────────────
+  const [seasonTimeLeft, setSeasonTimeLeft] = useState({ days: 14, hours: 23, minutes: 59, seconds: 59 });
+  const [showPointsInfo, setShowPointsInfo] = useState(false);
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const savedDate = localStorage.getItem('ajo_airdrop_target_date');
+      const savedDate = localStorage.getItem('ajo_season_target_date');
       const targetTime = savedDate
         ? new Date(savedDate).getTime()
-        : new Date(Date.now() + 30 * 86400000).getTime();
+        : new Date(Date.now() + 14 * 86400000).getTime();
 
       const diff = Math.max(0, targetTime - Date.now());
 
@@ -25,7 +26,7 @@ export const TopPlayerBar: React.FC = () => {
       const minutes = Math.floor((diff / 1000 / 60) % 60);
       const seconds = Math.floor((diff / 1000) % 60);
 
-      setAirdropTimeLeft({ days, hours, minutes, seconds });
+      setSeasonTimeLeft({ days, hours, minutes, seconds });
     };
 
     calculateTimeLeft();
@@ -37,28 +38,44 @@ export const TopPlayerBar: React.FC = () => {
     <header className="sticky top-0 z-40 w-full glass-panel border-b border-purple-500/20 px-3 py-1.5 shadow-lg backdrop-blur-md">
       <div className="max-w-md mx-auto space-y-1.5">
 
-        {/* Banner 1: Ajo Coin Balance & Pre-configured Airdrop Countdown */}
+        {/* Banner 1: AJO Points (Season Points) & Season 1 Countdown */}
         <div className="flex items-center justify-between bg-black/60 border border-purple-500/30 rounded-xl px-2.5 py-1 text-[11px]">
-          {/* Ajo Coin counter */}
-          <div className="flex items-center gap-1.5" title="AJO Tokens reclamados (Balance de Inventario)">
-            <Coins className="w-3.5 h-3.5 text-purple-400" />
-            <span className="font-extrabold text-white">
-              {(inventory.ajoBalance || 0).toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 2 })}
+          {/* AJO Points counter */}
+          <div 
+            onClick={() => setShowPointsInfo(!showPointsInfo)}
+            className="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity" 
+            title="AJO Points: Puntos de Temporada acumulados"
+          >
+            <Coins className="w-3.5 h-3.5 text-amber-400 animate-bounce" />
+            <span className="font-extrabold text-white text-xs">
+              {((inventory.ajoBalance || 0) + (stats.seasonPoints || 0)).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
             </span>
-            <span className="text-[9px] font-black bg-purple-500/30 text-purple-300 px-1.5 py-0.2 rounded border border-purple-500/40">
-              $AJO
+            <span className="text-[9px] font-black bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded border border-amber-500/40 uppercase tracking-wider">
+              AJO Points
             </span>
           </div>
 
-          {/* Airdrop Live Countdown */}
-          <div className="flex items-center gap-1 text-amber-300 font-mono font-extrabold text-[10px]" title="Cuenta regresiva del Airdrop AJO">
-            <Timer className="w-3.5 h-3.5 text-amber-400 animate-pulse shrink-0" />
-            <span className="text-gray-400 font-bold text-[9px] uppercase mr-0.5">Airdrop en:</span>
-            <span className="bg-amber-950/80 text-amber-300 border border-amber-500/40 px-1.5 py-0.5 rounded-md">
-              {airdropTimeLeft.days}d {String(airdropTimeLeft.hours).padStart(2, '0')}h {String(airdropTimeLeft.minutes).padStart(2, '0')}m {String(airdropTimeLeft.seconds).padStart(2, '0')}s
+          {/* Season 1 Live Countdown */}
+          <div className="flex items-center gap-1 text-emerald-300 font-mono font-extrabold text-[10px]" title="Temporada 1 en progreso">
+            <span className="text-[8px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-1 py-0.2 rounded uppercase">
+              Season 1
+            </span>
+            <Timer className="w-3.5 h-3.5 text-emerald-400 animate-pulse shrink-0 ml-0.5" />
+            <span className="bg-emerald-950/80 text-emerald-300 border border-emerald-500/40 px-1.5 py-0.5 rounded-md">
+              {seasonTimeLeft.days}d {String(seasonTimeLeft.hours).padStart(2, '0')}h {String(seasonTimeLeft.minutes).padStart(2, '0')}m {String(seasonTimeLeft.seconds).padStart(2, '0')}s
             </span>
           </div>
         </div>
+
+        {/* Info Banner when clicking AJO Points */}
+        {showPointsInfo && (
+          <div className="bg-amber-950/90 border border-amber-500/40 rounded-xl p-2 text-[10px] text-amber-200 animate-fadeIn flex justify-between items-center">
+            <span>
+              💡 <strong>AJO Points:</strong> Son puntos de temporada. No son tokens negociables. Sirven para determinar tu asignación final al terminar la Temporada 1.
+            </span>
+            <button onClick={() => setShowPointsInfo(false)} className="text-amber-400 font-bold ml-2 text-xs">✕</button>
+          </div>
+        )}
 
         {/* User Info & Stats Pills */}
         <div className="flex items-center justify-between gap-2">

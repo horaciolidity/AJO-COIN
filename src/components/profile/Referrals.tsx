@@ -25,8 +25,8 @@ export const Referrals: React.FC = () => {
   const handleShareTelegram = () => {
     triggerHaptic('medium');
     const viralMessage =
-      `🧄 ¡Únete a la fiebre de AJO COIN en Telegram! 🚀\n\n` +
-      `🔥 Tapea la cabeza de Ajo, activa el Modo Frenzy, derrota plagas de vampiros y acumula tokens $AJO reales para el Airdrop proyectado a 0.0001 USDC! 💰\n\n` +
+      `🧄 ¡Únete a la Temporada 1 de AJO COIN en Telegram! 🚀\n\n` +
+      `🔥 Tapea la cabeza de Ajo, completa cajas, evoluciona tu personaje y acumula AJO Points de Temporada para escalar en el ranking global! 🏆\n\n` +
       `🎁 ¡Entra con mi enlace exclusivo y recibe +500 GC y +50 Dientes de Ajo 🦷 gratis de bienvenida!\n\n` +
       `👇 ¡Haz clic y empieza a cultivar tu Ajo ahora!`;
 
@@ -87,7 +87,7 @@ export const Referrals: React.FC = () => {
           <Sparkles className="w-4 h-4 text-amber-400" /> Por qué recomendar AJO COIN:
         </h4>
         <ul className="text-[11px] text-gray-300 space-y-1.5 list-disc list-inside">
-          <li><strong className="text-white">Airdrop $AJO:</strong> Tokens proyectados a 0.0001 USDC en el lanzamiento.</li>
+          <li><strong className="text-white">Temporada 1 Activa:</strong> Acumula AJO Points completando misiones y cajas.</li>
           <li><strong className="text-white">Modo Frenzy & Plagas:</strong> Juego adictivo con jefes plaga y multiplicadores.</li>
           <li><strong className="text-white">Bono de Bienvenida:</strong> Tus referidos reciben 500 GC gratis para empezar.</li>
         </ul>
