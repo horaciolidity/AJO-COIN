@@ -104,6 +104,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
 
   // ── Player animation poses ───────────────────────────────────────────────
   const [playerAction, setPlayerAction] = useState<'IDLE' | 'PUNCH' | 'KICK' | 'SPECIAL' | 'VICTORY' | 'HIT'>('IDLE');
+  const playerPoseTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // ── Screen shake / flash ─────────────────────────────────────────────────
   const [screenShake, setScreenShake] = useState(false);
@@ -310,9 +311,12 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         setTimeout(() => setShowSpecialVFX(false), 700);
       }
 
-      // Player animation
+      // Player animation with Pose Lock Timer
+      if (playerPoseTimerRef.current) clearTimeout(playerPoseTimerRef.current);
       setPlayerAction(type);
-      setTimeout(() => setPlayerAction('IDLE'), 380);
+      playerPoseTimerRef.current = setTimeout(() => {
+        setPlayerAction('IDLE');
+      }, 250);
 
       // Floating hit effect on enemy side
       const rect = arenaRef.current?.getBoundingClientRect();
@@ -688,41 +692,14 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         {/* UPPER ZONE: PUNCH */}
         <div
           onClick={(e) => handleAttack('PUNCH', e)}
+          onTouchStart={(e) => { e.preventDefault(); handleAttack('PUNCH', e); }}
+          style={{ touchAction: 'none' }}
           className="w-full h-1/2 rounded-2xl bg-purple-500/5 hover:bg-purple-500/15 border border-purple-500/20 active:bg-purple-500/30 transition-all flex flex-col items-center justify-center cursor-pointer relative group"
         >
           <span className="text-[10px] font-black text-purple-300/50 uppercase tracking-widest group-hover:text-purple-300 group-active:scale-95 transition-transform">
             👆 ZONA SUPERIOR — PUÑETAZO (PUNCH)
           </span>
         </div>
-
-        {/* Floating Hit Effects */}
-        {hitEffects.map((effect) => (
-          <div
-            key={effect.id}
-            className="absolute pointer-events-none animate-floatUp text-sm font-black font-mono drop-shadow-[0_2px_4px_rgba(0,0,0,0.9)] z-30"
-            style={{
-              left: `${effect.x}px`,
-              top: `${effect.y}px`,
-              color: effect.isPlayerDamage
-                ? '#ef4444'
-                : effect.isCombo
-                ? '#f59e0b'
-                : effect.attackType === 'PUNCH'
-                ? '#38bdf8'
-                : effect.attackType === 'SPECIAL'
-                ? '#a855f7'
-                : '#f43f5e',
-            }}
-          >
-            {effect.isPlayerDamage
-              ? `💢 -${effect.damage} HP`
-              : effect.isCombo
-              ? `💥 ${effect.comboName}`
-              : effect.attackType === 'SPECIAL'
-              ? `✨ -${effect.damage}`
-              : `-${effect.damage} HP`}
-          </div>
-        ))}
 
         {/* 2D ARCADE FIGHTERS DISPLAY */}
         <div className="absolute inset-0 pointer-events-none flex items-center justify-around px-2 pb-2">
@@ -788,6 +765,8 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         {/* LOWER ZONE: KICK */}
         <div
           onClick={(e) => handleAttack('KICK', e)}
+          onTouchStart={(e) => { e.preventDefault(); handleAttack('KICK', e); }}
+          style={{ touchAction: 'none' }}
           className="w-full h-1/2 rounded-2xl bg-rose-500/5 hover:bg-rose-500/15 border border-rose-500/20 active:bg-rose-500/30 transition-all flex flex-col items-center justify-center cursor-pointer relative group"
         >
           <span className="text-[10px] font-black text-rose-300/50 uppercase tracking-widest group-hover:text-rose-300 group-active:scale-95 transition-transform">
