@@ -23,6 +23,9 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = ({
 }) => {
   // Determine image asset path based on character state & pose
   const getSpriteSrc = (): string => {
+    if (customSpriteUrl === 'BAG') {
+      return ''; // Render vector Punching Bag
+    }
     if (customSpriteUrl) return customSpriteUrl;
 
     if (!isEnemy) {
@@ -90,17 +93,36 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = ({
           isHit ? 'filter drop-shadow-[0_0_15px_rgba(239,68,68,0.9)]' : ''
         } ${isLowHp ? 'opacity-75' : ''}`}
       >
-        <img
-          src={getSpriteSrc()}
-          alt={isEnemy ? 'Enemy Fighter' : 'AJO Fighter'}
-          className="w-full h-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)]"
-          onError={(e) => {
-            // Graceful fallback to default idle sprite if pose fail
-            (e.target as HTMLImageElement).src = isEnemy
-              ? '/assets/fighter/enemy_brawler_idle.png'
-              : '/assets/fighter/ajo_idle.png';
-          }}
-        />
+        {customSpriteUrl === 'BAG' ? (
+          <div className="flex flex-col items-center justify-center relative w-full h-full">
+            {/* Hanging Chain */}
+            <div className="w-1 h-8 bg-gradient-to-b from-gray-500 via-gray-300 to-gray-600 border-x border-black/40 shadow" />
+            {/* Leather Punching Bag Body */}
+            <div
+              className={`w-24 h-36 rounded-3xl bg-gradient-to-r from-red-800 via-red-600 to-red-900 border-2 border-red-400 shadow-[0_10px_25px_rgba(0,0,0,0.8)] flex flex-col items-center justify-between py-4 relative overflow-hidden ${
+                isHit ? 'animate-hit scale-105 border-yellow-400' : 'animate-stance'
+              }`}
+            >
+              {/* Target Stripes */}
+              <div className="w-full h-3 bg-black/40 border-y border-white/20" />
+              <div className="w-12 h-12 rounded-full border-2 border-amber-400/80 bg-black/40 flex items-center justify-center text-xl font-black text-amber-300 shadow-inner">
+                🥊
+              </div>
+              <div className="w-full h-3 bg-black/40 border-y border-white/20" />
+            </div>
+          </div>
+        ) : (
+          <img
+            src={getSpriteSrc()}
+            alt={isEnemy ? 'Enemy Fighter' : 'AJO Fighter'}
+            className="w-full h-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)]"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = isEnemy
+                ? '/assets/fighter/enemy_brawler_idle.png'
+                : '/assets/fighter/ajo_idle.png';
+            }}
+          />
+        )}
       </div>
     </div>
   );

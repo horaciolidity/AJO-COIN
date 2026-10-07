@@ -90,6 +90,10 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
   // ── Combat Help Modal ─────────────────────────────────────────────────────
   const [showCombatHelp, setShowCombatHelp] = useState(false);
 
+  // ── Intermission / Training Punching Bag state ───────────────────────────
+  const [isIntermission, setIsIntermission] = useState(false);
+  const [intermissionCountdown, setIntermissionCountdown] = useState(0);
+
   // ── Enemy attack state machine ───────────────────────────────────────────
   const [enemyAttackState, setEnemyAttackState] = useState<EnemyAttackState>('IDLE');
   const enemyAttackTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -148,6 +152,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
   const scheduleEnemyAttack = useCallback(
     (currentEnemy: CombatEnemy) => {
       if (enemyAttackTimerRef.current) clearTimeout(enemyAttackTimerRef.current);
+      if (isPlayerDead || isIntermission || currentEnemy.spriteUrl === 'BAG') return;
 
       enemyAttackTimerRef.current = setTimeout(() => {
         // Start windup phase
@@ -323,7 +328,10 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         isCombo: Boolean(detectedCombo),
         comboName: detectedCombo?.announceText,
       };
-      setHitEffects((prev) => [...prev.slice(-5), newEffect]);
+      setHitEffects((prev) => [...prev.slice(-2), newEffect]);
+      setTimeout(() => {
+        setHitEffects((prev) => prev.filter((e) => e.id !== newEffect.id));
+      }, 450);
 
       // Special meter gain (with skin bonus applied)
       const specialGain = CombatEngine.getSkinSpecialMeterGain(
@@ -402,14 +410,40 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
     playerTookDamageThisRound.current = false;
     setRoundStats({ combosExecuted: 0, perfectDodges: 0, damageDealt: 0, damageTaken: 0, maxComboChain: 0, specialsUsed: 0 });
 
-    setTimeout(() => {
-      setPlayerAction('IDLE');
-      // Spawn boss wave or normal enemy
-      const nextEnemy = isBossWave
-        ? CombatEngine.spawnBossWave(bossWaveNumber, currentStage.order)
-        : CombatEngine.spawnEnemyForRank(currentStage.order);
-      setEnemy(nextEnemy);
-    }, ROUND_WIN_PAUSE_MS);
+    // Enter Intermission / Punching Bag Training Mode (4 seconds)
+    setIsIntermission(true);
+    setIntermissionCountdown(4);
+    setEnemy({
+      id: 'bag_' + Date.now(),
+      name: 'BOLSA DE ENTRENAMIENTO 🥊',
+      type: 'BUG',
+      emoji: '🥊',
+      maxHp: 99999,
+      currentHp: 99999,
+      rewardGarlic: 2,
+      rewardGc: 5,
+      rewardTeeth: 0,
+      color: '#ef4444',
+      attackDamage: 0,
+      attackInterval: 999999,
+      dodgeWindowMs: 0,
+      spriteUrl: 'BAG',
+    });
+
+    let count = 4;
+    const countTimer = setInterval(() => {
+      count -= 1;
+      setIntermissionCountdown(count);
+      if (count <= 0) {
+        clearInterval(countTimer);
+        setIsIntermission(false);
+        setPlayerAction('IDLE');
+        const nextEnemy = isBossWave
+          ? CombatEngine.spawnBossWave(bossWaveNumber, currentStage.order)
+          : CombatEngine.spawnEnemyForRank(currentStage.order);
+        setEnemy(nextEnemy);
+      }
+    }, 1000);
   };
 
   // ─── Special Attack ───────────────────────────────────────────────────────
@@ -461,10 +495,18 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
   // ─────────────────────────────────────────────────────────────────────────
   return (
     <div
-      className={`w-full flex flex-col items-center space-y-2 select-none transition-transform duration-75 ${
+      className={`w-full flex flex-col items-center space-y-2 select-none no-touch-scroll transition-transform duration-75 ${
         screenShake ? 'animate-[shake_0.35s_ease-in-out]' : ''
       }`}
     >
+      {/* ── INTERMISSION TRAINING BAG BANNER ── */}
+      {isIntermission && (
+        <div className="w-full flex items-center justify-center gap-2 animate-pulse z-40">
+          <div className="px-4 py-1.5 rounded-full bg-amber-500/90 border-2 border-amber-300 text-black font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(245,158,11,0.9)] flex items-center gap-1.5">
+            <span>🥊 ENTRENAMIENTO — PRÓXIMO RIVAL EN {intermissionCountdown}s</span>
+          </div>
+        </div>
+      )}
       {/* ── Combo Flash Overlay ── */}
       {comboFlash && (
         <div
