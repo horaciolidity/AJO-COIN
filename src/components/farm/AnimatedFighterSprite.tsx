@@ -67,20 +67,25 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = ({
 
   const transformFlip = facing === 'left' ? 'scale-x-[-1]' : '';
 
-  const animationClass =
-    pose === 'IDLE'
-      ? 'animate-stance'
-      : pose === 'PUNCH'
-      ? 'animate-punch z-20'
-      : pose === 'KICK'
-      ? 'animate-kick z-20'
-      : pose === 'SPECIAL'
-      ? 'scale-125 animate-pulse z-30 drop-shadow-[0_0_25px_rgba(245,158,11,0.9)]'
+  const animationClass = isEnemy
+    ? pose === 'PUNCH' || pose === 'SPECIAL'
+      ? '-translate-x-8 scale-125 -rotate-12 z-30 drop-shadow-[0_0_25px_rgba(239,68,68,1)] transition-transform duration-75'
       : pose === 'HIT'
-      ? 'animate-hit'
-      : pose === 'VICTORY'
-      ? 'scale-110 -translate-y-3 transition-transform duration-200'
-      : '';
+      ? 'translate-x-6 rotate-12 brightness-150 transition-transform duration-75'
+      : 'animate-stance'
+    : pose === 'IDLE'
+    ? 'animate-stance'
+    : pose === 'PUNCH'
+    ? 'translate-x-6 scale-125 rotate-6 z-30 transition-transform duration-75'
+    : pose === 'KICK'
+    ? 'translate-x-8 scale-125 -rotate-12 z-30 transition-transform duration-75'
+    : pose === 'SPECIAL'
+    ? 'scale-135 animate-pulse z-30 drop-shadow-[0_0_30px_rgba(245,158,11,1)]'
+    : pose === 'HIT'
+    ? '-translate-x-6 rotate-[-12deg] brightness-200 transition-transform duration-75'
+    : pose === 'VICTORY'
+    ? 'scale-115 -translate-y-3 transition-transform duration-200'
+    : '';
 
   return (
     <div className={`relative flex flex-col items-center justify-end select-none ${dimensions}`}>

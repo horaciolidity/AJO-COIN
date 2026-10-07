@@ -311,12 +311,12 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         setTimeout(() => setShowSpecialVFX(false), 700);
       }
 
-      // Player animation with Pose Lock Timer
+      // Player animation with instant response Pose Lock Timer (130ms for lightning fast taps)
       if (playerPoseTimerRef.current) clearTimeout(playerPoseTimerRef.current);
       setPlayerAction(type);
       playerPoseTimerRef.current = setTimeout(() => {
         setPlayerAction('IDLE');
-      }, 250);
+      }, 130);
 
       // Floating hit effect on enemy side
       const rect = arenaRef.current?.getBoundingClientRect();
