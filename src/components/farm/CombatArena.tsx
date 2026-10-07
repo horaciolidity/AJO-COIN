@@ -15,6 +15,7 @@ import {
   TAP_STYLE_COMBO_MULT,
 } from '../../services/CombatEngine';
 import { GarlicCharacter } from './GarlicCharacter';
+import { AnimatedFighterSprite } from './AnimatedFighterSprite';
 import { triggerHaptic } from '../../utils/haptics';
 import { playTapSound, playHarvestSound, playCoinSound } from '../../utils/audio';
 import { Zap, Flame, Shield, Heart, Swords, Star } from 'lucide-react';
@@ -681,44 +682,38 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
           </div>
         ))}
 
-        {/* FIGHTERS DISPLAY */}
-        <div className="absolute inset-0 pointer-events-none flex items-center justify-around px-6">
-          {/* Player (Left) */}
-          <div
-            className={`transition-transform duration-150 ${
-              playerAction === 'PUNCH'
-                ? 'translate-x-6 scale-110'
-                : playerAction === 'KICK'
-                ? 'translate-x-8 rotate-12'
-                : playerAction === 'SPECIAL'
-                ? 'scale-125'
-                : playerAction === 'HIT'
-                ? '-translate-x-4 opacity-70'
-                : playerAction === 'VICTORY'
-                ? 'scale-110 -translate-y-3'
-                : ''
-            } ${isPlayerHit ? 'brightness-200 hue-rotate-180' : ''}`}
-          >
-            <GarlicCharacter comboCount={attackHistory.length} />
+        {/* 2D ARCADE FIGHTERS DISPLAY */}
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-around px-2 pb-2">
+          {/* Player AJO Fighter (Left) */}
+          <div className="relative z-10 flex items-center justify-center">
+            <AnimatedFighterSprite
+              pose={playerAction as any}
+              facing="right"
+              isHit={isPlayerHit}
+              isLowHp={playerHp <= 25}
+              size="md"
+            />
           </div>
 
-          {/* Enemy (Right) */}
-          <div
-            className={`transition-all duration-150 ${
-              enemyAttackState === 'WINDUP'
-                ? 'translate-x-3 scale-110 drop-shadow-[0_0_12px_rgba(239,68,68,0.9)]'
-                : enemyAttackState === 'STRIKING'
-                ? '-translate-x-6 scale-125'
-                : ''
-            }`}
-          >
-            <div
-              className={`text-7xl drop-shadow-[0_0_15px_rgba(239,68,68,0.5)] transition-all duration-150 ${
-                isEnemyLow ? 'opacity-60 grayscale' : 'animate-pulse'
-              }`}
-            >
-              {enemy.currentHp <= 0 ? '💫' : enemy.emoji}
-            </div>
+          {/* Enemy Fighter (Right) */}
+          <div className="relative z-10 flex items-center justify-center">
+            <AnimatedFighterSprite
+              pose={
+                enemy.currentHp <= 0
+                  ? 'DEFEAT'
+                  : enemyAttackState === 'STRIKING'
+                  ? 'PUNCH'
+                  : enemyAttackState === 'WINDUP'
+                  ? 'SPECIAL'
+                  : 'IDLE'
+              }
+              facing="left"
+              isEnemy={true}
+              isHit={enemy.currentHp <= 0}
+              isLowHp={hpPct <= 25}
+              customSpriteUrl={enemy.spriteUrl}
+              size="md"
+            />
           </div>
         </div>
 

@@ -321,6 +321,8 @@ export interface CombatEnemy {
   dodgeWindowMs: number;
   /** Optional flag indicating if enemy is a Boss */
   isBoss?: boolean;
+  /** Custom 2D Fighter Sprite Image URL */
+  spriteUrl?: string;
 }
 
 export interface ComboDefinition {
