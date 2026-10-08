@@ -12,7 +12,7 @@ interface AnimatedFighterSpriteProps {
   size?: 'sm' | 'md' | 'lg';
 }
 
-export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = ({
+export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React.memo(({
   pose,
   facing = 'right',
   isEnemy = false,
@@ -94,7 +94,7 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = ({
 
       {/* Main Fighter Sprite Container */}
       <div
-        className={`relative z-10 w-full h-full flex items-center justify-center transition-all duration-100 ${transformFlip} ${animationClass} ${
+        className={`relative z-10 w-full h-full flex items-center justify-center transition-transform duration-75 ${transformFlip} ${animationClass} ${
           isHit ? 'filter drop-shadow-[0_0_15px_rgba(239,68,68,0.9)]' : ''
         } ${isLowHp ? 'opacity-75' : ''}`}
       >
@@ -131,4 +131,4 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = ({
       </div>
     </div>
   );
-};
+});

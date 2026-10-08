@@ -5,7 +5,7 @@ interface ComboMeterProps {
   comboCount: number;
 }
 
-export const ComboMeter: React.FC<ComboMeterProps> = ({ comboCount }) => {
+export const ComboMeter: React.FC<ComboMeterProps> = React.memo(({ comboCount }) => {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Screen shake on extreme combos
@@ -82,4 +82,4 @@ export const ComboMeter: React.FC<ComboMeterProps> = ({ comboCount }) => {
       )}
     </div>
   );
-};
+});

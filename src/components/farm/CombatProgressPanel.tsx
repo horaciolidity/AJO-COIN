@@ -37,7 +37,7 @@ function getNextTier(streak: number): StreakTier | null {
   return null;
 }
 
-export const CombatProgressPanel: React.FC = () => {
+export const CombatProgressPanel: React.FC = React.memo(() => {
   const { combatWinStreak, stats } = useGame();
 
   const tier = getCurrentTier(combatWinStreak);
@@ -84,7 +84,7 @@ export const CombatProgressPanel: React.FC = () => {
         </div>
         <div className="w-full h-1.5 bg-black/60 rounded-full overflow-hidden border border-white/10">
           <div
-            className={`h-full rounded-full transition-all duration-500 ${
+            className={`h-full rounded-full transition-[width] duration-200 ease-out ${
               combatWinStreak >= 10
                 ? 'bg-gradient-to-r from-red-500 to-rose-400'
                 : combatWinStreak >= 5
@@ -109,4 +109,4 @@ export const CombatProgressPanel: React.FC = () => {
       </div>
     </div>
   );
-};
+});

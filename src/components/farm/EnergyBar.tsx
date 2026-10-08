@@ -2,7 +2,7 @@ import React from 'react';
 import { useGame } from '../../context/GameContext';
 import { Zap, Clock } from 'lucide-react';
 
-export const EnergyBar: React.FC = () => {
+export const EnergyBar: React.FC = React.memo(() => {
   const { stats } = useGame();
   const percentage = Math.min(100, Math.max(0, (stats.energy / stats.maxEnergy) * 100));
 
@@ -22,7 +22,7 @@ export const EnergyBar: React.FC = () => {
       {/* Progress Bar Container */}
       <div className="w-full h-3 bg-black/40 rounded-full overflow-hidden p-0.5 border border-white/10">
         <div
-          className="h-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 rounded-full transition-all duration-300 shadow-[0_0_10px_rgba(245,158,11,0.5)]"
+          className="h-full bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-300 rounded-full transition-[width] duration-150 ease-out shadow-[0_0_10px_rgba(245,158,11,0.5)]"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -36,4 +36,4 @@ export const EnergyBar: React.FC = () => {
       </div>
     </div>
   );
-};
+});

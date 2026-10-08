@@ -200,9 +200,16 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { date: today, taps: 0, harvest: 0, combo: 0 };
   });
 
-  // Persist daily data to localStorage whenever it changes
+  // Persist daily data to localStorage (debounced 2s to eliminate tap latency)
+  const dailySaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   useEffect(() => {
-    localStorage.setItem('ajo_daily_progress_v2', JSON.stringify(dailyData));
+    if (dailySaveTimerRef.current) clearTimeout(dailySaveTimerRef.current);
+    dailySaveTimerRef.current = setTimeout(() => {
+      localStorage.setItem('ajo_daily_progress_v2', JSON.stringify(dailyData));
+    }, 2000);
+    return () => {
+      if (dailySaveTimerRef.current) clearTimeout(dailySaveTimerRef.current);
+    };
   }, [dailyData]);
 
   // Combo, Rhythm & Particle Effects
@@ -271,7 +278,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => window.removeEventListener('AJO_DAILY_REWARD', onDailyReward);
   }, []);
 
-  // Auto-Save game state to localStorage & Supabase (debounced 3.5s to protect the DB)
+  // Auto-Save game state to localStorage & Supabase (debounced 2.5s to eliminate tap latency)
+  const localSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
   const cloudSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -285,7 +293,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       achievements,
       combatWinStreak,
     };
-    StorageAdapter.saveState(fullState);
+
+    if (localSaveTimerRef.current) clearTimeout(localSaveTimerRef.current);
+    localSaveTimerRef.current = setTimeout(() => {
+      StorageAdapter.saveState(fullState);
+    }, 2000);
 
     if (user && user.id) {
       if (cloudSaveTimerRef.current) clearTimeout(cloudSaveTimerRef.current);
@@ -293,11 +305,33 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         saveGameStateToSupabase(user.id, fullState, user.username, user.photoUrl);
       }, 3500);
     }
+
+    return () => {
+      if (localSaveTimerRef.current) clearTimeout(localSaveTimerRef.current);
+    };
   }, [stats, inventory, boxes, upgrades, quests, achievements, combatWinStreak, user?.id]);
 
+  // Flush pending saves on page unload / hide
+  useEffect(() => {
+    const handleUnload = () => {
+      const fullState: SavedGameState = {
+        version: 3,
+        stats,
+        inventory,
+        boxes,
+        upgrades,
+        quests,
+        achievements,
+        combatWinStreak,
+      };
+      StorageAdapter.saveState(fullState);
+      localStorage.setItem('ajo_daily_progress_v2', JSON.stringify(dailyData));
+    };
+    window.addEventListener('beforeunload', handleUnload);
+    return () => window.removeEventListener('beforeunload', handleUnload);
+  }, [stats, inventory, boxes, upgrades, quests, achievements, combatWinStreak, dailyData]);
+
   // ── Quest Progress Sync: HARVEST quests ───────────────────────────────────
-  // Runs whenever totalGarlicHarvested changes, keeping HARVEST quest progress
-  // in sync without needing to call setQuests inside a setState callback.
   useEffect(() => {
     if (stats.totalGarlicHarvested === 0) return;
     setQuests((qList) =>
@@ -324,20 +358,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       })
     );
   }, [stats.totalBoxesCompleted]);
-
-  // ── Quest Progress Sync: TAPS quests ──────────────────────────────────────
-  useEffect(() => {
-    if (stats.totalTaps === 0) return;
-    setQuests((qList) =>
-      qList.map((q) => {
-        if (q.questType === 'TAPS' && q.mechanicType !== 'RHYTHM' && !q.isClaimed) {
-          const nextProg = Math.min(q.targetValue, Math.max(q.progress, stats.totalTaps));
-          return { ...q, progress: nextProg, isCompleted: nextProg >= q.targetValue };
-        }
-        return q;
-      })
-    );
-  }, [stats.totalTaps]);
 
   // ── Daily data: reset if it's a new day ──────────────────────────────────
   useEffect(() => {

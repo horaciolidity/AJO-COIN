@@ -68,9 +68,11 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
   const [specialMeter, setSpecialMeter] = useState<number>(0);
 
   // ── Combo state ──────────────────────────────────────────────────────────
-  const [attackHistory, setAttackHistory] = useState<CombatAttackType[]>([]);
+  // Use refs for attackHistory and comboChain to avoid recreating handleAttack callback on every tap
+  const attackHistoryRef = useRef<CombatAttackType[]>([]);
   const [activeComboNotice, setActiveComboNotice] = useState<ComboDefinition | null>(null);
-  const [comboChain, setComboChain] = useState(0);
+  const comboChainRef = useRef(0);
+  const [comboChainDisplay, setComboChainDisplay] = useState(0); // display-only state
   const comboTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // ── Dodge state ──────────────────────────────────────────────────────────
@@ -143,9 +145,10 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
   const resetComboTimer = useCallback(() => {
     if (comboTimerRef.current) clearTimeout(comboTimerRef.current);
     comboTimerRef.current = setTimeout(() => {
-      setAttackHistory([]);
+      attackHistoryRef.current = [];
+      comboChainRef.current = 0;
+      setComboChainDisplay(0);
       setActiveComboNotice(null);
-      setComboChain(0);
     }, COMBO_RESET_MS);
   }, []);
 
@@ -196,7 +199,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
                 attackType: 'PUNCH',
                 isPlayerDamage: true,
               };
-              setHitEffects((p) => [...p.slice(-5), effect]);
+              setHitEffects((p) => p.length >= 3 ? [p[p.length - 1], effect] : [...p, effect]);
 
               setRoundStats((r) => ({ ...r, damageTaken: r.damageTaken + damage }));
             }
@@ -215,6 +218,9 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
                 setPlayerHp(PLAYER_MAX_HP);
                 setPlayerAction('IDLE');
                 playerTookDamageThisRound.current = false;
+                attackHistoryRef.current = [];
+                comboChainRef.current = 0;
+                setComboChainDisplay(0);
                 setRoundStats({ combosExecuted: 0, perfectDodges: 0, damageDealt: 0, damageTaken: 0, maxComboChain: 0, specialsUsed: 0 });
                 setEnemy(CombatEngine.spawnEnemyForRank(currentStage.order));
               }, 3000);
@@ -264,17 +270,16 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
       // Feed into base tap economy (marked as combat tap)
       handleTap(undefined, undefined, 0, true);
 
-      // Update attack sequence & check combos
-      const newSeq = [...attackHistory, type];
-      setAttackHistory(newSeq);
+      // Update attack sequence & check combos — use ref to avoid dependency on state
+      attackHistoryRef.current = [...attackHistoryRef.current, type];
       resetComboTimer();
 
-      const detectedCombo = CombatEngine.detectCombo(newSeq);
-      let newChain = comboChain;
+      const detectedCombo = CombatEngine.detectCombo(attackHistoryRef.current);
 
       if (detectedCombo) {
-        newChain += 1;
-        setComboChain(newChain);
+        comboChainRef.current += 1;
+        const newChain = comboChainRef.current;
+        setComboChainDisplay(newChain);
         setActiveComboNotice(detectedCombo);
         triggerHaptic('heavy');
         playCoinSound();
@@ -291,7 +296,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
           maxComboChain: Math.max(r.maxComboChain, newChain),
         }));
         // Reset sequence after successful combo
-        setAttackHistory([]);
+        attackHistoryRef.current = [];
       }
 
       // Calculate damage (now with skin bonus + tap style combo mult)
@@ -332,10 +337,10 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         isCombo: Boolean(detectedCombo),
         comboName: detectedCombo?.announceText,
       };
-      setHitEffects((prev) => [...prev.slice(-2), newEffect]);
+      setHitEffects((prev) => prev.length >= 3 ? [prev[prev.length - 1], newEffect] : [...prev, newEffect]);
       setTimeout(() => {
         setHitEffects((prev) => prev.filter((e) => e.id !== newEffect.id));
-      }, 450);
+      }, 350);
 
       // Special meter gain (with skin bonus applied)
       const specialGain = CombatEngine.getSkinSpecialMeterGain(
@@ -358,7 +363,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [enemy.currentHp, isPlayerDead, attackHistory, comboChain, stats.powerPerTap]
+    [enemy.currentHp, isPlayerDead, stats.powerPerTap]
   );
 
   // ─── Enemy Defeated ───────────────────────────────────────────────────────
@@ -412,6 +417,9 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
 
     // Reset round stats for next fight
     playerTookDamageThisRound.current = false;
+    attackHistoryRef.current = [];
+    comboChainRef.current = 0;
+    setComboChainDisplay(0);
     setRoundStats({ combosExecuted: 0, perfectDodges: 0, damageDealt: 0, damageTaken: 0, maxComboChain: 0, specialsUsed: 0 });
 
     // Enter Intermission / Punching Bag Training Mode (4 seconds)
@@ -514,7 +522,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
       {/* ── Combo Flash Overlay ── */}
       {comboFlash && (
         <div
-          className="fixed inset-0 pointer-events-none z-50 opacity-20 transition-opacity duration-300"
+          className="absolute inset-0 pointer-events-none z-50 opacity-15 rounded-3xl"
           style={{ backgroundColor: comboFlash }}
         />
       )}
@@ -581,9 +589,9 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
             <div className="px-2 py-0.5 rounded-full bg-red-600/30 border border-red-500/50 text-red-400 font-black text-[10px] uppercase tracking-wider animate-pulse">
               VS
             </div>
-            {comboChain > 1 && (
+            {comboChainDisplay > 1 && (
               <div className="text-[9px] text-amber-300 font-black mt-0.5 animate-bounce">
-                ⚡CADENA x{comboChain}
+                ⚡CADENA x{comboChainDisplay}
               </div>
             )}
           </div>
@@ -617,8 +625,8 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
           <Heart className="w-3 h-3 text-emerald-400 flex-shrink-0" />
           <div className="flex-1 h-2.5 bg-black/60 rounded-full overflow-hidden border border-emerald-500/30">
             <div
-              className={`h-full rounded-full transition-all duration-300 bg-gradient-to-r ${hpColor(playerHpPct)} ${
-                isPlayerHit ? 'animate-ping opacity-80' : ''
+              className={`h-full rounded-full transition-[width] duration-150 ease-out bg-gradient-to-r ${hpColor(playerHpPct)} ${
+                isPlayerHit ? 'brightness-150' : ''
               }`}
               style={{ width: `${playerHpPct}%` }}
             />
@@ -633,7 +641,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
           <Swords className="w-3 h-3 text-red-400 flex-shrink-0" />
           <div className="flex-1 h-2.5 bg-black/60 rounded-full overflow-hidden border border-red-500/30">
             <div
-              className={`h-full rounded-full transition-all duration-200 bg-gradient-to-r ${enemyHpColor(hpPct)}`}
+              className={`h-full rounded-full transition-[width] duration-100 ease-out bg-gradient-to-r ${enemyHpColor(hpPct)}`}
               style={{ width: `${hpPct}%` }}
             />
           </div>
@@ -659,7 +667,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         <Zap className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
         <div className="flex-1 h-2 bg-black/60 rounded-full overflow-hidden border border-amber-500/40">
           <div
-            className={`h-full rounded-full transition-all duration-300 bg-gradient-to-r from-amber-500 via-yellow-400 to-emerald-400 shadow-[0_0_8px_rgba(245,158,11,0.8)] ${
+            className={`h-full rounded-full transition-[width] duration-150 ease-out bg-gradient-to-r from-amber-500 via-yellow-400 to-emerald-400 shadow-[0_0_8px_rgba(245,158,11,0.8)] ${
               specialMeter >= 100 ? 'animate-pulse' : ''
             }`}
             style={{ width: `${specialMeter}%` }}
@@ -675,8 +683,8 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         <div className="animate-bounce bg-gradient-to-r from-amber-500 to-orange-400 text-black px-4 py-1 rounded-full font-black text-xs shadow-lg uppercase tracking-wider flex items-center gap-1.5 border-2 border-yellow-300">
           <span className="text-base">{activeComboNotice.vfxEmoji}</span>
           <span>{activeComboNotice.announceText}</span>
-          {comboChain > 1 && (
-            <span className="bg-black/30 rounded-full px-1.5 text-white">x{comboChain}</span>
+          {comboChainDisplay > 1 && (
+            <span className="bg-black/30 rounded-full px-1.5 text-white">x{comboChainDisplay}</span>
           )}
         </div>
       )}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useGame } from '../../context/GameContext';
 import { GarlicCharacter } from './GarlicCharacter';
 import { CombatArena } from './CombatArena';
@@ -27,16 +27,16 @@ export const TapGame: React.FC = () => {
   } = useGame();
 
   // Rhythm quest detection
-  const rhythmQuest = quests.find((q) => q.mechanicType === 'RHYTHM' && !q.isCompleted && !q.isClaimed);
+  const rhythmQuest = useMemo(() => quests.find((q) => q.mechanicType === 'RHYTHM' && !q.isCompleted && !q.isClaimed), [quests]);
   const rhythmActive = Boolean(rhythmQuest) && comboCount >= 3;
 
-  const completedQuestsCount = calculateTotalCompletedQuests(quests);
-  const nextIncompleteQuest = quests.find((q) => !q.isClaimed && !q.isCompleted && (q.progress || 0) < q.targetValue);
-  const nextStage = getNextStage(currentStage.id);
+  const completedQuestsCount = useMemo(() => calculateTotalCompletedQuests(quests), [quests]);
+  const nextIncompleteQuest = useMemo(() => quests.find((q) => !q.isClaimed && !q.isCompleted && (q.progress || 0) < q.targetValue), [quests]);
+  const nextStage = useMemo(() => getNextStage(currentStage.id), [currentStage.id]);
 
-  const skinLevel = getSkinLevel(stats.xp, stats.totalTaps);
+  const skinLevel = useMemo(() => getSkinLevel(stats.xp, stats.totalTaps), [stats.xp, stats.totalTaps]);
 
-  const evalResult = checkEvolutionRequirements(
+  const evalResult = useMemo(() => checkEvolutionRequirements(
     currentStage.id,
     {
       xp: stats.xp,
@@ -46,11 +46,11 @@ export const TapGame: React.FC = () => {
     inventory.rawGarlic,
     inventory.unlockedSkins,
     skinLevel,
-  );
+  ), [currentStage.id, stats.xp, stats.totalTaps, completedQuestsCount, inventory.rawGarlic, inventory.unlockedSkins, skinLevel]);
 
   // Progress towards next stage (starts at 0% when entering a new stage)
-  let evolutionProgress = 100;
-  if (nextStage) {
+  const evolutionProgress = useMemo(() => {
+    if (!nextStage) return 100;
     const curXp = currentStage.requiredXp || 0;
     const curTaps = currentStage.requiredTaps || 0;
     const curGarlic = currentStage.requiredRawGarlic || 0;
@@ -66,11 +66,11 @@ export const TapGame: React.FC = () => {
     const rawGarlicRatio = Math.max(0, Math.min(1, (inventory.rawGarlic - curGarlic) / (targetGarlic - curGarlic || 1)));
     const questsRatio = Math.max(0, Math.min(1, (completedQuestsCount - curQuests) / (targetQuests - curQuests || 1)));
 
-    evolutionProgress = Math.floor(((xpRatio + tapsRatio + rawGarlicRatio + questsRatio) / 4) * 100);
-  }
+    return Math.floor(((xpRatio + tapsRatio + rawGarlicRatio + questsRatio) / 4) * 100);
+  }, [nextStage, currentStage, stats.xp, stats.totalTaps, inventory.rawGarlic, completedQuestsCount]);
 
   // Active tap style info
-  const activeTapStyle = TAP_STYLES_CATALOG.find((s) => s.id === (inventory.equippedTapStyle || 'NORMAL')) || TAP_STYLES_CATALOG[0];
+  const activeTapStyle = useMemo(() => TAP_STYLES_CATALOG.find((s) => s.id === (inventory.equippedTapStyle || 'NORMAL')) || TAP_STYLES_CATALOG[0], [inventory.equippedTapStyle]);
 
   return (
     <div className="relative flex flex-col items-center justify-between min-h-[calc(100vh-140px)] p-3 max-w-md mx-auto space-y-3">
@@ -131,7 +131,7 @@ export const TapGame: React.FC = () => {
 
           <div className="w-full h-3 bg-black/50 rounded-full overflow-hidden p-0.5 border border-sprout-500/20">
             <div
-              className="h-full bg-gradient-to-r from-amber-500 via-yellow-400 to-sprout-400 rounded-full transition-all duration-300 shadow-[0_0_12px_rgba(245,158,11,0.7)]"
+              className="h-full bg-gradient-to-r from-amber-500 via-yellow-400 to-sprout-400 rounded-full transition-[width] duration-150 ease-out shadow-[0_0_12px_rgba(245,158,11,0.7)]"
               style={{ width: `${evolutionProgress}%` }}
             />
           </div>
