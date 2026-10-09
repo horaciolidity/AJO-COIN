@@ -10,6 +10,12 @@ export const FIGHTER_ASSETS = [
   '/assets/fighter/ajo_hit.png',
   '/assets/fighter/ajo_victory.png',
   '/assets/fighter/enemy_brawler_idle.png',
+  '/assets/fighter/enemy_brawler_attack.png',
+  '/assets/fighter/enemy_ninja_idle.png',
+  '/assets/fighter/enemy_ninja_attack.png',
+  '/assets/fighter/enemy_samurai_idle.png',
+  '/assets/fighter/enemy_samurai_attack.png',
+  '/assets/fighter/enemy_beast_idle.png',
   '/assets/backgrounds/alien.jpg',
   '/assets/backgrounds/dead.jpg',
   '/assets/backgrounds/fire.jpg',
@@ -34,7 +40,6 @@ export function preloadFighterAssets(): Promise<void[]> {
       img.src = src;
       img.onload = () => {
         PRELOADED_IMAGES.set(src, img);
-        // Attempt decode if supported for zero-lag rendering
         if ('decode' in img) {
           img.decode().then(() => resolve()).catch(() => resolve());
         } else {
@@ -42,7 +47,6 @@ export function preloadFighterAssets(): Promise<void[]> {
         }
       };
       img.onerror = () => {
-        // Resolve anyway so failure of one asset doesn't block the game
         resolve();
       };
     });

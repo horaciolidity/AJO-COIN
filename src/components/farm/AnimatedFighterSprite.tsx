@@ -44,9 +44,9 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
     if (customSpriteUrl === 'BAG') {
       return ''; // Render vector Punching Bag
     }
-    if (customSpriteUrl) return customSpriteUrl;
 
     if (!isEnemy) {
+      if (customSpriteUrl) return customSpriteUrl;
       switch (pose) {
         case 'PUNCH':
           return '/assets/fighter/ajo_punch.png';
@@ -61,24 +61,30 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
         case 'DEFEAT':
           return '/assets/fighter/ajo_hit.png';
         case 'WALK':
-          return '/assets/fighter/ajo_idle.png';
         case 'IDLE':
         default:
           return '/assets/fighter/ajo_idle.png';
       }
     } else {
-      // Enemy sprite poses
-      switch (pose) {
-        case 'HIT':
-        case 'DEFEAT':
-        case 'WINDUP':
-        case 'PUNCH':
-        case 'KICK':
-        case 'SPECIAL':
-        case 'IDLE':
-        default:
-          return '/assets/fighter/enemy_brawler_idle.png';
+      // Dynamic Enemy sprite selection depending on customSpriteUrl and Pose
+      const baseSprite = customSpriteUrl || '/assets/fighter/enemy_brawler_idle.png';
+
+      const isAttacking = pose === 'PUNCH' || pose === 'KICK' || pose === 'SPECIAL';
+
+      if (baseSprite.includes('ninja')) {
+        return isAttacking ? '/assets/fighter/enemy_ninja_attack.png' : '/assets/fighter/enemy_ninja_idle.png';
       }
+      if (baseSprite.includes('samurai')) {
+        return isAttacking ? '/assets/fighter/enemy_samurai_attack.png' : '/assets/fighter/enemy_samurai_idle.png';
+      }
+      if (baseSprite.includes('brawler')) {
+        return isAttacking ? '/assets/fighter/enemy_brawler_attack.png' : '/assets/fighter/enemy_brawler_idle.png';
+      }
+      if (baseSprite.includes('beast')) {
+        return '/assets/fighter/enemy_beast_idle.png';
+      }
+
+      return baseSprite;
     }
   };
 
@@ -94,7 +100,7 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
     ? pose === 'WINDUP'
       ? 'scale-110 -translate-x-3 rotate-6 drop-shadow-[0_0_20px_rgba(239,68,68,1)] filter saturate-200 animate-pulse transition-transform duration-100'
       : pose === 'PUNCH' || pose === 'SPECIAL' || pose === 'KICK'
-      ? '-translate-x-10 scale-125 -rotate-12 z-30 drop-shadow-[0_0_25px_rgba(239,68,68,1)] transition-transform duration-75'
+      ? '-translate-x-12 scale-130 -rotate-12 z-30 drop-shadow-[0_0_25px_rgba(239,68,68,1)] transition-transform duration-75'
       : pose === 'HIT'
       ? 'translate-x-8 rotate-12 brightness-200 contrast-150 transition-transform duration-75'
       : pose === 'DEFEAT'
@@ -158,7 +164,6 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
                 imagesLoaded ? 'opacity-100' : 'opacity-90'
               }`}
               style={{
-                // Prevent drag or selection interference on mobile
                 pointerEvents: 'none',
                 userSelect: 'none',
               }}
