@@ -1,6 +1,16 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { preloadFighterAssets } from '../../utils/assetPreloader';
 
-export type FighterPose = 'IDLE' | 'PUNCH' | 'KICK' | 'SPECIAL' | 'HIT' | 'VICTORY' | 'DEFEAT';
+export type FighterPose =
+  | 'IDLE'
+  | 'WALK'
+  | 'PUNCH'
+  | 'KICK'
+  | 'SPECIAL'
+  | 'HIT'
+  | 'VICTORY'
+  | 'DEFEAT'
+  | 'WINDUP';
 
 interface AnimatedFighterSpriteProps {
   pose: FighterPose;
@@ -21,6 +31,14 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
   customSpriteUrl,
   size = 'md',
 }) => {
+  const [imagesLoaded, setImagesLoaded] = useState(false);
+
+  useEffect(() => {
+    preloadFighterAssets().then(() => {
+      setImagesLoaded(true);
+    });
+  }, []);
+
   // Determine image asset path based on character state & pose
   const getSpriteSrc = (): string => {
     if (customSpriteUrl === 'BAG') {
@@ -42,6 +60,8 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
           return '/assets/fighter/ajo_victory.png';
         case 'DEFEAT':
           return '/assets/fighter/ajo_hit.png';
+        case 'WALK':
+          return '/assets/fighter/ajo_idle.png';
         case 'IDLE':
         default:
           return '/assets/fighter/ajo_idle.png';
@@ -51,7 +71,7 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
       switch (pose) {
         case 'HIT':
         case 'DEFEAT':
-          return '/assets/fighter/enemy_brawler_idle.png';
+        case 'WINDUP':
         case 'PUNCH':
         case 'KICK':
         case 'SPECIAL':
@@ -62,41 +82,54 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
     }
   };
 
+  const currentSrc = getSpriteSrc();
+
   const dimensions =
     size === 'lg' ? 'w-48 h-48' : size === 'sm' ? 'w-32 h-32' : 'w-40 h-40';
 
   const transformFlip = facing === 'left' ? 'scale-x-[-1]' : '';
 
+  // Tailored animation classes per pose to provide clear movement feedback
   const animationClass = isEnemy
-    ? pose === 'PUNCH' || pose === 'SPECIAL'
-      ? '-translate-x-8 scale-125 -rotate-12 z-30 drop-shadow-[0_0_25px_rgba(239,68,68,1)] transition-transform duration-75'
+    ? pose === 'WINDUP'
+      ? 'scale-110 -translate-x-3 rotate-6 drop-shadow-[0_0_20px_rgba(239,68,68,1)] filter saturate-200 animate-pulse transition-transform duration-100'
+      : pose === 'PUNCH' || pose === 'SPECIAL' || pose === 'KICK'
+      ? '-translate-x-10 scale-125 -rotate-12 z-30 drop-shadow-[0_0_25px_rgba(239,68,68,1)] transition-transform duration-75'
       : pose === 'HIT'
-      ? 'translate-x-6 rotate-12 brightness-150 transition-transform duration-75'
+      ? 'translate-x-8 rotate-12 brightness-200 contrast-150 transition-transform duration-75'
+      : pose === 'DEFEAT'
+      ? 'translate-x-12 rotate-45 opacity-40 grayscale blur-[1px] transition-all duration-300'
       : 'animate-stance'
     : pose === 'IDLE'
     ? 'animate-stance'
+    : pose === 'WALK'
+    ? 'translate-x-3 animate-stance'
     : pose === 'PUNCH'
-    ? 'translate-x-6 scale-125 rotate-6 z-30 transition-transform duration-75'
+    ? 'translate-x-8 scale-125 rotate-6 z-30 transition-transform duration-75'
     : pose === 'KICK'
-    ? 'translate-x-8 scale-125 -rotate-12 z-30 transition-transform duration-75'
+    ? 'translate-x-10 scale-125 -rotate-12 z-30 transition-transform duration-75'
     : pose === 'SPECIAL'
-    ? 'scale-135 animate-pulse z-30 drop-shadow-[0_0_30px_rgba(245,158,11,1)]'
+    ? 'scale-135 translate-x-6 animate-pulse z-30 drop-shadow-[0_0_30px_rgba(245,158,11,1)]'
     : pose === 'HIT'
-    ? '-translate-x-6 rotate-[-12deg] brightness-200 transition-transform duration-75'
+    ? '-translate-x-8 rotate-[-12deg] brightness-200 contrast-150 transition-transform duration-75'
     : pose === 'VICTORY'
-    ? 'scale-115 -translate-y-3 transition-transform duration-200'
+    ? 'scale-115 -translate-y-4 transition-transform duration-200 drop-shadow-[0_0_20px_rgba(16,185,129,0.8)]'
+    : pose === 'DEFEAT'
+    ? 'rotate-90 opacity-50 grayscale transition-all duration-300'
     : '';
 
   return (
-    <div className={`relative flex flex-col items-center justify-end select-none ${dimensions}`}>
+    <div className={`relative flex flex-col items-center justify-end select-none ${dimensions} will-change-transform`}>
       {/* 2D Fighter Ground Contact Shadow */}
-      <div className="absolute bottom-1 w-24 h-4 rounded-full bg-black/60 blur-xs transform scale-x-125" />
+      <div className={`absolute bottom-1 w-24 h-4 rounded-full bg-black/60 blur-xs transform scale-x-125 transition-transform duration-100 ${
+        pose === 'PUNCH' || pose === 'KICK' || pose === 'SPECIAL' ? 'scale-x-150 opacity-80' : ''
+      }`} />
 
       {/* Main Fighter Sprite Container */}
       <div
         className={`relative z-10 w-full h-full flex items-center justify-center transition-transform duration-75 ${transformFlip} ${animationClass} ${
-          isHit ? 'filter drop-shadow-[0_0_15px_rgba(239,68,68,0.9)]' : ''
-        } ${isLowHp ? 'opacity-75' : ''}`}
+          isHit ? 'filter drop-shadow-[0_0_20px_rgba(239,68,68,1)]' : ''
+        } ${isLowHp ? 'opacity-80' : ''}`}
       >
         {customSpriteUrl === 'BAG' ? (
           <div className="flex flex-col items-center justify-center relative w-full h-full">
@@ -117,16 +150,25 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
             </div>
           </div>
         ) : (
-          <img
-            src={getSpriteSrc()}
-            alt={isEnemy ? 'Enemy Fighter' : 'AJO Fighter'}
-            className="w-full h-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)]"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = isEnemy
-                ? '/assets/fighter/enemy_brawler_idle.png'
-                : '/assets/fighter/ajo_idle.png';
-            }}
-          />
+          <div className="relative w-full h-full flex items-center justify-center">
+            <img
+              src={currentSrc}
+              alt={isEnemy ? 'Enemy Fighter' : 'AJO Fighter'}
+              className={`w-full h-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)] transition-opacity duration-75 ${
+                imagesLoaded ? 'opacity-100' : 'opacity-90'
+              }`}
+              style={{
+                // Prevent drag or selection interference on mobile
+                pointerEvents: 'none',
+                userSelect: 'none',
+              }}
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = isEnemy
+                  ? '/assets/fighter/enemy_brawler_idle.png'
+                  : '/assets/fighter/ajo_idle.png';
+              }}
+            />
+          </div>
         )}
       </div>
     </div>
