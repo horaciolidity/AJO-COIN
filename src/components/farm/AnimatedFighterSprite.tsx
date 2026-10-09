@@ -92,7 +92,7 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
 
   const rawSrc = getSpriteSrc();
 
-  // Process image on load to strip out checkerboard/box background
+  // Process image on load to strip out checkerboard/box background for enemy
   const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const img = e.currentTarget;
     if (isEnemy && img) {
@@ -146,11 +146,11 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
         pose === 'PUNCH' || pose === 'KICK' || pose === 'SPECIAL' ? 'scale-x-175 opacity-80' : ''
       }`} />
 
-      {/* Main Fighter Sprite Container */}
+      {/* Main Fighter Sprite Container - 100% Solid Opacity */}
       <div
         className={`relative z-10 w-full h-full flex items-center justify-center transition-transform duration-100 ${transformFlip} ${animationClass} ${
           isHit ? 'filter drop-shadow-[0_0_25px_rgba(239,68,68,1)]' : ''
-        } ${isLowHp ? 'opacity-80' : ''}`}
+        }`}
       >
         {customSpriteUrl === 'BAG' ? (
           <div className="flex flex-col items-center justify-center relative w-full h-full">
@@ -177,13 +177,10 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
               alt={isEnemy ? 'Enemy Fighter' : 'AJO Fighter'}
               onLoad={handleImageLoad}
               crossOrigin="anonymous"
-              className={`w-full h-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)] transition-opacity duration-100 ${
-                imagesLoaded ? 'opacity-100' : 'opacity-90'
-              }`}
+              className="w-full h-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.8)] opacity-100"
               style={{
                 pointerEvents: 'none',
                 userSelect: 'none',
-                mixBlendMode: isEnemy ? 'normal' : 'normal',
               }}
               onError={(e) => {
                 (e.target as HTMLImageElement).src = isEnemy

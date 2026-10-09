@@ -15,6 +15,7 @@ import {
   TAP_STYLE_COMBO_MULT,
 } from '../../services/CombatEngine';
 import { AnimatedFighterSprite } from './AnimatedFighterSprite';
+import { SkinBackground } from './SkinBackground';
 import { triggerHaptic } from '../../utils/haptics';
 import { playTapSound, playHarvestSound, playCoinSound } from '../../utils/audio';
 import { preloadFighterAssets } from '../../utils/assetPreloader';
@@ -234,7 +235,6 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
             setTimeout(() => setIsPlayerHit(false), 250);
             playerTookDamageThisRound.current = true;
 
-            // Floating hit damage on player
             const effect: CombatHitEffect = {
               id: `enemy_hit_${Date.now()}`,
               x: 60 + Math.random() * 30,
@@ -470,12 +470,10 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
       onHarvestGarlic(defeatedEnemy.rewardGarlic);
     }
 
-    // Enable Persistent Victory Overlay
     setIsVictoryState(true);
     setCanProceedNextBattle(false);
     setVictoryCountdown(3);
 
-    // 3 Second mandatory victory display timer before button activates
     let count = 3;
     const victoryTimer = setInterval(() => {
       count -= 1;
@@ -487,7 +485,6 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
     }, 1000);
   };
 
-  // User explicitly clicks to proceed to next battle
   const handleProceedToNextFight = () => {
     if (!canProceedNextBattle) return;
     triggerHaptic('heavy');
@@ -741,25 +738,24 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         </div>
       )}
 
-      {/* ── 2D ARENA FIELD ── */}
+      {/* ── 2D ARENA FIELD WITH FULL UNSEEN BACKGROUND STAGE ── */}
       <div
         ref={arenaRef}
-        className="relative w-full h-64 rounded-3xl overflow-hidden border border-purple-500/30 bg-gradient-to-b from-purple-950/40 via-black to-emerald-950/40 flex flex-col justify-between p-2 shadow-2xl"
+        className="relative w-full h-64 rounded-3xl overflow-hidden border border-purple-500/30 flex flex-col justify-between shadow-2xl z-0"
         onTouchStart={handleTouchStartGesture}
         onTouchMove={handleTouchMoveGesture}
         onTouchEnd={handleTouchEndGesture}
       >
-        {/* UPPER ZONE: PUNCH */}
+        {/* Full Unobstructed High-Res Background Stage Image */}
+        <SkinBackground skinId={inventory.equippedSkin} />
+
+        {/* INVISIBLE UPPER TOUCH/CLICK ZONE: PUNCH */}
         <div
           onClick={(e) => handleAttack('PUNCH', e)}
           onTouchStart={(e) => handleAttack('PUNCH', e)}
           style={{ touchAction: 'none' }}
-          className="w-full h-1/2 rounded-2xl bg-purple-500/5 hover:bg-purple-500/15 border border-purple-500/20 active:bg-purple-500/30 transition-all flex flex-col items-center justify-center cursor-pointer relative group"
-        >
-          <span className="text-[10px] font-black text-purple-300/50 uppercase tracking-widest group-hover:text-purple-300 group-active:scale-95 transition-transform">
-            👆 ZONA SUPERIOR — PUÑETAZO (PUNCH)
-          </span>
-        </div>
+          className="w-full h-1/2 bg-transparent cursor-pointer relative z-10 active:bg-white/5 transition-colors"
+        />
 
         {/* Floating damage effects layer */}
         <div className="absolute inset-0 pointer-events-none z-30">
@@ -791,14 +787,14 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         )}
 
         {/* 2D ARCADE FIGHTERS DISPLAY */}
-        <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-6 pb-2">
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-6 pb-2 z-20">
           {/* Player AJO Fighter (Left Side) */}
-          <div className="relative z-10 flex items-center justify-center">
+          <div className="relative flex items-center justify-center">
             <AnimatedFighterSprite
               pose={playerAction as any}
               facing="right"
               isHit={isPlayerHit}
-              isLowHp={playerHp <= 50}
+              isLowHp={playerHp <= 100}
               size="md"
             />
           </div>
@@ -811,7 +807,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
           )}
 
           {/* Enemy Fighter (Right Side) */}
-          <div className="relative z-10 flex items-center justify-center">
+          <div className="relative flex items-center justify-center">
             <AnimatedFighterSprite
               pose={
                 enemy.currentHp <= 0
@@ -877,17 +873,13 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
           </div>
         )}
 
-        {/* LOWER ZONE: KICK */}
+        {/* INVISIBLE LOWER TOUCH/CLICK ZONE: KICK */}
         <div
           onClick={(e) => handleAttack('KICK', e)}
           onTouchStart={(e) => handleAttack('KICK', e)}
           style={{ touchAction: 'none' }}
-          className="w-full h-1/2 rounded-2xl bg-rose-500/5 hover:bg-rose-500/15 border border-rose-500/20 active:bg-rose-500/30 transition-all flex flex-col items-center justify-center cursor-pointer relative group"
-        >
-          <span className="text-[10px] font-black text-rose-300/50 uppercase tracking-widest group-hover:text-rose-300 group-active:scale-95 transition-transform">
-            👇 ZONA INFERIOR — PATADA (KICK)
-          </span>
-        </div>
+          className="w-full h-1/2 bg-transparent cursor-pointer relative z-10 active:bg-white/5 transition-colors"
+        />
       </div>
 
       {/* ── ACTION BUTTONS ROW ── */}
@@ -959,11 +951,11 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
             <div className="space-y-2.5 bg-black/40 p-3 rounded-2xl border border-white/5 text-[11px]">
               <div className="flex items-center gap-2">
                 <span className="bg-amber-500/20 text-amber-300 font-bold px-2 py-0.5 rounded-lg border border-amber-500/30">👊 PUÑO</span>
-                <span className="text-gray-300 text-[10px]">Ataque frontal rápido y preciso.</span>
+                <span className="text-gray-300 text-[10px]">Toca la mitad superior de la arena.</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="bg-red-500/20 text-red-300 font-bold px-2 py-0.5 rounded-lg border border-red-500/30">🦶 PATADA</span>
-                <span className="text-gray-300 text-[10px]">Ataque de mayor potencia.</span>
+                <span className="text-gray-300 text-[10px]">Toca la mitad inferior de la arena.</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="bg-blue-500/20 text-blue-300 font-bold px-2 py-0.5 rounded-lg border border-blue-500/30">🛡️ ESQUIVAR</span>
