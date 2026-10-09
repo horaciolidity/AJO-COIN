@@ -207,24 +207,33 @@ export const ENEMY_CATALOG: Omit<CombatEnemy, 'id' | 'currentHp'>[] = [
   },
 ];
 
-export const PLAYER_MAX_HP = 100;
+export const PLAYER_MAX_HP = 350;
 
 export class CombatEngine {
   /**
    * Spawn enemy tailored to evolution rank order.
-   * Enemy stats scale with stageOrder.
+   * Enemy stats scale significantly at Platinum rank (stageOrder >= 5).
    */
   static spawnEnemyForRank(stageOrder: number): CombatEnemy {
     let index = 0;
-    if (stageOrder >= 10) index = 4; // Boss
-    else if (stageOrder >= 7) index = 3; // Tank
-    else if (stageOrder >= 5) index = 2; // Mold
-    else if (stageOrder >= 3) index = 1; // Worm
-    else index = 0; // Bug
+    if (stageOrder >= 10) index = 6; // Boss
+    else if (stageOrder >= 8) index = 5; // Toxic Warrior
+    else if (stageOrder >= 6) index = 4; // Combat Mech
+    else if (stageOrder >= 5) index = 3; // Wild Beast (Platinum)
+    else if (stageOrder >= 3) index = 2; // Steel Samurai
+    else if (stageOrder >= 2) index = 1; // Shadow Ninja
+    else index = 0; // Punk Brawler
 
     const base = ENEMY_CATALOG[index];
-    const hpScale = 1 + (stageOrder - 1) * 0.35;
-    const dmgScale = 1 + (stageOrder - 1) * 0.25;
+    // Platinum+ scaling (stageOrder >= 5 gets extra tough HP & attack boost)
+    const isPlatinumPlus = stageOrder >= 5;
+    const hpScale = isPlatinumPlus
+      ? 1 + (stageOrder - 1) * 0.65
+      : 1 + (stageOrder - 1) * 0.35;
+    const dmgScale = isPlatinumPlus
+      ? 1 + (stageOrder - 1) * 0.45
+      : 1 + (stageOrder - 1) * 0.25;
+
     const maxHp = Math.round(base.maxHp * hpScale);
 
     return {
@@ -232,8 +241,9 @@ export class CombatEngine {
       id: `enemy_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
       maxHp,
       currentHp: maxHp,
-      rewardGarlic: Math.round(base.rewardGarlic * (1 + stageOrder * 0.2)),
+      rewardGarlic: Math.round(base.rewardGarlic * (1 + stageOrder * 0.25)),
       attackDamage: Math.round(base.attackDamage * dmgScale),
+      attackInterval: isPlatinumPlus ? Math.max(1500, base.attackInterval - 500) : base.attackInterval,
     };
   }
 

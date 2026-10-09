@@ -18,14 +18,14 @@ import { AnimatedFighterSprite } from './AnimatedFighterSprite';
 import { triggerHaptic } from '../../utils/haptics';
 import { playTapSound, playHarvestSound, playCoinSound } from '../../utils/audio';
 import { preloadFighterAssets } from '../../utils/assetPreloader';
-import { Zap, Flame, Shield, Heart, Swords, Star } from 'lucide-react';
+import { Zap, Flame, Shield, Heart, Swords, Star, Trophy, ChevronRight } from 'lucide-react';
 
 interface CombatArenaProps {
   onHarvestGarlic?: (amount: number) => void;
 }
 
 const COMBO_RESET_MS = 1500;
-const POSE_LOCK_MS = 140; // Fluid attack animation frame window
+const POSE_LOCK_MS = 160;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -96,15 +96,17 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
   const [bossWaveNumber, setBossWaveNumber] = useState(0);
   const [showBossCinematic, setShowBossCinematic] = useState(false);
 
+  // ── Victory Persistent State & Next Fight Delay ───────────────────────────
+  const [isVictoryState, setIsVictoryState] = useState(false);
+  const [canProceedNextBattle, setCanProceedNextBattle] = useState(false);
+  const [victoryCountdown, setVictoryCountdown] = useState(3);
+  const [defeatedEnemySnapshot, setDefeatedEnemySnapshot] = useState<CombatEnemy | null>(null);
+
   // ── Special VFX overlay ───────────────────────────────────────────────────
   const [showSpecialVFX, setShowSpecialVFX] = useState(false);
 
   // ── Combat Help Modal ─────────────────────────────────────────────────────
   const [showCombatHelp, setShowCombatHelp] = useState(false);
-
-  // ── Intermission / Training Punching Bag state ───────────────────────────
-  const [isIntermission, setIsIntermission] = useState(false);
-  const [intermissionCountdown, setIntermissionCountdown] = useState(0);
 
   // ── Enemy attack state machine ───────────────────────────────────────────
   const [enemyAttackState, setEnemyAttackState] = useState<EnemyAttackState>('IDLE');
@@ -135,15 +137,15 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
   });
   const playerTookDamageThisRound = useRef(false);
 
-  // ── Stable Refs for Enemy AI Timer Loop (prevents timer tear-down bug) ──
+  // ── Stable Refs for Enemy AI Timer Loop ──────────────────────────────────
   const isDodgingRef = useRef(isDodging);
   isDodgingRef.current = isDodging;
 
   const isPlayerDeadRef = useRef(isPlayerDead);
   isPlayerDeadRef.current = isPlayerDead;
 
-  const isIntermissionRef = useRef(isIntermission);
-  isIntermissionRef.current = isIntermission;
+  const isVictoryStateRef = useRef(isVictoryState);
+  isVictoryStateRef.current = isVictoryState;
 
   const currentEnemyRef = useRef(enemy);
   currentEnemyRef.current = enemy;
@@ -176,7 +178,6 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
     }, COMBO_RESET_MS);
   }, []);
 
-  // ── Clear all timers helper ──
   const clearAllEnemyTimers = useCallback(() => {
     if (enemyAttackTimerRef.current) clearTimeout(enemyAttackTimerRef.current);
     if (enemyWindupTimerRef.current) clearTimeout(enemyWindupTimerRef.current);
@@ -190,7 +191,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
     const targetEnemy = currentEnemyRef.current;
     if (
       isPlayerDeadRef.current ||
-      isIntermissionRef.current ||
+      isVictoryStateRef.current ||
       targetEnemy.spriteUrl === 'BAG' ||
       targetEnemy.currentHp <= 0
     ) {
@@ -198,14 +199,14 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
     }
 
     enemyAttackTimerRef.current = setTimeout(() => {
-      if (isPlayerDeadRef.current || isIntermissionRef.current || currentEnemyRef.current.currentHp <= 0) return;
+      if (isPlayerDeadRef.current || isVictoryStateRef.current || currentEnemyRef.current.currentHp <= 0) return;
 
       // Windup Phase (Telegraph warning)
       setEnemyAttackState('WINDUP');
       triggerHaptic('light');
 
       enemyWindupTimerRef.current = setTimeout(() => {
-        if (isPlayerDeadRef.current || isIntermissionRef.current || currentEnemyRef.current.currentHp <= 0) return;
+        if (isPlayerDeadRef.current || isVictoryStateRef.current || currentEnemyRef.current.currentHp <= 0) return;
 
         // Strike Phase
         setEnemyAttackState('STRIKING');
@@ -277,7 +278,6 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
           return nextHp;
         });
 
-        // Cooldown back to idle & reschedule next attack
         enemyCooldownTimerRef.current = setTimeout(() => {
           setEnemyAttackState('COOLDOWN');
           setTimeout(() => {
@@ -289,17 +289,15 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
     }, currentEnemyRef.current.attackInterval);
   }, [clearAllEnemyTimers, currentStage.order, resetCombatStreak, showToast, triggerScreenShake]);
 
-  // Re-schedule whenever a new enemy spawns or stage changes
   useEffect(() => {
-    if (isPlayerDead || isIntermission || enemy.currentHp <= 0) return;
+    if (isPlayerDead || isVictoryState || enemy.currentHp <= 0) return;
     scheduleEnemyAttack();
 
     return () => {
       clearAllEnemyTimers();
     };
-  }, [enemy.id, isPlayerDead, isIntermission, scheduleEnemyAttack, clearAllEnemyTimers]);
+  }, [enemy.id, isPlayerDead, isVictoryState, scheduleEnemyAttack, clearAllEnemyTimers]);
 
-  // Clean up timers on unmount
   useEffect(() => {
     return () => {
       clearAllEnemyTimers();
@@ -312,24 +310,20 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
   const handleAttack = useCallback(
     (type: CombatAttackType, e?: React.MouseEvent | React.TouchEvent) => {
       if (e) {
-        // Prevent touch zoom/scroll duplication
         if (e.cancelable) e.preventDefault();
       }
 
       const now = performance.now();
-      // Debounce rapid multi-touches (80ms minimum threshold per attack frame)
       if (now - lastAttackTimeRef.current < 80) return;
       lastAttackTimeRef.current = now;
 
-      if (enemy.currentHp <= 0 || isPlayerDead || isIntermission) return;
+      if (enemy.currentHp <= 0 || isPlayerDead || isVictoryState) return;
 
       triggerHaptic(type === 'SPECIAL' ? 'heavy' : 'medium');
       if (type !== 'SPECIAL') playTapSound();
 
-      // Feed into base tap economy (marked as combat tap)
       handleTap(undefined, undefined, 0, true);
 
-      // Update attack sequence & check combos
       attackHistoryRef.current = [...attackHistoryRef.current, type];
       resetComboTimer();
 
@@ -357,7 +351,6 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         attackHistoryRef.current = [];
       }
 
-      // Calculate damage
       const isCrit = Math.random() < effectiveCritChance;
       const damage = CombatEngine.calculateHitDamage(
         type,
@@ -368,22 +361,19 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         tapStyleComboMult
       );
 
-      // Trigger SPECIAL VFX
       if (type === 'SPECIAL') {
         setShowSpecialVFX(true);
         setTimeout(() => setShowSpecialVFX(false), 600);
       }
 
-      // Player animation pose lock (140ms for responsive animation cycle)
       if (playerPoseTimerRef.current) clearTimeout(playerPoseTimerRef.current);
       setPlayerAction(type);
       playerPoseTimerRef.current = setTimeout(() => {
         setPlayerAction('IDLE');
       }, POSE_LOCK_MS);
 
-      // Floating hit effect on enemy side
       const rect = arenaRef.current?.getBoundingClientRect();
-      const hitX = rect ? rect.width * 0.6 + (Math.random() * 30 - 15) : 160;
+      const hitX = rect ? rect.width * 0.5 + (Math.random() * 30 - 15) : 160;
       const hitY = rect ? rect.height * 0.35 + (Math.random() * 20 - 10) : 80;
 
       const newEffect: CombatHitEffect = {
@@ -401,7 +391,6 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         setHitEffects((prev) => prev.filter((ef) => ef.id !== newEffect.id));
       }, 350);
 
-      // Special meter gain
       const specialGain = CombatEngine.getSkinSpecialMeterGain(
         type,
         skinBonus.specialMeterBonus,
@@ -409,12 +398,10 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
       );
       setSpecialMeter((prev) => Math.min(100, prev + specialGain));
 
-      // Round stats
       setRoundStats((r) => ({ ...r, damageDealt: r.damageDealt + damage }));
       if (type === 'SPECIAL')
         setRoundStats((r) => ({ ...r, specialsUsed: r.specialsUsed + 1 }));
 
-      // Apply damage to enemy
       setEnemy((prev) => {
         const nextHp = Math.max(0, prev.currentHp - damage);
         if (nextHp <= 0) handleEnemyDefeated(prev);
@@ -424,7 +411,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
     [
       enemy.currentHp,
       isPlayerDead,
-      isIntermission,
+      isVictoryState,
       handleTap,
       resetComboTimer,
       effectiveCritChance,
@@ -437,7 +424,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
     ]
   );
 
-  // ─── Enemy Defeated ───────────────────────────────────────────────────────
+  // ─── Enemy Defeated (Persistent Victory Screen) ──────────────────────────
   const handleEnemyDefeated = (defeatedEnemy: CombatEnemy) => {
     playHarvestSound();
     triggerHaptic('success');
@@ -445,6 +432,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
     clearAllEnemyTimers();
     setEnemyAttackState('IDLE');
     triggerComboFlash('#10b981');
+    setDefeatedEnemySnapshot(defeatedEnemy);
 
     const snap = { ...roundStats };
     const wasPerfect = !playerTookDamageThisRound.current;
@@ -482,6 +470,31 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
       onHarvestGarlic(defeatedEnemy.rewardGarlic);
     }
 
+    // Enable Persistent Victory Overlay
+    setIsVictoryState(true);
+    setCanProceedNextBattle(false);
+    setVictoryCountdown(3);
+
+    // 3 Second mandatory victory display timer before button activates
+    let count = 3;
+    const victoryTimer = setInterval(() => {
+      count -= 1;
+      setVictoryCountdown(count);
+      if (count <= 0) {
+        clearInterval(victoryTimer);
+        setCanProceedNextBattle(true);
+      }
+    }, 1000);
+  };
+
+  // User explicitly clicks to proceed to next battle
+  const handleProceedToNextFight = () => {
+    if (!canProceedNextBattle) return;
+    triggerHaptic('heavy');
+    setIsVictoryState(false);
+    setCanProceedNextBattle(false);
+    setPlayerAction('IDLE');
+
     playerTookDamageThisRound.current = false;
     attackHistoryRef.current = [];
     comboChainRef.current = 0;
@@ -495,40 +508,10 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
       specialsUsed: 0,
     });
 
-    // Enter Intermission Training Mode (4 seconds)
-    setIsIntermission(true);
-    setIntermissionCountdown(4);
-    setEnemy({
-      id: 'bag_' + Date.now(),
-      name: 'BOLSA DE ENTRENAMIENTO 🥊',
-      type: 'BUG',
-      emoji: '🥊',
-      maxHp: 99999,
-      currentHp: 99999,
-      rewardGarlic: 2,
-      rewardGc: 5,
-      rewardTeeth: 0,
-      color: '#ef4444',
-      attackDamage: 0,
-      attackInterval: 999999,
-      dodgeWindowMs: 0,
-      spriteUrl: 'BAG',
-    });
-
-    let count = 4;
-    const countTimer = setInterval(() => {
-      count -= 1;
-      setIntermissionCountdown(count);
-      if (count <= 0) {
-        clearInterval(countTimer);
-        setIsIntermission(false);
-        setPlayerAction('IDLE');
-        const nextEnemy = isBossWave
-          ? CombatEngine.spawnBossWave(bossWaveNumber, currentStage.order)
-          : CombatEngine.spawnEnemyForRank(currentStage.order);
-        setEnemy(nextEnemy);
-      }
-    }, 1000);
+    const nextEnemy = isBossWave
+      ? CombatEngine.spawnBossWave(bossWaveNumber, currentStage.order)
+      : CombatEngine.spawnEnemyForRank(currentStage.order);
+    setEnemy(nextEnemy);
   };
 
   // ─── Special Attack ───────────────────────────────────────────────────────
@@ -543,7 +526,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
 
   // ─── Dodge ────────────────────────────────────────────────────────────────
   const handleDodge = () => {
-    if (dodgeCooldown || isDodging || isPlayerDead) return;
+    if (dodgeCooldown || isDodging || isPlayerDead || isVictoryState) return;
     setIsDodging(true);
     triggerHaptic('medium');
     setTimeout(() => setIsDodging(false), DODGE_DURATION_MS);
@@ -576,6 +559,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
   const playerHpPct = Math.max(0, Math.min(100, Math.round((playerHp / PLAYER_MAX_HP) * 100)));
   const isEnemyLow = hpPct <= 25;
   const isWindup = enemyAttackState === 'WINDUP';
+  const isDualAttacking = playerAction !== 'IDLE' && enemyAttackState === 'STRIKING';
 
   return (
     <div
@@ -583,15 +567,6 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         screenShake ? 'animate-[shake_0.35s_ease-in-out]' : ''
       }`}
     >
-      {/* ── INTERMISSION TRAINING BAG BANNER ── */}
-      {isIntermission && (
-        <div className="w-full flex items-center justify-center gap-2 animate-pulse z-40">
-          <div className="px-4 py-1.5 rounded-full bg-amber-500/90 border-2 border-amber-300 text-black font-black text-xs uppercase tracking-widest shadow-[0_0_20px_rgba(245,158,11,0.9)] flex items-center gap-1.5">
-            <span>🥊 ENTRENAMIENTO — PRÓXIMO RIVAL EN {intermissionCountdown}s</span>
-          </div>
-        </div>
-      )}
-
       {/* ── Combo Flash Overlay ── */}
       {comboFlash && (
         <div
@@ -706,8 +681,8 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
               style={{ width: `${playerHpPct}%` }}
             />
           </div>
-          <span className="text-[9px] font-mono font-bold text-emerald-400 w-8 text-right">
-            {playerHp}HP
+          <span className="text-[9px] font-mono font-bold text-emerald-400 w-12 text-right">
+            {playerHp}/{PLAYER_MAX_HP} HP
           </span>
         </div>
 
@@ -722,7 +697,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
               style={{ width: `${hpPct}%` }}
             />
           </div>
-          <span className="text-[9px] font-mono font-bold text-red-400 w-8 text-right">
+          <span className="text-[9px] font-mono font-bold text-red-400 w-12 text-right">
             {enemy.currentHp}HP
           </span>
         </div>
@@ -806,27 +781,36 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
           ))}
         </div>
 
+        {/* Dual Attack Clash Flash Effect */}
+        {isDualAttacking && (
+          <div className="absolute inset-0 pointer-events-none z-30 flex items-center justify-center">
+            <div className="px-3 py-1 bg-amber-500 text-black font-black text-sm uppercase rounded-full animate-ping border-2 border-white shadow-[0_0_30px_rgba(245,158,11,1)]">
+              💥 COLISIÓN DE ATAQUES! 💥
+            </div>
+          </div>
+        )}
+
         {/* 2D ARCADE FIGHTERS DISPLAY */}
-        <div className="absolute inset-0 pointer-events-none flex items-center justify-around px-2 pb-2">
-          {/* Player AJO Fighter (Left) */}
+        <div className="absolute inset-0 pointer-events-none flex items-center justify-between px-6 pb-2">
+          {/* Player AJO Fighter (Left Side) */}
           <div className="relative z-10 flex items-center justify-center">
             <AnimatedFighterSprite
               pose={playerAction as any}
               facing="right"
               isHit={isPlayerHit}
-              isLowHp={playerHp <= 25}
+              isLowHp={playerHp <= 50}
               size="md"
             />
           </div>
 
           {/* Impact Hit Spark Effect (Center) */}
           {(playerAction === 'PUNCH' || playerAction === 'KICK' || playerAction === 'SPECIAL') && (
-            <div className="absolute z-30 pointer-events-none animate-ping text-5xl drop-shadow-[0_0_20px_rgba(245,158,11,1)]">
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none animate-ping text-5xl drop-shadow-[0_0_20px_rgba(245,158,11,1)]">
               {playerAction === 'SPECIAL' ? '✨' : playerAction === 'KICK' ? '⚡' : '💥'}
             </div>
           )}
 
-          {/* Enemy Fighter (Right) */}
+          {/* Enemy Fighter (Right Side) */}
           <div className="relative z-10 flex items-center justify-center">
             <AnimatedFighterSprite
               pose={
@@ -848,10 +832,36 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
           </div>
         </div>
 
-        {/* Enemy defeated overlay */}
-        {enemy.currentHp <= 0 && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-3xl z-20 pointer-events-none">
-            <div className="text-4xl animate-bounce">🏆</div>
+        {/* Persistent Victory Overlay */}
+        {isVictoryState && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 backdrop-blur-md rounded-3xl z-40 p-4 space-y-3 animate-fade-in">
+            <div className="flex flex-col items-center text-center space-y-1">
+              <Trophy className="w-14 h-14 text-amber-400 animate-bounce drop-shadow-[0_0_25px_rgba(245,158,11,0.9)]" />
+              <div className="text-xl font-black text-amber-300 uppercase tracking-widest drop-shadow-[0_0_10px_rgba(245,158,11,0.8)]">
+                ¡VICTORIA ÉPICA! 🏆
+              </div>
+              <p className="text-xs text-emerald-400 font-bold uppercase">
+                {defeatedEnemySnapshot?.name} DERROTADO
+              </p>
+              <div className="flex gap-3 text-[11px] text-gray-300 font-medium bg-black/50 px-3 py-1.5 rounded-xl border border-white/10 mt-1">
+                <span>🧄 +{defeatedEnemySnapshot?.rewardGarlic} Ajos</span>
+                <span>💎 +{defeatedEnemySnapshot?.rewardGc} GC</span>
+              </div>
+            </div>
+
+            {canProceedNextBattle ? (
+              <button
+                onClick={handleProceedToNextFight}
+                className="w-full py-3 bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-black font-black text-xs rounded-2xl shadow-[0_0_25px_rgba(245,158,11,0.9)] animate-bounce hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 uppercase tracking-wider cursor-pointer"
+              >
+                <span>¡SIGUIENTE PELEA! 🥊</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            ) : (
+              <div className="px-4 py-2 bg-black/60 border border-amber-500/30 text-amber-300 text-[10px] font-bold rounded-xl flex items-center gap-1.5 animate-pulse">
+                <span>Preparando siguiente contrincante en {victoryCountdown}s…</span>
+              </div>
+            )}
           </div>
         )}
 
@@ -885,7 +895,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         {/* Dodge Button */}
         <button
           onClick={handleDodge}
-          disabled={dodgeCooldown || isDodging || isPlayerDead}
+          disabled={dodgeCooldown || isDodging || isPlayerDead || isVictoryState}
           className={`flex-1 py-2.5 rounded-2xl font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 border-2 transition-all duration-200 ${
             isDodging
               ? 'bg-blue-500/40 border-blue-400 text-blue-200 scale-95'
@@ -903,7 +913,7 @@ export const CombatArena: React.FC<CombatArenaProps> = ({ onHarvestGarlic }) => 
         {/* Special Attack Button */}
         <button
           onClick={handleSpecialAttack}
-          disabled={specialMeter < 100 || isPlayerDead}
+          disabled={specialMeter < 100 || isPlayerDead || isVictoryState}
           className={`flex-1 py-2.5 rounded-2xl font-black text-[11px] uppercase tracking-wider flex items-center justify-center gap-1.5 border-2 transition-all duration-200 ${
             specialMeter >= 100
               ? 'bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-500 text-black border-white shadow-[0_0_25px_rgba(245,158,11,0.9)] animate-bounce'

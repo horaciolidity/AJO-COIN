@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { preloadFighterAssets } from '../../utils/assetPreloader';
+import { getTransparentSpriteDataUrl } from '../../utils/transparentSprite';
 
 export type FighterPose =
   | 'IDLE'
@@ -32,6 +33,8 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
   size = 'md',
 }) => {
   const [imagesLoaded, setImagesLoaded] = useState(false);
+  const [processedSpriteUrl, setProcessedSpriteUrl] = useState<string>('');
+  const imgRef = useRef<HTMLImageElement | null>(null);
 
   useEffect(() => {
     preloadFighterAssets().then(() => {
@@ -66,9 +69,8 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
           return '/assets/fighter/ajo_idle.png';
       }
     } else {
-      // Dynamic Enemy sprite selection depending on customSpriteUrl and Pose
+      // Dynamic Enemy sprite selection
       const baseSprite = customSpriteUrl || '/assets/fighter/enemy_brawler_idle.png';
-
       const isAttacking = pose === 'PUNCH' || pose === 'KICK' || pose === 'SPECIAL';
 
       if (baseSprite.includes('ninja')) {
@@ -88,38 +90,51 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
     }
   };
 
-  const currentSrc = getSpriteSrc();
+  const rawSrc = getSpriteSrc();
+
+  // Process image on load to strip out checkerboard/box background
+  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const img = e.currentTarget;
+    if (isEnemy && img) {
+      const transparentDataUrl = getTransparentSpriteDataUrl(img);
+      if (transparentDataUrl && transparentDataUrl !== processedSpriteUrl) {
+        setProcessedSpriteUrl(transparentDataUrl);
+      }
+    }
+  };
+
+  const currentDisplaySrc = isEnemy && processedSpriteUrl ? processedSpriteUrl : rawSrc;
 
   const dimensions =
-    size === 'lg' ? 'w-48 h-48' : size === 'sm' ? 'w-32 h-32' : 'w-40 h-40';
+    size === 'lg' ? 'w-48 h-48' : size === 'sm' ? 'w-32 h-32' : 'w-44 h-44';
 
   const transformFlip = facing === 'left' ? 'scale-x-[-1]' : '';
 
-  // Tailored animation classes per pose to provide clear movement feedback
+  // Arena Physics: Lunging towards center during attacks
   const animationClass = isEnemy
     ? pose === 'WINDUP'
-      ? 'scale-110 -translate-x-3 rotate-6 drop-shadow-[0_0_20px_rgba(239,68,68,1)] filter saturate-200 animate-pulse transition-transform duration-100'
+      ? 'scale-110 -translate-x-4 rotate-6 drop-shadow-[0_0_20px_rgba(239,68,68,1)] filter saturate-200 animate-pulse transition-transform duration-100'
       : pose === 'PUNCH' || pose === 'SPECIAL' || pose === 'KICK'
-      ? '-translate-x-12 scale-130 -rotate-12 z-30 drop-shadow-[0_0_25px_rgba(239,68,68,1)] transition-transform duration-75'
+      ? '-translate-x-20 scale-135 -rotate-12 z-30 drop-shadow-[0_0_25px_rgba(239,68,68,1)] transition-transform duration-100 ease-out'
       : pose === 'HIT'
-      ? 'translate-x-8 rotate-12 brightness-200 contrast-150 transition-transform duration-75'
+      ? 'translate-x-10 rotate-12 brightness-200 contrast-150 transition-transform duration-75'
       : pose === 'DEFEAT'
-      ? 'translate-x-12 rotate-45 opacity-40 grayscale blur-[1px] transition-all duration-300'
+      ? 'translate-x-16 rotate-45 opacity-40 grayscale blur-[1px] transition-all duration-300'
       : 'animate-stance'
     : pose === 'IDLE'
     ? 'animate-stance'
     : pose === 'WALK'
-    ? 'translate-x-3 animate-stance'
+    ? 'translate-x-4 animate-stance'
     : pose === 'PUNCH'
-    ? 'translate-x-8 scale-125 rotate-6 z-30 transition-transform duration-75'
+    ? 'translate-x-16 scale-130 rotate-6 z-30 transition-transform duration-100 ease-out'
     : pose === 'KICK'
-    ? 'translate-x-10 scale-125 -rotate-12 z-30 transition-transform duration-75'
+    ? 'translate-x-20 scale-135 -rotate-12 z-30 transition-transform duration-100 ease-out'
     : pose === 'SPECIAL'
-    ? 'scale-135 translate-x-6 animate-pulse z-30 drop-shadow-[0_0_30px_rgba(245,158,11,1)]'
+    ? 'scale-140 translate-x-16 animate-pulse z-30 drop-shadow-[0_0_30px_rgba(245,158,11,1)]'
     : pose === 'HIT'
-    ? '-translate-x-8 rotate-[-12deg] brightness-200 contrast-150 transition-transform duration-75'
+    ? '-translate-x-10 rotate-[-12deg] brightness-200 contrast-150 transition-transform duration-75'
     : pose === 'VICTORY'
-    ? 'scale-115 -translate-y-4 transition-transform duration-200 drop-shadow-[0_0_20px_rgba(16,185,129,0.8)]'
+    ? 'scale-120 -translate-y-4 transition-transform duration-200 drop-shadow-[0_0_20px_rgba(16,185,129,0.8)]'
     : pose === 'DEFEAT'
     ? 'rotate-90 opacity-50 grayscale transition-all duration-300'
     : '';
@@ -128,13 +143,13 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
     <div className={`relative flex flex-col items-center justify-end select-none ${dimensions} will-change-transform`}>
       {/* 2D Fighter Ground Contact Shadow */}
       <div className={`absolute bottom-1 w-24 h-4 rounded-full bg-black/60 blur-xs transform scale-x-125 transition-transform duration-100 ${
-        pose === 'PUNCH' || pose === 'KICK' || pose === 'SPECIAL' ? 'scale-x-150 opacity-80' : ''
+        pose === 'PUNCH' || pose === 'KICK' || pose === 'SPECIAL' ? 'scale-x-175 opacity-80' : ''
       }`} />
 
       {/* Main Fighter Sprite Container */}
       <div
-        className={`relative z-10 w-full h-full flex items-center justify-center transition-transform duration-75 ${transformFlip} ${animationClass} ${
-          isHit ? 'filter drop-shadow-[0_0_20px_rgba(239,68,68,1)]' : ''
+        className={`relative z-10 w-full h-full flex items-center justify-center transition-transform duration-100 ${transformFlip} ${animationClass} ${
+          isHit ? 'filter drop-shadow-[0_0_25px_rgba(239,68,68,1)]' : ''
         } ${isLowHp ? 'opacity-80' : ''}`}
       >
         {customSpriteUrl === 'BAG' ? (
@@ -147,7 +162,6 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
                 isHit ? 'animate-hit scale-105 border-yellow-400' : 'animate-stance'
               }`}
             >
-              {/* Target Stripes */}
               <div className="w-full h-3 bg-black/40 border-y border-white/20" />
               <div className="w-12 h-12 rounded-full border-2 border-amber-400/80 bg-black/40 flex items-center justify-center text-xl font-black text-amber-300 shadow-inner">
                 🥊
@@ -158,14 +172,18 @@ export const AnimatedFighterSprite: React.FC<AnimatedFighterSpriteProps> = React
         ) : (
           <div className="relative w-full h-full flex items-center justify-center">
             <img
-              src={currentSrc}
+              ref={imgRef}
+              src={currentDisplaySrc}
               alt={isEnemy ? 'Enemy Fighter' : 'AJO Fighter'}
-              className={`w-full h-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)] transition-opacity duration-75 ${
+              onLoad={handleImageLoad}
+              crossOrigin="anonymous"
+              className={`w-full h-full object-contain drop-shadow-[0_8px_16px_rgba(0,0,0,0.7)] transition-opacity duration-100 ${
                 imagesLoaded ? 'opacity-100' : 'opacity-90'
               }`}
               style={{
                 pointerEvents: 'none',
                 userSelect: 'none',
+                mixBlendMode: isEnemy ? 'normal' : 'normal',
               }}
               onError={(e) => {
                 (e.target as HTMLImageElement).src = isEnemy
